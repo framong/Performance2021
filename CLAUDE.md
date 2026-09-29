@@ -90,3 +90,13 @@ Presenti su disco ma non inclusi nel `.vbproj`, tra cui:
 - SciChart usa ancora le API obsolete `SeriesSource` / `ChartSeriesViewModel`: non migrarle se non richiesto.
 - Dopo ogni modifica al codice esegui la build e correggi gli errori.
 - Mantieni lo stile esistente: nomi e commenti in italiano.
+- `clsTimePlotViewModel` attiva è quella in fondo a `UserControl\UserControlTimePlotView.xaml.vb`: il file
+  `clsTimePlotViewModel.vb` nella root NON è compilato. Modifica solo la versione in `UserControlTimePlotView.xaml.vb`.
+- La lettura dei dati Parquet NON è thread-safe: `DataProvider2020.CanaleDbl(...)` è lazy e legge dal file e muta lo
+  stato del provider. Tutto ciò che può innescare letture (`CanaleDbl`, `VerificaCanaleTarget`, `TwaModes`,
+  `CanaleTackDefault`) va eseguito sul thread UI; in background (`Task.Run`) solo calcoli su array già caricati,
+  come in `PreparaRichieste` / `EseguiCalcoli` di `clsTimePlotViewModel`.
+- Lo stato condiviso è globale in `mdlCommon` (`DataProvider2020`, `DataPlotSync`, `MatriceControlliBase`,
+  `TgtManager`, `PeriodsManager`, `GraficoEventiViewModel`, `AppConfig`). Al cambio di dataset tutto va azzerato in
+  `ResetStatoDataset` (MainWindow): ogni nuovo oggetto che si iscrive a eventi di `DataPlotSync` (`WithEvents`) o
+  conserva dati del dataset deve essere sganciato/azzerato lì, altrimenti resta vivo e lavora sul set precedente.
