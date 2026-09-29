@@ -1,0 +1,45 @@
+﻿<UserControl x:Class="UserControlSciChartPlot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+    <sc:SciChartSurface x:Name="Plot"
+                        Grid.Row="1" Grid.Column="0" 
+                        sc:ThemeManager.Theme="BrightSpark" Margin="3,2,3,2" 
+                        SeriesSource="{Binding SeriesSource, Mode=OneWay}"
+												>
+      <sc:SciChartSurface.XAxes >
+        <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1" ></sc:NumericAxis>
+      </sc:SciChartSurface.XAxes>
+      <sc:SciChartSurface.YAxes>
+        <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1"></sc:NumericAxis>
+      </sc:SciChartSurface.YAxes>
+      <sc:SciChartSurface.Annotations>
+        <sc:TextAnnotation Text="{Binding Titolo}" X1="1" Y1="0.0" FontSize="16" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+        <sc:TextAnnotation Text="{Binding SottoTitolo1}" X1="1" Y1="0.12" FontSize="12" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+        <sc:TextAnnotation Text="{Binding SottoTitolo2}" X1="1" Y1="0.2" FontSize="12" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+        <sc:TextAnnotation Text="{Binding Ordinata}" X1="0.11" Y1="0.5" FontSize="30" HorizontalAnchorPoint="Left" VerticalAnchorPoint="center" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative">
+          <sc:TextAnnotation.RenderTransform>
+            <RotateTransform Angle="90"></RotateTransform>
+          </sc:TextAnnotation.RenderTransform>
+        </sc:TextAnnotation>
+        <sc:TextAnnotation Text="{Binding Ascissa}" X1="1" Y1="0.8" FontSize="30" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative"></sc:TextAnnotation>
+      </sc:SciChartSurface.Annotations>
+      <sc:SciChartSurface.Resources>
+      </sc:SciChartSurface.Resources>
+      <sc:SciChartSurface.ChartModifier>
+        <sc:ModifierGroup>
+          <sc:MouseWheelZoomModifier IsEnabled="True" XyDirection="XYDirection" ></sc:MouseWheelZoomModifier>
+          <sc:CursorModifier IsEnabled="True" ></sc:CursorModifier>
+          <sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick"/>
+        </sc:ModifierGroup>
+      </sc:SciChartSurface.ChartModifier>
+    </sc:SciChartSurface>
+
+  </Grid>
+</UserControl>

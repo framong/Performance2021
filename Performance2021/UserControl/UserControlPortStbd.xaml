@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="UserControlPortStbd"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*"></ColumnDefinition>
+            <ColumnDefinition Width="50*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+
+    <ToggleButton x:Name="Port" Grid.Column="0" Background="Red" >
+			<!--<ToggleButton.Style>
+				<Style TargetType="{x:Type ToggleButton}">
+					<Setter Property="Background" Value="#FFFA5A5A"/>
+					<Style.Triggers>
+						<Trigger Property="IsChecked" Value="true">
+							<Setter Property="Background" Value="Red"/>
+						</Trigger>
+					</Style.Triggers>
+				</Style>
+			</ToggleButton.Style>-->
+      <Viewbox>
+        <Label Name="lblPort" >P</Label>
+      </Viewbox>
+    </ToggleButton>
+    <ToggleButton x:Name="Stbd" Grid.Column="1"  Background="Green" >
+			<!--<ToggleButton.Style>
+				<Style TargetType="{x:Type ToggleButton}">
+					<Setter Property="Background" Value="#FF66B066"/>
+					<Style.Triggers>
+						<Trigger Property="IsChecked" Value="true">
+							<Setter Property="Background" Value="Green"/>
+						</Trigger>
+					</Style.Triggers>
+				</Style>
+			</ToggleButton.Style>-->
+			<Viewbox>
+        <Label Name="lblStbd" >S</Label>
+      </Viewbox>
+        </ToggleButton>
+    </Grid>
+</UserControl>

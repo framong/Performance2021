@@ -1,0 +1,224 @@
+﻿<UserControl x:Class="UserControlTimePlotView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="250" d:DesignWidth="800" >
+
+  <UserControl.Resources>
+    <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+  </UserControl.Resources>
+
+  <Grid Name="GrigliaGrafico" Height="{Binding PlotHeight}">
+
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{Binding ObjChartSyncManager.DataBoxWidth, Mode=TwoWay}" />
+      <ColumnDefinition Width="3" MinWidth="3"/>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="30"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" ></RowDefinition>
+      <RowDefinition Height="3" MinHeight="3"></RowDefinition>
+    </Grid.RowDefinitions>
+    <GridSplitter Name="SplitDati" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" Background="#77000000" >
+
+    </GridSplitter>
+
+    <ScrollViewer Grid.Column="0" Grid.Row="0" HorizontalScrollBarVisibility="Disabled"  VerticalScrollBarVisibility="Visible" >
+      <ScrollViewer.Resources>
+        <Style x:Key="{x:Type ScrollBar}" TargetType="{x:Type ScrollBar}">
+          <Setter Property="MinWidth" Value="8" />
+          <Setter Property="Width" Value="8" />
+        </Style>
+      </ScrollViewer.Resources>
+
+      <ItemsControl Name="ControlloDataDisplay" ItemsSource="{Binding CanaliOrdinata}" HorizontalAlignment="Stretch" >
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+
+            <Border Name="OutBorder" BorderBrush="{Binding PrintedColor, Converter={StaticResource converter}}" BorderThickness="2" >
+              <Grid Name="GrigliaBoxDati" Background="LightYellow" MinHeight="50" MinWidth="60" Height="{Binding DataContext.DataBoxHeight, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}}" >
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="2*"/>
+                  <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="1*" ></RowDefinition>
+                  <RowDefinition Height="1*" ></RowDefinition>
+                  <RowDefinition Height="1*" ></RowDefinition>
+                  <RowDefinition Height="1*" ></RowDefinition>
+                  <RowDefinition Height="3" MinHeight="3" ></RowDefinition>
+
+                </Grid.RowDefinitions>
+                <GridSplitter Name="SplitDati" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Grid.Row="5" DragCompleted="SplitDati_DragCompleted" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Background="LightGray">
+
+                </GridSplitter>
+                <Border Name="MainBorder" BorderBrush="DarkGray" BorderThickness="1" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="4"  ></Border>
+                <Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  ></Border>
+                <Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="1" Grid.Column="1"></Border>
+                <Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="2" Grid.Column="1"></Border>
+                <Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="3" Grid.Column="1"></Border>
+
+                <Viewbox Stretch="Uniform" Name="vb_Descrizione" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+                  <Label Name="lbl_Descrizione" Content="{Binding Name}" MouseDoubleClick="Lbl_Descrizione_MouseDoubleClick" ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_UM" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" >
+                  <Label Name="lbl_UM"  Content="{Binding UM}" ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_Avg" Grid.Row="1" Grid.Column="0" Grid.RowSpan="1" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                  <Label Name="lbl_AvgVal" Content="{Binding StatisticheIntervallo.AvgString}" ToolTip="Avg"  ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_Max" Grid.Row="1" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Top" >
+                  <Label Name="lbl_MaxVal"  Content="{Binding StatisticheIntervallo.MaxString}" ToolTip="Max" ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_DS" Grid.Row="2" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Center" >
+                  <Label Name="lbl_DsVal"   Content="{Binding StatisticheIntervallo.SdString}" ToolTip="Std Dev" Grid.Row="2" Grid.Column="1" ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_Min" Grid.Row="3" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                  <Label Name="lbl_MinVal"  Content="{Binding StatisticheIntervallo.MinString}" ToolTip="Min" ></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_CurrVal" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3"  HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                  <Label Name="lbl_CurrVal" Grid.Row="1" Grid.Column="0" Content="{Binding StrCurrentValue}" ToolTip="Currnt Value" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="Black"></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_AvgValStbd" Grid.Row="1" Grid.Column="0"  HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                  <Label Name="lbl_AvgValStbd" Grid.Row="1" Grid.Column="0" Content="{Binding StatisticheIntervallo.AvgStbdString}" ToolTip="Stbd Only Avg" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="Green"></Label>
+                </Viewbox>
+                <Viewbox Stretch="Uniform"  Name="vb_AvgValPort" Grid.Row="3" Grid.Column="0"  HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                  <Label Name="lbl_AvgValPort" Grid.Row="3" Grid.Column="0" Content="{Binding StatisticheIntervallo.AvgPortString}" ToolTip="Port Only Avg" HorizontalAlignment="Right" VerticalAlignment="Bottom" Foreground="red"></Label>
+                </Viewbox>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+    </ScrollViewer>
+
+    <Border Grid.Row="0" Grid.Column="0" Panel.ZIndex="100"
+            Visibility="{Binding PlaceholderVisibile}"
+            Background="#FFF6F8F9" BorderBrush="DarkGray" BorderThickness="1"
+            IsHitTestVisible="False">
+      <TextBlock Text="{Binding NomiCanali}" FontSize="12" FontWeight="SemiBold"
+                 Foreground="#FF303030" TextWrapping="Wrap" Margin="4"
+                 VerticalAlignment="Top" HorizontalAlignment="Left"/>
+    </Border>
+
+    <Border Grid.Row="0" Grid.Column="2" Margin="3,2,3,2" Panel.ZIndex="100"
+            Visibility="{Binding PlaceholderVisibile}"
+            Background="#FFF6F8F9" BorderBrush="DarkGray" BorderThickness="1"
+            IsHitTestVisible="False">
+      <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <TextBlock Text="{Binding NomiCanali}" FontSize="15" FontWeight="SemiBold"
+                   Foreground="#FF303030" HorizontalAlignment="Center" TextWrapping="Wrap"
+                   TextAlignment="Center" MaxWidth="600"/>
+        <TextBlock Text="{Binding TestoStatoCaricamento}" FontSize="11" Foreground="Gray"
+                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+      </StackPanel>
+    </Border>
+
+    <GridSplitter Name="SplitGrafici"  Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Background="#77000000" Grid.ColumnSpan="4">
+    </GridSplitter>
+    <sc:SciChartSurface x:Name="SCsurface" sc:ThemeManager.Theme="BrightSpark" Margin="3,2,3,2"  Grid.Row="0" Grid.Column="2" 
+                        MinHeight="200" SeriesSource="{Binding SeriesSource}" YAxes="{Binding Yassi, Mode=OneWay}" sc:SciChartGroup.VerticalChartGroup="LrVerticalGroup"
+                        XAxes="{Binding Xassi, Mode=OneWay}" Annotations="{Binding Annotazioni}" MouseMove="SCsurface_MouseMove"
+                        >
+      <sc:SciChartSurface.ChartModifier>
+        <!--<sc:ModifierGroup sc:MouseManager.MouseEventGroup="MyMouseEventGroup"  >-->
+        <sc:ModifierGroup >
+          <!--<local:clsRubberBandModifier IsAnimated="False" ExecuteOn="MouseRightButton" IsEnabled="{Binding ObjChartSyncManager.RubberModeIsEnabled}" IsXAxisOnly="{Binding ObjChartSyncManager.RubberModeIsXAxisOnly}" RubberBandFill="#99FF0000" ReceiveHandledEvents="False" ></local:clsRubberBandModifier>-->
+          <local:clsRubberBandModifier IsAnimated="False" ExecuteOn="MouseRightButton" IsEnabled="True" IsXAxisOnly="{Binding ObjChartSyncManager.RubberModeIsXAxisOnly}" RubberBandFill="#99FF0000" ReceiveHandledEvents="False" ></local:clsRubberBandModifier>
+          <!--<sc:MouseWheelZoomModifier Name="ScMouseWheelZoomModifier" IsEnabled="{Binding ObjChartSyncManager.MouseWheelEnabled}" XyDirection="{Binding ObjChartSyncManager.MouseWheelXYdirection}" ReceiveHandledEvents="True" ></sc:MouseWheelZoomModifier>-->
+          <sc:MouseWheelZoomModifier Name="ScMouseWheelZoomModifier" IsEnabled="True" XyDirection="{Binding ObjChartSyncManager.MouseWheelXYdirection}" ReceiveHandledEvents="True" ></sc:MouseWheelZoomModifier>
+          <sc:ZoomPanModifier Name="ScZoomPanModifier" ZoomExtentsY="{Binding ObjChartSyncManager.ZoomExtentsY}" ReceiveHandledEvents="True" IsEnabled="True" XyDirection="XYDirection" ></sc:ZoomPanModifier>
+          <!--<sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick" IsAnimated="False"/>-->
+          <sc:CursorModifier IsEnabled="True"></sc:CursorModifier>
+          <sc:RolloverModifier IsEnabled="True" ShowAxisLabels="False" ShowTooltipOn="Never"></sc:RolloverModifier>
+          <sc:VerticalSliceModifier Name="BarraVericale" IsEnabled="True" Visibility="Visible"  >
+          </sc:VerticalSliceModifier>
+        </sc:ModifierGroup>
+      </sc:SciChartSurface.ChartModifier>
+    </sc:SciChartSurface>
+
+    <StackPanel Orientation="Vertical" Grid.Column="3" HorizontalAlignment="Right">
+      <Menu FontSize="12" VerticalAlignment="Top" Margin="2,2,2,10" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Right" >
+        <MenuItem Background="Yellow" Header="Settings" ToolTip="Plot Settings" >
+          <MenuItem >
+            <MenuItem.Header>
+              <Button Name="btn_SelChannels"  Command="{Binding CmdSelezionaCanale}" Content="Sel Channels"  Width="100" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+
+          <MenuItem>
+            <MenuItem.Header>
+              <ComboBox ItemsSource="{Binding ListaLineType}" 
+                        SelectedItem="{Binding SelectedLineType, Mode=TwoWay}"
+                        DisplayMemberPath="Descrizione"
+                        SelectionChanged="ComboBox_SelectionChanged"
+                        >
+                <!--<ComboBoxItem>Raw Value</ComboBoxItem>
+                <ComboBoxItem>Raw Value Derivative</ComboBoxItem>
+                <ComboBoxItem>Signed Value</ComboBoxItem>
+                <ComboBoxItem>Signed Value Derivative</ComboBoxItem>
+                <ComboBoxItem>Windward Leeward</ComboBoxItem>
+                <ComboBoxItem>Windward Leeward Derivative</ComboBoxItem>-->
+              </ComboBox>
+
+            </MenuItem.Header>
+          </MenuItem>
+          <!--<MenuItem>
+                  <MenuItem.Header>
+                <ToggleButton IsChecked="{Binding ShowAbsolute}"  ToolTip="Force Absolute Value" Name="btn_180mode" Content="Normalize"  Width="100" Click="Btn_180mode_Click" HorizontalContentAlignment="Left"/>
+              </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                <ToggleButton IsChecked="{Binding ShowDerivative}"  ToolTip="Force Absolute Value" Name="btn_Derivative" Content="Derivative"  Width="100" Click="btn_Derivative_Click" HorizontalContentAlignment="Left"/>
+              </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                <ToggleButton IsChecked="{Binding ShowWindwardLeeward}"  ToolTip="When a channel has an omologue for the other tack shows the lleward if port is selected and the windward if is starboard" Name="btn_WwdLwd" Content="Windward Leeward"  Width="100" Click="btn_WwdLwd_Click" HorizontalContentAlignment="Left"/>
+              </MenuItem.Header>
+                </MenuItem>-->
+          <MenuItem>
+            <MenuItem.Header>
+              <ToggleButton IsChecked="{Binding CommonYaxis}" Name="btn_ToggleYaxes"  ToolTip="Use a common axis for all channels" Content="Single Y Axis"  Width="100" Click="btn_ToggleYaxes_Click" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <ToggleButton IsChecked="{Binding ShowTargetIfAvailable}"  ToolTip="Show target if available" Name="btn_ShowTgt" Content="Show Target" Width="100" Click="btn_ShowTgt_Click" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <ToggleButton IsChecked="{Binding ShowPortStbdBackGround}"  ToolTip="Show background colored by tack" Name="btn_ShowBack" Content="Show Background"  Width="100" Click="btn_ShowBack_Click" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button Name="btn_SaveToClipboard"  Content="Copy To Clipboard" ToolTip="Copy Chart as Image to Clipboard" Width="100" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button Name="btn_Del" Content="Delete" ToolTip="Delete Current Plot" HorizontalContentAlignment="Left" Width="100"/>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+
+      <Button Name="btn_ZoomExtends" Margin="2,0,2,0" Content="Ext" Click="btn_ZoomExtents_Click" Width="30" HorizontalAlignment="Right"/>
+      <Label Content="move:" VerticalContentAlignment="Bottom" HorizontalAlignment="Right"></Label>
+      <Button Name="btn_MoveTop" Margin="2,0,2,2" Content="Top" ToolTip="Move The Chart To The Top" Click="btn_MoveTop_Click" Width="30" HorizontalAlignment="Right"/>
+      <Button Name="btn_MoveUp" Margin="2,0,2,2" Content="Up" ToolTip="Move The Chart Up" Width="30" HorizontalAlignment="Right"/>
+      <Button Name="btn_MoveDn" Margin="2,0,2,2"  Content="Dn" ToolTip="Move The Chart Down" Width="30" HorizontalAlignment="Right"/>
+      <Button Name="btn_MoveBottom" Margin="2,0,2,2" Content="Btm" ToolTip="Move The Chart To The Bottom" Click="btn_MoveBottom_Click" Width="30" HorizontalAlignment="Right"/>
+    </StackPanel>
+
+
+  </Grid>
+</UserControl>

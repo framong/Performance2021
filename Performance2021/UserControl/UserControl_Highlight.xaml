@@ -1,0 +1,250 @@
+﻿<UserControl x:Class="UserControl_Highlight"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" GotFocus="UserControl_GotFocus" Loaded="UserControl_Loaded"
+             d:DesignHeight="450" d:DesignWidth="800">
+  <UserControl.Resources>
+    <local:DecimalsFromElementoConverter x:Key="FmtDec"/>
+    <local:BooleanToFontWeightConverter x:Key="BoolToWeight"/>
+  </UserControl.Resources>
+
+  <!--xmlns:scott="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"-->
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="40"></RowDefinition>
+      <RowDefinition Height="*"></RowDefinition>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition></ColumnDefinition>
+    </Grid.ColumnDefinitions>
+    <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="4">
+      <Button Content="Refresh Time Range" Margin="2" Click="Button_Click"></Button>
+      <!--<Button Content="Refresh by Periods" Margin="2" Click="Button_Click_1"></Button>-->
+      <Button Content="Up Channels" Margin="2" Click="Button_Click_2"></Button>
+      <Button Content="Dn Channels" Margin="2" Click="Button_Click_4"></Button>
+      <Button Content="Select Filter Channel" Margin="2" Click="Button_Click_3"></Button>
+      <Label Width="50" Content="Filter:" Margin="2" HorizontalContentAlignment="Right"></Label>
+      <Label Width="150" Content="{Binding CanaleFiltro.LongName}" Margin="2" HorizontalContentAlignment="Left"></Label>
+      <Label Width="40" Content="Min" Margin="2" HorizontalContentAlignment="Right"></Label>
+      <TextBox Height="20" MinWidth="30" PreviewTextInput="TextBox_PreviewTextInputByte" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Text="{Binding VminFiltro,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+      <Label Width="40" Content="Max" Margin="2" HorizontalContentAlignment="Right"></Label>
+      <TextBox Height="20" MinWidth="30" PreviewTextInput="TextBox_PreviewTextInputByte" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Text="{Binding VmaxFiltro,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+      <Label Width="70" Content="Shear" Margin="2" HorizontalContentAlignment="Right"></Label>
+      <TextBox Height="20" MinWidth="30" PreviewTextInput="TextBox_PreviewTextInputByte" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Text="{Binding Shear,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+      <Button Content="Print Pdf" Margin="2" Click="Button_Click_5"></Button>
+    </StackPanel>
+    <TabControl Grid.Row="1" Grid.Column="0" TabStripPlacement="Bottom" >
+      <TabItem Header="Genaral">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="980"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="1" Grid.RowSpan="2">
+            <!-- Lista di righe eterogenee -->
+            <ItemsControl ItemsSource="{Binding GeneralTableRows}">
+              <!-- Virtualizzazione (se usi ListBox/ListView ottieni virtualizzazione di default) -->
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel IsVirtualizing="True"
+                                            VirtualizationMode="Recycling"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+
+              <ItemsControl.Resources>
+                <!-- TEMPLATE: HeaderRow -->
+                <DataTemplate DataType="{x:Type local:HeaderRow}">
+                  <Border Background="#FFEFF6FF" Padding="8" Margin="0,8,0,4"
+                            BorderBrush="#FFBBD7FF" BorderThickness="1" CornerRadius="6">
+                    <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="20" />
+                  </Border>
+                </DataTemplate>
+
+                <!-- TEMPLATE: EmptyRow -->
+                <DataTemplate DataType="{x:Type local:EmptyRow}">
+                  <Border Height="{Binding Height}" Background="Transparent"/>
+                </DataTemplate>
+
+                <!-- TEMPLATE: DataRow -->
+                <DataTemplate DataType="{x:Type local:DataRow}">
+                  <!-- Ogni riga dati ha un numero di celle variabile.
+                         Usiamo un ItemsControl orizzontale con WrapPanel:
+                         le celle NON sono obbligate a colonne fisse. -->
+                  <ItemsControl ItemsSource="{Binding Cells}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <!-- Stile della singola cella -->
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Margin="1" Padding="1"
+                          BorderBrush="#FFE0E0E0" BorderThickness="1"
+                          CornerRadius="0"
+                          Background="{Binding Background}">
+                          <!-- Se non ti serve editing: sostituisci TextBox con TextBlock -->
+                          <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                             IsReadOnly="{Binding IsReadOnly}"
+                             BorderThickness="{Binding BorderThikness}"
+                             Background="Transparent"
+                             FontSize="{Binding FontSize}"
+                             HorizontalContentAlignment="{Binding HCAlign}"
+                             FontWeight="{Binding IsBold, Converter={StaticResource BoolToWeight}}"
+                             Width="{Binding Width}"/>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </DataTemplate>
+              </ItemsControl.Resources>
+            </ItemsControl>
+          </ScrollViewer>
+
+
+        </Grid>
+      </TabItem>
+      <TabItem Header="Up PortAndStbd">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiUp, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn" />
+
+          <!--<scott:WpfPlot x:Name="PlotAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+      <TabItem  Header="Up Port Only">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiUpPort, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"/>
+          <!--<scott:WpfPlot x:Name="PlotPortAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotPortSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+      <TabItem Header="Up Stbd Only">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiUpStbd, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"/>
+          <!--<scott:WpfPlot x:Name="PlotStbdAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotStbdSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+      <TabItem Header="Dn PortAndStbd">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiDn, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn" />
+
+          <!--<scott:WpfPlot x:Name="PlotAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+      <TabItem  Header="Dn Port Only">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiDnPort, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"/>
+          <!--<scott:WpfPlot x:Name="PlotPortAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotPortSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+      <TabItem Header="Dn Stbd Only">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="2" ItemsSource="{Binding TabellaDatiDnStbd, Mode=TwoWay}" 
+                AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      SelectionMode="Extended" SelectionUnit="FullRow" Margin="2,2,2,2"
+                  AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"/>
+          <!--<scott:WpfPlot x:Name="PlotStbdAvg" Grid.Column="0" Grid.Row="0" Margin="8"/>
+          <scott:WpfPlot x:Name="PlotStbdSD" Grid.Column="2" Grid.Row="0" Margin="8"/>-->
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+
+</UserControl>

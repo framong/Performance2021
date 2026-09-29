@@ -1,0 +1,51 @@
+﻿<UserControl x:Class="ctrl_ChartEventiView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"  
+						 xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+		<!--<sc:SciChartSurface x:Name="SCsurface" sc:ThemeManager.Theme="SciChartv4Dark" 
+												Margin="3,2,3,2"  Grid.Row="0" Grid.Column="0" 
+                        MinHeight="200" >-->
+			
+		<!--<sc:SciChartSurface x:Name="SCsurface" sc:ThemeManager.Theme="SciChartv4Dark" Margin="3,2,3,2"  Grid.Row="0" Grid.Column="0" 
+                        MinHeight="200" SeriesSource="{Binding SeriesSource}" YAxes="{Binding Yassi, Mode=OneWay}" sc:SciChartGroup.VerticalChartGroup="LrVerticalGroup"
+                        XAxes="{Binding Xassi, Mode=OneWay}" Annotations="{Binding Annotazioni}"
+                        >-->
+		<sc:SciChartSurface x:Name="SCsurface" sc:ThemeManager.Theme="SciChartv4Dark" 
+												Margin="3,2,3,2"  Grid.Row="0" Grid.Column="0" 
+                        MinHeight="200" YAxes="{Binding Yassi, Mode=OneWay}" 
+												sc:SciChartGroup.VerticalChartGroup="Eventi"
+                        XAxes="{Binding Xassi, Mode=OneWay}" 
+												Annotations="{Binding Annotazioni}"
+                        >
+			<sc:SciChartSurface.RenderableSeries>
+				<sc:FastMountainRenderableSeries Name="LineaBase" DataSeries="{Binding SerieTWA}"></sc:FastMountainRenderableSeries>
+			</sc:SciChartSurface.RenderableSeries>
+			<!--<sc:SciChartSurface.XAxes>
+				<sc:DateTimeAxis></sc:DateTimeAxis>				
+			</sc:SciChartSurface.XAxes>
+			<sc:SciChartSurface.YAxes>
+				<sc:NumericAxis></sc:NumericAxis>				
+			</sc:SciChartSurface.YAxes>
+			<sc:SciChartSurface.Annotations>
+				<sc:BoxAnnotation Name="Ante" X1="0" X2="0.4" Y1="0" Y2="1" CoordinateMode="Relative" Background="#22FFFFFF"></sc:BoxAnnotation>
+				<sc:BoxAnnotation Name="Post" X1="0.6" X2="1" Y1="0" Y2="1" CoordinateMode="Relative" Background="#22FFFFFF"></sc:BoxAnnotation>
+			</sc:SciChartSurface.Annotations>-->
+			<sc:SciChartSurface.ChartModifier>
+				<sc:ModifierGroup sc:MouseManager.MouseEventGroup="MyMouseEventGroup"  >
+					<local:clsRubberBandModifier IsAnimated="False" ExecuteOn="MouseRightButton" IsEnabled="True" IsXAxisOnly="True" RubberBandFill="#99FF0000" ReceiveHandledEvents="False" ></local:clsRubberBandModifier>
+					<sc:MouseWheelZoomModifier Name="ScMouseWheelZoomModifier" IsEnabled="True" XyDirection="XDirection"  ReceiveHandledEvents="True" ></sc:MouseWheelZoomModifier>
+					<sc:ZoomPanModifier Name="ScZoomPanModifier" ReceiveHandledEvents="True" IsEnabled="True" XyDirection="XYDirection" ></sc:ZoomPanModifier>
+					<sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick"/>
+					<sc:CursorModifier IsEnabled="True"></sc:CursorModifier>
+				</sc:ModifierGroup>
+			</sc:SciChartSurface.ChartModifier>
+		</sc:SciChartSurface>
+
+	</Grid>
+</UserControl>

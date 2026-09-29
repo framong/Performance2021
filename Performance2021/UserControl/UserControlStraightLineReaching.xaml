@@ -1,0 +1,270 @@
+﻿<UserControl x:Class="UserControlStraightLineReaching"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+              xmlns:estucsl="http://schemas.xceed.com/wpf/xaml/toolkit" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+  <UserControl.Resources>
+    <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+  </UserControl.Resources>
+
+  <Grid Margin="0,1,0,-1">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="220" />
+      <ColumnDefinition Width="3" MinWidth="3"/>
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="25" />
+      <RowDefinition Height="220" />
+      <RowDefinition Height="3" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <GridSplitter Name="PeriodsToCharts" Grid.Column="1" Grid.Row="1" Grid.RowSpan="3" DragCompleted="PeriodsToCharts_DragCompleted" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+    </GridSplitter>
+    <!--<GridSplitter Name="ChartsSplitter" Grid.Column="0" Grid.Row="2" DragCompleted="ChartsSplitter_DragCompleted" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="Aqua" AllowDrop="True">
+    </GridSplitter>-->
+<!--<MenuItem.Template>
+    <ControlTemplate>
+      <TextBlock Padding="0,0,0,0">
+                    
+      </TextBlock>
+    </ControlTemplate>
+  </MenuItem.Template>-->
+    <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Height="20">
+      <Button Name="aaa" Content="Refresh" Click="Btn_Refresh_Click" Margin="2,0,2,0" Padding="5,0,5,0" BorderThickness="2" ></Button>
+      <Menu Margin="10,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray" >
+        <MenuItem Header="Period Selection">
+          <StackPanel Orientation="Horizontal">
+            <Label FontSize="12" Content="Output Type" HorizontalContentAlignment="Right" Margin="5,0,0,0"></Label>
+            <ComboBox FontSize="12" Name="OutPutType" SelectedItem="{Binding OutputType}" MinWidth="160" Margin="5,0,0,0">
+            </ComboBox>
+          </StackPanel>
+          <CheckBox IsChecked="{Binding AutoRefresh}" >Autorefresh also when in GroupBy/ColorBy OutputTypes</CheckBox>
+          <!--<CheckBox IsChecked="{Binding PlotTargetsIfAvailable}" >Plot Targets when available</CheckBox>-->
+          <CheckBox IsChecked="{Binding PlotTrendLines}" >Plot Trend Lines</CheckBox>
+          <CheckBox IsChecked="{Binding NormalizeDistributions}" ToolTip="Normalize Distributions" >Normalize Distributions</CheckBox>
+          <Label Content="Straight Lines selecton filters:"></Label>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.PerformanceSelected}" Padding="2,0,10,0" >Performances</CheckBox>
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.TechnicalSelected}" >TecnicsAndSystems</CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.StbdSelected}" Width="50">Stbd</CheckBox>
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.PortSelected}" Width="50">Port</CheckBox>
+                <!--<CheckBox IsChecked="{Binding StraightLinesSelectionSettings.UpwindSelected}" Width="50">Up</CheckBox>
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.DownwindSelected}" Width="55" Padding="0,0,5,0">Down</CheckBox>-->
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwaFilter}" Width="100"  VerticalAlignment="Center" >TWA Range</CheckBox>
+                  <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwaMin}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwaFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                  <estucsl:DoubleUpDown FormatString="F0"  x:Name="UsNud_FilterTwaMin" IsEnabled="{Binding StraightLinesSelectionSettings.TwaMinEnabled}" Value="{Binding StraightLinesSelectionSettings.TwaMin}" ToolTip="Twa Min Value" Width="60" Height="25" Minimum="0" Maximum="180" ></estucsl:DoubleUpDown>
+                  <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwaMax}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwaFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <estucsl:DoubleUpDown FormatString="F0"  x:Name="UsNud_FilterTwaMax" IsEnabled="{Binding StraightLinesSelectionSettings.TwaMaxEnabled}" Value="{Binding StraightLinesSelectionSettings.TwaMax}" ToolTip="Twa Max Value" Width="60" Height="25"  Minimum="0" Maximum="180"></estucsl:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <!--<MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwaMax}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwaFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <estucsl:DoubleUpDown FormatString="F0"  x:Name="UsNud_FilterTwaMax" IsEnabled="{Binding StraightLinesSelectionSettings.TwaMaxEnabled}" Value="{Binding StraightLinesSelectionSettings.TwaMax}" ToolTip="Twa Max Value" Width="80" Height="25"  Minimum="0" Maximum="180"></estucsl:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>-->
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}"  VerticalAlignment="Center" Width="100" >TWS Range</CheckBox>
+                <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsMin}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                <estucsl:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMin" IsEnabled="{Binding StraightLinesSelectionSettings.TwsMinEnabled}" Value="{Binding StraightLinesSelectionSettings.TwsMin}" ToolTip="Tws Min Value" Width="60" Height="25" Minimum="0" Maximum="50"></estucsl:DoubleUpDown>
+                <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsMax}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                <estucsl:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMax" IsEnabled="{Binding StraightLinesSelectionSettings.TwsMaxEnabled}" Value="{Binding StraightLinesSelectionSettings.TwsMax}" ToolTip="Tws Max Value" Width="60" Height="25" Minimum="0" Maximum="50"></estucsl:DoubleUpDown>
+              </StackPanel>
+            </MenuItem.Header>
+            <!--<MenuItem.Header>
+              <CheckBox IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}" Width="100">TWS Range</CheckBox>
+            </MenuItem.Header>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsMin}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                  <estucsl:DoubleUpDown FormatString="F1"  x:Name="UsNud_FilterTwsMin" IsEnabled="{Binding StraightLinesSelectionSettings.TwsMinEnabled}" Value="{Binding StraightLinesSelectionSettings.TwsMin}" ToolTip="Tws Min Value" Width="80" Height="25" Minimum="0" Maximum="50"></estucsl:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding StraightLinesSelectionSettings.ApplyTwsMax}" IsEnabled="{Binding StraightLinesSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <estucsl:DoubleUpDown FormatString="F1"  x:Name="UsNud_FilterTwsMax" IsEnabled="{Binding StraightLinesSelectionSettings.TwsMaxEnabled}" Value="{Binding StraightLinesSelectionSettings.TwsMax}" ToolTip="Tws Max Value" Width="80" Height="25" Minimum="0" Maximum="50"></estucsl:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>-->
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+      <Button Name="btn_MouseMode" Content="Mouse Mode: Selection" Margin="2,0,5,0" Padding="5,0,5,0" Click="Btn_MouseMode_Click"></Button>
+
+      <Menu Margin="10,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray">
+        <MenuItem Header="Tools">
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Name="btn_PrintPdf" Content="Make a pdf" Click="btn_PrintPdf_Click" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" x:Name="btn_SelectChannels" Content="Channels Manager" ToolTip="Select Channels To Show" Width="120" ></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" x:Name="btn_Export" Content="HTML Report"  ToolTip="HTML Report" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" x:Name="btn_SelectExportChannels" Content="HTML Rep. Channels" ToolTip="HTML Report Channels Selection" Width="120" ></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Name="btn_UpdateKeys" Click="btn_UpdateKeys_Click" Content="Update Keys" ToolTip="update KEYS property of the selected periods" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+      <ToggleButton Width="350" ToolTip="Daily/Selection Vmg Percentage (equivalent Tws) @ Tws" IsChecked="{Binding PeriodsMng.VmgPercentageCheckedOnly}" Content="{Binding PeriodsMng.VmgPercentage.Descrizione}" Margin="20,0,10,0"></ToggleButton>
+    </StackPanel>
+    <Grid Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" >
+      <Grid.RowDefinitions>
+        <RowDefinition Height="220" />
+        <RowDefinition Height="3" />
+        <RowDefinition Height="5*" />
+        <RowDefinition Height="3" />
+        <RowDefinition Height="1*" />
+    </Grid.RowDefinitions>
+      <GridSplitter Name="PeriodsToXYsplitter" Grid.Row="1" ResizeDirection="Rows" DragCompleted="PeriodsToXYsplitter_DragCompleted" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+      </GridSplitter>
+      <GridSplitter Name="PeriodsToXYsplitter1" Grid.Row="3" ResizeDirection="Rows" DragCompleted="PeriodsToXYsplitter_DragCompleted" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+      </GridSplitter>
+
+      <ScrollViewer Grid.Column="0" Grid.Row="2">
+        <ItemsControl Name="IcLineUpSelPeriods" ItemsSource="{Binding Lista}" >
+          <ItemsControl.ItemContainerStyle>
+            <Style>
+              <Setter Property="FrameworkElement.Margin" Value="0"/>
+            </Style>
+          </ItemsControl.ItemContainerStyle>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="2,1,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="20" />
+                  <ColumnDefinition Width="25" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="24"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Border BorderBrush="{Binding Colore, Converter={StaticResource converter}}" BorderThickness="3" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" ></Border>
+                <CheckBox MouseMove="Period_MouseMove" MouseLeave="Period_MouseLeave" Click="ItemChkBx_Click" Name="ItemChkBx" HorizontalAlignment="Left" VerticalAlignment="Center"  Margin="3,3,3,3" Grid.Column="1" Grid.Row="0" IsChecked="{Binding IsChecked, Mode=TwoWay}"></CheckBox>
+                <TextBlock PreviewMouseRightButtonUp="TextBlock_PreviewMouseRightButtonUp" MouseMove="Period_MouseMove" MouseLeave="Period_MouseLeave" FontSize="12" Grid.Column="2" Grid.Row="0" Background="{Binding ColoreSfondo, Converter={StaticResource converter}}" Text="{Binding DescrizioneBreve}" Margin="0,3,3,3" PreviewMouseUp="TextBlock_PreviewMouseUp"/>
+                <Label PreviewMouseDoubleClick="TextBlock_PreviewMouseRightButtonUp" MouseMove="Period_MouseMove" MouseLeave="Period_MouseLeave" Background="{Binding Mure, Converter={StaticResource converter}}" Width="20" HorizontalAlignment="left" Grid.Row="0" Grid.Column="0"  Margin="4,4,4,4"></Label>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+            <TextBlock FontSize="{Binding PeriodDetailsFontSize}" Grid.Column="0" Grid.Row="4" Text="{Binding CurrentPeriodDescription}" TextWrapping="Wrap">
+            </TextBlock>
+            <StackPanel Grid.Column="0" Grid.Row="4" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Orientation="Horizontal">
+                <Button Click="FontSizeBigger" Content="+" Height="18" Width="20" Cursor="Hand"></Button>
+                <Button Click="FontSizeSmaller" Content="-" Height="18" Width="20" Cursor="Hand"></Button>
+            </StackPanel>
+
+
+      <sc:SciChartSurface x:Name="XYvmg" Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" Grid.Column="0" Grid.Row="0"
+                sc:ThemeManager.Theme="BrightSpark" 
+                Margin="3,2,3,2" 
+                DataContext="{Binding StraightLineTrackXyPerMinute, Mode=TwoWay}"
+                SeriesSource="{Binding VmgXySeriesSource, Mode=TwoWay}"
+                >
+        <sc:SciChartSurface.XAxes >
+          <sc:NumericAxis GrowBy="0.1,0.1"></sc:NumericAxis>
+        </sc:SciChartSurface.XAxes>
+        <sc:SciChartSurface.YAxes >
+          <sc:NumericAxis GrowBy="0.1,0.1"></sc:NumericAxis>
+        </sc:SciChartSurface.YAxes>
+        <sc:SciChartSurface.Annotations>
+          <sc:TextAnnotation Text="{Binding TitoloPlot}" X1="0.02" Y1="0.90" FontSize="30" AnnotationCanvas="BelowChart" Foreground="#44000000" CoordinateMode="Relative"></sc:TextAnnotation>
+          <sc:TextAnnotation Text="Mt Fwd" X1="0.0" Y1="0.0" FontSize="20" AnnotationCanvas="BelowChart" Foreground="Gray" CoordinateMode="Relative"></sc:TextAnnotation>
+          <sc:LineArrowAnnotation X1="0.0" X2="0.0" Y1="0.93" Y2="0.1" CoordinateMode="RelativeY" Stroke="Gray" StrokeDashArray="2,3" StrokeThickness="2"></sc:LineArrowAnnotation>
+          <sc:TextAnnotation Text="Mt Side" X1="0.7" Y1="0.9" FontSize="20" AnnotationCanvas="BelowChart" Foreground="Gray" CoordinateMode="Relative"></sc:TextAnnotation>
+          <sc:LineArrowAnnotation X1="0.07" X2="0.9" Y1="0" Y2="0" CoordinateMode="RelativeX" StrokeDashArray="2,3" Stroke="Gray" StrokeThickness="2"></sc:LineArrowAnnotation>
+        </sc:SciChartSurface.Annotations>
+        <sc:SciChartSurface.ChartModifier>
+          <sc:ModifierGroup>
+            <sc:MouseWheelZoomModifier ></sc:MouseWheelZoomModifier>
+            <sc:ZoomPanModifier ReceiveHandledEvents="True" IsEnabled="{Binding StraightLineChartSync.ZoomPanEnabled}"/>
+            <sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick" IsAnimated="False"/>
+            <sc:DataPointSelectionModifier IsEnabled="{Binding StraightLineChartSync.DataPointSelectionEnabled}" SelectionChanged="DataPointSelectionModifier_SelectionChanged"></sc:DataPointSelectionModifier>
+          </sc:ModifierGroup>
+        </sc:SciChartSurface.ChartModifier>
+      </sc:SciChartSurface>
+      <!--</DockPanel>-->
+
+    </Grid>
+
+
+
+    <ScrollViewer Grid.Column="2" Grid.Row="1" Grid.RowSpan="3" HorizontalScrollBarVisibility="Auto" CanContentScroll="False" VerticalScrollBarVisibility="Visible" >
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" MaxHeight="500"></RowDefinition>
+          <RowDefinition Height="*" MaxHeight="500"></RowDefinition>
+        </Grid.RowDefinitions>
+        <ItemsControl Name="ItmCtrl_PeriodsCharts" Grid.Row="0" HorizontalAlignment="Stretch" ItemsSource="{Binding ContenitoreTwsVsChannels.ListaControlli}" >
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" >
+
+              </StackPanel>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <ItemsControl Name="ItmCtrl_PeriodsDistributionCharts" Grid.Row="1" HorizontalAlignment="Stretch" ItemsSource="{Binding ContenitoreDistributions.ListaControlli}" >
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" >
+
+              </StackPanel>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </Grid>
+    </ScrollViewer>
+
+
+  </Grid>
+
+
+
+</UserControl>

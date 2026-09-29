@@ -1,0 +1,33 @@
+﻿<Window x:Class="UserControlExportHtml"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Export Html Utility" Height="300" Width="400">
+  <!--<Window.CommandBindings>
+    <CommandBinding Command="ApplicationCommands.Open" Executed="Open_Executed" />
+    <CommandBinding Command="ApplicationCommands.Save" Executed="Save_Executed" />
+  </Window.CommandBindings>-->
+  <DockPanel>
+    <ToolBar DockPanel.Dock="Top">
+      <Button Click="Button_Click">
+        <Label>Export</Label>
+      </Button>
+      <Separator />
+      <ToggleButton Command="EditingCommands.ToggleBold" Name="btnBold">
+        <Label>Bold</Label>
+        <!--<Image Source="/WpfTutorialSamples;component/Images/text_bold.png" Width="16" Height="16" />-->
+      </ToggleButton>
+      <ToggleButton Command="EditingCommands.ToggleItalic" Name="btnItalic">
+        <Label>Italic</Label>
+        <!--<Image Source="/WpfTutorialSamples;component/Images/text_italic.png" Width="16" Height="16" />-->
+      </ToggleButton>
+      <ToggleButton Command="EditingCommands.ToggleUnderline" Name="btnUnderline">
+        <Label>Underl</Label>
+        <!--<Image Source="/WpfTutorialSamples;component/Images/text_underline.png" Width="16" Height="16" />-->
+      </ToggleButton>
+      <Separator />
+      <ComboBox Name="cmbFontFamily" Width="150" SelectionChanged="cmbFontFamily_SelectionChanged" />
+      <ComboBox Name="cmbFontSize" Width="50" IsEditable="True" TextBoxBase.TextChanged="CmbFontSize_TextChanged" />
+    </ToolBar>
+    <RichTextBox Name="rtbEditor" SelectionChanged="rtbEditor_SelectionChanged" />
+  </DockPanel>
+</Window>

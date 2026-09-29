@@ -1,0 +1,132 @@
+﻿<Window x:Class="UserControlParquetFinder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+        Title="Parquet Search Utility"
+             mc:Ignorable="d" Width="900" Height="500"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="40"></RowDefinition>
+        <RowDefinition Height="10"></RowDefinition>
+        <RowDefinition Height="120"></RowDefinition>
+        <RowDefinition Height="*"></RowDefinition>
+      <RowDefinition Height="*"></RowDefinition>
+      </Grid.RowDefinitions>
+
+      <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Margin="2,2,2,2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="50"></ColumnDefinition>
+        <ColumnDefinition Width="300"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="200"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition ></RowDefinition>
+      </Grid.RowDefinitions>
+      <Border BorderThickness="1" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" BorderBrush="Gray"></Border>
+
+        <Label Grid.Column="2" Content="{Binding PgbText}" HorizontalAlignment="Right" Width="70"  Visibility="{Binding PgbVisibility}"></Label>
+      <StackPanel Grid.Column="3" Orientation="Horizontal">
+        <ProgressBar Height="20" Width="80" Margin="3,3,3,3" Maximum="{Binding PgbMaxVal}" Minimum="{Binding PgbMinVal}" Value="{Binding PgbValue}" Visibility="{Binding PgbVisibility}"></ProgressBar>
+        <Button Click="btnSearch" Width="100" Margin="5,5,5,5" IsEnabled="{Binding SearchEnabled}" Content="Search"></Button>
+      </StackPanel>
+        
+      <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
+        <Label FontSize="20">Search From:</Label>
+        <DatePicker FontSize="20" Name="DtpFrom" Width="160" DisplayDate="{Binding TR.Start}" SelectedDate="{Binding TR.Start}" Margin="2,3,2,3"></DatePicker>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2">
+        <Label FontSize="20">To:</Label>
+        <DatePicker FontSize="20" Name="DtpTo" Width="160" DisplayDate="{Binding TR.Finish}" SelectedDate="{Binding TR.Finish}" Margin="2,3,2,3"></DatePicker>
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Margin="2,2,2,2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="330"></ColumnDefinition>
+        <ColumnDefinition Width="300"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="25"></RowDefinition>
+        <RowDefinition></RowDefinition>
+      </Grid.RowDefinitions>
+      <Border BorderThickness="1" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="3" BorderBrush="Gray"></Border>
+      <Label Grid.Column="0" Grid.Row="0" FontWeight="Bold" Content="Search into stored periods:"></Label>
+      <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="0" Grid.RowSpan="1">
+        <CheckBox IsChecked="{Binding SearchPeriods, Mode=OneWay}" Checked="chkPeriods_Checked" Unchecked="chkPeriods_Unchecked" x:Name="chkPeriods">Output a parquet file with his json for periods, search for:</CheckBox>
+        <CheckBox IsChecked="{Binding SearchSL, Mode=OneWay}" Checked="chkStrLines_Checked" Unchecked="chkStrLines_Unchecked" x:Name="chkStrLines" Margin="20,0,0,0">Straight Lines</CheckBox>
+        <CheckBox IsChecked="{Binding SearchTacks, Mode=OneWay}" Checked="chkTacks_Checked" Unchecked="chkTacks_Unchecked" x:Name="chkTacks" Margin="20,0,0,0">Tacks</CheckBox>
+        <CheckBox IsChecked="{Binding SearchGybes, Mode=OneWay}" Checked="chkGybes_Checked" Unchecked="chkGybes_Unchecked" x:Name="chkGybes" Margin="20,0,0,0">Gybes</CheckBox>
+        <CheckBox IsChecked="{Binding SearchAcc, Mode=OneWay}" Checked="chkAccelerations_Checked" Unchecked="chkAccelerations_Unchecked" x:Name="chkAccelerations" Margin="20,0,0,0">Accelerations</CheckBox>
+      </StackPanel>
+
+      <Label Grid.Column="1" Grid.Row="0" FontWeight="Bold" Content="All rows free search:"></Label>
+      <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical">
+        <CheckBox IsChecked="{Binding SearchRowsOutPeriods, Mode=OneWay}" Checked="chkAllRows_PnP_Checked" Unchecked="chkAllRows_PnP_Unchecked" x:Name="chkAllRows_PnP">Output a parquet file with his json for periods</CheckBox>
+        <CheckBox IsChecked="{Binding SearchRowsOutData, Mode=OneWay}" Checked="chkAllRows_DataTable_Checked" Unchecked="chkAllRows_DataTable_Unchecked" x:Name="chkAllRows_DataTable">Output a full data table</CheckBox>
+        <CheckBox IsChecked="{Binding SearchRowsOutStatistics, Mode=OneWay}" Checked="chkAllRows_Statistics_Checked" Unchecked="chkAllRows_Statistics_Unchecked" x:Name="chkAllRows_Statistics">Output a data table with statistics</CheckBox>
+      </StackPanel>
+
+      <Button  Grid.Column="2" Grid.Row="0" HorizontalAlignment="Left" Click="Button_Click_1" Margin="5,2,5,2" Width="100" IsEnabled="{Binding OutputChannelsEnabled}" ToolTip="Click To Select Channels to be exported" Content="Output Channels"></Button>
+      <StackPanel Grid.Column="2" Grid.Row="1" Orientation="Vertical">
+        <ListBox Height="80" Margin="5,3,5,3" ItemsSource="{Binding ListaCanaliOutput}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto"  IsEnabled="{Binding OutputChannelsEnabled}">
+        </ListBox>
+      </StackPanel>
+
+    </Grid>
+
+      <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Margin="2,2,2,2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+      <Border BorderThickness="1" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" BorderBrush="Gray"></Border>
+      <Border BorderThickness="1" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" BorderBrush="Gray"></Border>
+
+      <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal" >
+          <Label FontWeight="Bold" Content="Filters:"></Label>
+          <Button Click="Button_Click" Content="Add New" Width="80" Margin="20,4,0,4"></Button>
+        </StackPanel>
+      <ScrollViewer HorizontalAlignment="Stretch" Grid.Column="0" Grid.Row="1" Margin="3,3,3,3">
+        <ItemsControl ItemsSource="{Binding ListaControlliFiltro}" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Vertical" >
+
+                </StackPanel>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+
+    <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Margin="2,2,2,2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+      <Border BorderThickness="1" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" BorderBrush="Gray"></Border>
+
+      <StackPanel Orientation="Horizontal">
+        <Label FontWeight="Bold" Content="Results:"></Label>
+        <Button Margin="5,3,5,3" Content="Copy To Clipboard"></Button>
+      </StackPanel>
+
+      <TextBox Text="{Binding ResultTxt}" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Visible"></TextBox>
+    </Grid>
+     
+    </Grid>
+</Window>

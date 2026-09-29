@@ -1,0 +1,731 @@
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{C20569D1-351D-4700-B9BB-CED49BB3C2E4}</ProjectGuid>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SPwpf</RootNamespace>
+    <AssemblyName>Performance2021</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <MyType>Custom</MyType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+    <PublishUrl>ftp://192.168.128.245:321/Performance/</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Web</InstallFrom>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <InstallUrl>http://192.168.128.245/Performance/</InstallUrl>
+    <PublisherName>Francesco Mongelli</PublisherName>
+    <SuiteName>LR Performance</SuiteName>
+    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
+    <WebPage>publish.htm</WebPage>
+    <ApplicationRevision>70</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <IncrementalBuild>true</IncrementalBuild>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DocumentationFile>Performance2021.xml</DocumentationFile>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <IncrementalBuild>false</IncrementalBuild>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DocumentationFile>Performance2021.xml</DocumentationFile>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>Off</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>SailingPerformer.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>763DFE3A8FA0DDAA2539B10793933AB3CA79813E</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>SPwpf_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>false</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\x64\Release\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AKCurrentLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\AKCurrentLib.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="Application.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="cls2021.vb" />
+    <Compile Include="clsChartsSyncManager.vb" />
+    <Compile Include="clsGroupLines.vb" />
+    <Compile Include="clsChartEventiViewModel.vb" />
+    <Compile Include="ClassiGestionePeriodi.vb" />
+    <Compile Include="ClassiGestioneStraightLine.vb" />
+    <Compile Include="ClassiGestionePavarot.vb" />
+    <Compile Include="clsRatingUtilities.vb" />
+    <Compile Include="clsSailShape2022.vb" />
+    <Compile Include="clsSailUsage.vb" />
+    <Compile Include="CurrentCalibration_dHdg.vb" />
+    <Compile Include="GestioneFileSources.vb" />
+    <Compile Include="Classi2020.vb" />
+    <Compile Include="GestioneMapsui.vb" />
+    <Compile Include="GestionePdf.vb" />
+    <Compile Include="GestioneStampe.vb" />
+    <Compile Include="LoadingForm.xaml.vb">
+      <DependentUpon>LoadingForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ManeuverCurrentAnalyzer.vb" />
+    <Compile Include="MilfDataProvider.vb" />
+    <Compile Include="ResultsClipboard.vb" />
+    <Compile Include="SailList.xaml.vb">
+      <DependentUpon>SailList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SelectProfileForm.xaml.vb">
+      <DependentUpon>SelectProfileForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RenameProfileForm.xaml.vb">
+      <DependentUpon>RenameProfileForm.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QualitySettingsForm.xaml.vb">
+      <DependentUpon>QualitySettingsForm.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UserControl\SailShape.xaml.vb">
+      <DependentUpon>SailShape.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControl360Checks.xaml.vb">
+      <DependentUpon>UserControl360Checks.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlAb3D.xaml.vb">
+      <DependentUpon>UserControlAb3D.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlCrossoverTwsTwa.xaml.vb">
+      <DependentUpon>UserControlCrossoverTwsTwa.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlExportHtml.xaml.vb">
+      <DependentUpon>UserControlExportHtml.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\ChannelSelectorAndOrderer.xaml.vb">
+      <DependentUpon>ChannelSelectorAndOrderer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlBenchmarks.xaml.vb">
+      <DependentUpon>UserControlBenchmarks.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlLiftAndDrag.xaml.vb">
+      <DependentUpon>UserControlLiftAndDrag.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlParquetFinder.xaml.vb">
+      <DependentUpon>UserControlParquetFinder.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlParquetFinderFilter.xaml.vb">
+      <DependentUpon>UserControlParquetFinderFilter.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlPolarManager.xaml.vb">
+      <DependentUpon>UserControlPolarManager.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlPolarSelect.xaml.vb">
+      <DependentUpon>UserControlPolarSelect.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlTimeRangeSummary.xaml.vb">
+      <DependentUpon>UserControlTimeRangeSummary.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlSciChartPlot.xaml.vb">
+      <DependentUpon>UserControlSciChartPlot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlSciChartXYplot.xaml.vb">
+      <DependentUpon>UserControlSciChartXYplot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlSelFromList.xaml.vb">
+      <DependentUpon>UserControlSelFromList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlChannelSelectorTwin.xaml.vb">
+      <DependentUpon>UserControlChannelSelectorTwin.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlPavarotAdvancedPlot.xaml.vb">
+      <DependentUpon>UserControlPavarotAdvancedPlot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStartExpedition.xaml.vb">
+      <DependentUpon>UserControlStartExpedition.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLineVmgDownwind.xaml.vb">
+      <DependentUpon>UserControlStraightLineVmgDownwind.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLineReaching.xaml.vb">
+      <DependentUpon>UserControlStraightLineReaching.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLineVmgUpwind.xaml.vb">
+      <DependentUpon>UserControlStraightLineVmgUpwind.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlTimePlotView.xaml.vb">
+      <DependentUpon>UserControlTimePlotView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\PeriodManagerView.xaml.vb">
+      <DependentUpon>PeriodManagerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SciChart\RubberBandModifier.vb" />
+    <Compile Include="UserControl\UserControlNumericUpDown.xaml.vb">
+      <DependentUpon>UserControlNumericUpDown.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlPavarot.xaml.vb">
+      <DependentUpon>UserControlPavarot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlPavarotPlot.xaml.vb">
+      <DependentUpon>UserControlPavarotPlot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLinePlotContainer.xaml.vb">
+      <DependentUpon>UserControlStraightLinePlotContainer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLineStandardPlot.xaml.vb">
+      <DependentUpon>UserControlStraightLineStandardPlot.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlStraightLine.xaml.vb">
+      <DependentUpon>UserControlStraightLine.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControl_ImportaPeriodi.xaml.vb">
+      <DependentUpon>UserControl_ImportaPeriodi.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControl_InputBox.xaml.vb">
+      <DependentUpon>UserControl_InputBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControl_Highlight.xaml.vb">
+      <DependentUpon>UserControl_Highlight.xaml</DependentUpon>
+    </Compile>
+    <Page Include="LoadingForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SailList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SelectProfileForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RenameProfileForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="QualitySettingsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\SailShape.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControl360Checks.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlAb3D.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlCrossoverTwsTwa.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlExportHtml.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\ChannelSelectorAndOrderer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlBenchmarks.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlLiftAndDrag.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlParquetFinder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlParquetFinderFilter.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlPolarManager.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlPolarSelect.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlTimeRangeSummary.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlSciChartPlot.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlSciChartXYplot.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlSelFromList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlChannelSelectorTwin.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlPavarotAdvancedPlot.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlStartExpedition.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLineVmgDownwind.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLineReaching.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLineVmgUpwind.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserControl\UserControlTimePlotView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="Application.xaml.vb">
+      <DependentUpon>Application.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ClassiGestionePolari.vb" />
+    <Compile Include="MainWindow.xaml.vb">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Page Include="UserControl\PeriodManagerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlNumericUpDown.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlPavarot.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlPavarotPlot.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLinePlotContainer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLineStandardPlot.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlStraightLine.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControl_ImportaPeriodi.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControl_InputBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControl_Highlight.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="System.Threading.Tasks" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Windows" />
+    <Import Include="System.Windows.Controls" />
+    <Import Include="System.Windows.Data" />
+    <Import Include="System.Windows.Documents" />
+    <Import Include="System.Windows.Input" />
+    <Import Include="System.Windows.Shapes" />
+    <Import Include="System.Windows.Media" />
+    <Import Include="System.Windows.Media.Imaging" />
+    <Import Include="System.Windows.Navigation" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="mdlCommon.vb" />
+    <Compile Include="My Project\AssemblyInfo.vb">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="My Project\MyExtensions\MyWpfExtension.vb">
+      <VBMyExtensionTemplateID>Microsoft.VisualBasic.WPF.MyExtension</VBMyExtensionTemplateID>
+      <VBMyExtensionTemplateVersion>1.0.0.0</VBMyExtensionTemplateVersion>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="FodyWeavers.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+    <EmbeddedResource Include="boat.svg" />
+    <EmbeddedResource Include="boat.png" />
+    <Content Include="config\IlsEccMergingChannels.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="SailingPerformer.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Common\" />
+    <Folder Include="polars\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="ArrowUp.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="VBIDE">
+      <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>5</VersionMajor>
+      <VersionMinor>3</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="config\AccelerationHystoricDataReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\AccelerationReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\GombocMapping.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\PavarotHystoricDataReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\PavarotReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\psconfig.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\StraightLineHystoricDataReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="config\StraightLineReportTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="FodyWeavers.xml" />
+    <Resource Include="LRSalta_Mod.png" />
+    <Content Include="ScriptHttpMidd.vb" />
+    <Content Include="x64\SQLite.Interop.dll" />
+    <Content Include="x86\SQLite.Interop.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <PublishFile Include="config\psconfig.xml">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Include</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>File</FileType>
+    </PublishFile>
+    <PublishFile Include="polars\18Apr2019AC75VPPTarget_Rev1.xml">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Include</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>File</FileType>
+    </PublishFile>
+    <PublishFile Include="polars\18Apr2019AC75VPPTarget_Rev2.xml">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Include</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>File</FileType>
+    </PublishFile>
+    <PublishFile Include="polars\18Apr2019AC75VPPTarget_Rev3.xml">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Include</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>File</FileType>
+    </PublishFile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Ab3d.PowerToys">
+      <Version>10.0.8000</Version>
+    </PackageReference>
+    <PackageReference Include="Accord.Statistics">
+      <Version>3.8.0</Version>
+    </PackageReference>
+    <PackageReference Include="alglibnet2">
+      <Version>0.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="BruTile.MbTiles">
+      <Version>2.1.2</Version>
+    </PackageReference>
+    <PackageReference Include="CsvHelper">
+      <Version>27.2.1</Version>
+    </PackageReference>
+    <PackageReference Include="Dirkster.NumericUpDownLib">
+      <Version>3.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="EntityFramework">
+      <Version>6.4.4</Version>
+    </PackageReference>
+    <PackageReference Include="EPPlus">
+      <Version>5.8.8</Version>
+    </PackageReference>
+    <PackageReference Include="ExcelDataReader">
+      <Version>3.6.0</Version>
+    </PackageReference>
+    <PackageReference Include="Extended.Wpf.Toolkit">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="Eziriz.Reactor.Licensing">
+      <Version>6.8.0</Version>
+    </PackageReference>
+    <PackageReference Include="FontAwesome.WPF">
+      <Version>4.7.0.9</Version>
+    </PackageReference>
+    <PackageReference Include="GeoTimeZone">
+      <Version>4.1.0</Version>
+    </PackageReference>
+    <PackageReference Include="gong-wpf-dragdrop">
+      <Version>3.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Mapsui">
+      <Version>2.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="MathNet.Numerics">
+      <Version>4.15.0</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="NGeoMag">
+      <Version>5.9.1</Version>
+    </PackageReference>
+    <PackageReference Include="Parquet.Net">
+      <Version>3.9.1</Version>
+    </PackageReference>
+    <PackageReference Include="PdfSharp">
+      <Version>1.51.5185-beta</Version>
+    </PackageReference>
+    <PackageReference Include="PropertyChanged.Fody">
+      <Version>3.4.0</Version>
+    </PackageReference>
+    <PackageReference Include="SciChart">
+      <Version>6.0.1.12982</Version>
+    </PackageReference>
+    <PackageReference Include="SciChart.DrawingTools">
+      <Version>6.0.2.13028</Version>
+    </PackageReference>
+    <PackageReference Include="SciChart.Wpf.UI">
+      <Version>3.1.251</Version>
+    </PackageReference>
+    <PackageReference Include="SciChart.Wpf.UI.Transitionz">
+      <Version>3.1.251</Version>
+    </PackageReference>
+    <PackageReference Include="ScottPlot.WPF">
+      <Version>5.1.57</Version>
+    </PackageReference>
+    <PackageReference Include="SharpKml.Core">
+      <Version>5.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="SharpKml.Kmz">
+      <Version>2.0.2.2</Version>
+    </PackageReference>
+    <PackageReference Include="SkiaSharp">
+      <Version>3.119.1</Version>
+    </PackageReference>
+    <PackageReference Include="SQLitePCLRaw.bundle_green">
+      <Version>1.1.14</Version>
+    </PackageReference>
+    <PackageReference Include="System.Configuration.ConfigurationManager">
+      <Version>6.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Data.SQLite">
+      <Version>1.0.112</Version>
+    </PackageReference>
+    <PackageReference Include="System.Memory">
+      <Version>4.5.4</Version>
+    </PackageReference>
+    <PackageReference Include="System.Net.Http.Formatting.Extension">
+      <Version>5.2.3</Version>
+    </PackageReference>
+    <PackageReference Include="System.Numerics.Vectors">
+      <Version>4.5.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Reactive">
+      <Version>5.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Reflection.Emit">
+      <Version>4.7.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Reflection.Emit.Lightweight">
+      <Version>4.7.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+      <Version>6.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="TimeZoneConverter">
+      <Version>5.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Unity">
+      <Version>5.11.10</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>

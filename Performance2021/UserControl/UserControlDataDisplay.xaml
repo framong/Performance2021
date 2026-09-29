@@ -1,0 +1,66 @@
+﻿<UserControl x:Class="UserControlDataDisplay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" >
+		
+		
+	<Border Name="OutBorder" BorderBrush="DarkGray" BorderThickness="2" >
+
+    <Grid Name="GrigliaPrincipale" Background="LightYellow" MinHeight="50" MinWidth="60" Height="{Binding DataBoxHeight}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="2*"/>
+			<ColumnDefinition Width="1*"/>
+		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="1*" ></RowDefinition>
+			<RowDefinition Height="1*" ></RowDefinition>
+			<RowDefinition Height="1*" ></RowDefinition>
+			<RowDefinition Height="1*" ></RowDefinition>
+        <!--<RowDefinition Height="40" ></RowDefinition>-->
+        <RowDefinition Height="3" MinHeight="3" ></RowDefinition>
+    
+      </Grid.RowDefinitions>
+      <GridSplitter Name="SplitDati" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Background="LightGray">
+
+      </GridSplitter>
+      <Border Name="MainBorder" BorderBrush="DarkGray" BorderThickness="1" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="4"  ></Border>
+			<Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  ></Border>
+			<Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="1" Grid.Column="1"></Border>
+			<Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="2" Grid.Column="1"></Border>
+			<Border BorderBrush="DarkGray" BorderThickness="1" Grid.Row="3" Grid.Column="1"></Border>
+      <!--<Label Name="lbl_Descrizione" MouseDoubleClick="ToggleNomi" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  VerticalAlignment="Center" HorizontalContentAlignment="Left"></Label>-->
+      <Viewbox Stretch="Uniform" Name="vb_Descrizione" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+        <Label Name="lbl_Descrizione" MouseDoubleClick="ToggleNomi" >Channel</Label>
+      </Viewbox>
+      <Viewbox Stretch="Uniform"  Name="vb_UM" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" >
+        <Label Name="lbl_UM"  MouseDoubleClick="ToggleNomi" >Kts</Label>
+      </Viewbox>
+      <Viewbox Stretch="Uniform"  Name="vb_Avg" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center" >
+        <Label Name="lbl_AvgVal" ToolTip="Avg" MouseDoubleClick="ToggleNomi" >22.5</Label>
+       
+      </Viewbox>
+      <Viewbox Stretch="Uniform"  Name="vb_Max" Grid.Row="1" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Top" >
+        <Label Name="lbl_MaxVal" ToolTip="Max" MouseDoubleClick="ToggleNomi" >25.3</Label>
+      </Viewbox>
+      <Viewbox Stretch="Uniform"  Name="vb_DS" Grid.Row="2" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Center" >
+        <Label Name="lbl_DsVal" ToolTip="DS" MouseDoubleClick="ToggleNomi" Grid.Row="2" Grid.Column="1" >3.2</Label>
+      </Viewbox>
+      <Viewbox Stretch="Uniform"  Name="vb_Min" Grid.Row="3" Grid.Column="1"  HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+        <Label Name="lbl_MinVal" ToolTip="Min" MouseDoubleClick="ToggleNomi" >19.7</Label>
+      </Viewbox>
+      <!--<StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">  
+      <TextBox Text="{Binding DataBoxHeight}"  ></TextBox>
+      <TextBox Text="{Binding ObjChartSyncManager.DataBoxHeight}" ></TextBox>
+      </StackPanel>-->
+      <!--<Label Name="lbl_UM"  MouseDoubleClick="ToggleNomi" Grid.Row="0" Grid.Column="1" HorizontalContentAlignment="Right" VerticalAlignment="Center">Kts</Label>-->
+      <!--<Label Name="lbl_MaxVal" ToolTip="Max" MouseDoubleClick="ToggleNomi" Grid.Row="1" Grid.Column="1"  HorizontalContentAlignment="Right" VerticalContentAlignment="Top">25.3</Label>-->
+      <!--<Label FontStretch="Normal" FontSize="50"  Name="lbl_AvgVal" ToolTip="Avg" MouseDoubleClick="ToggleNomi" Grid.Row="1" Grid.Column="0" Grid.RowSpan="2" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"></Label>-->
+		  <!--<Label Name="lbl_MinVal" ToolTip="Min" MouseDoubleClick="ToggleNomi" Grid.Row="3" Grid.Column="1"  HorizontalContentAlignment="Right" VerticalContentAlignment="Bottom">19.7</Label>
+		  <Label Name="lbl_DsVal" ToolTip="DS" MouseDoubleClick="ToggleNomi" Grid.Row="2" Grid.Column="1"  HorizontalContentAlignment="Right" VerticalContentAlignment="Bottom">3.2</Label>-->
+	</Grid>
+	</Border>
+</UserControl>

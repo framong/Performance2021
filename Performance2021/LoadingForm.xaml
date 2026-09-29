@@ -1,0 +1,27 @@
+﻿<Window x:Class="LoadingForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPwpf"
+        mc:Ignorable="d"
+        Title="Performance2021" Height="450" Width="800" Opacity="0.5" WindowStyle="ToolWindow" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Cursor="Wait">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="100"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <ImageBrush ImageSource="LRSalta_Mod.png"/>
+        </Grid.Background>
+        <Label Grid.Row="1" FontSize="40" Foreground="White" Content="Application Loading .." HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+        <!--<ListBox Grid.Row="2" Height="50" ItemsSource="{Binding ListaProfili}" Visibility="{Binding Visibile}">
+
+        </ListBox>-->
+        <!--<Image Source="LRSalta_Mod.png" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="6" ></Image>-->
+    </Grid>
+</Window>

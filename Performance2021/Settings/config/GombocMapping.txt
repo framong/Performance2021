@@ -1,0 +1,43 @@
+[Block.Clock.Epoch]	time
+[Block.Clock.Epoch]	date
+[Block.Boat.Latitude]	latitude
+[Block.Boat.Longitude]	longitude
+[Block.Boat.TWS_kts]	tws
+[Block.Boat.TWD]	twd
+[Block.Boat.CWA]	twa
+[Block.Boat.TWA]	hdgtwa
+[Block.Boat.Speed_kts]	bs
+[Block.Boat.Aero.ApparentWind.AWA]	awa
+([Block.Boat.Aero.ApparentWind.AWS]*1.94384)	aws
+[Block.Boat.Heel_n]	heel
+[Block.Boat.Trim]	trim
+([Block.Boat.q] * 57.2958)	ptchrt
+[Block.Boat.Sink_min]	rideheight
+[Block.Boat.PortFoil.Cant]	cantport
+[Block.Boat.StbdFoil.Cant]	cantstbd
+[Block.Boat.Aero.Traveler]	maintrav
+[Block.Boat.Aero.Twist]	maintwist
+[Block.Boat.AP.TgtRide]	rdetgt
+[Block.Boat.Rudder.Yaw]	rdr
+[Block.Boat.Rudder.Rake]	rdrrk
+[Block.Boat.Leeway_n]	lwy
+[Block.Boat.Heading]	hdg
+[Block.Boat.COG]	cse
+[Block.Boat.COG]	cog
+[Block.Boat.Speed_kts]	sog
+([Block.Boat.r] * 57.2958)	yawrt
+([Block.Boat.p] * 57.2958)	rollrt
+[Block.Boat.PortFoil.InboardFlap1]	PortFoilInFlap1Angle
+[Block.Boat.PortFoil.InboardFlap2]	PortFoilInFlap2Angle
+[Block.Boat.PortFoil.OutboardFlap1]	PortFoilOutFlap1Angle
+[Block.Boat.PortFoil.OutboardFlap2]	PortFoilOutFlap2Angle
+[Block.Boat.StbdFoil.InboardFlap1]	StbdFoilInFlap1Angle
+[Block.Boat.StbdFoil.InboardFlap2]	StbdFoilInFlap2Angle
+[Block.Boat.StbdFoil.OutboardFlap1]	StbdFoilOutFlap1Angle
+[Block.Boat.StbdFoil.OutboardFlap2]	StbdFoilOutFlap2Angle
+[Block.Boat.PortFoil.Cant] + [Block.Boat.PortFoil.Effective.Cant] - [Block.Boat.Heel]	PortCantAngleEffective
+[Block.Boat.StbdFoil.Cant] + [Block.Boat.StbdFoil.Effective.Cant] + [Block.Boat.Heel]	StbdCantAngleEffective
+([Block.Boat.Rudder.Rake]+[Block.Boat.Trim])	RuddeRakeEffective
+[Block.Boat.HullLiftFraction]	HullLift
+[Block.Boat.RefBoatID]	BoatConfigId
+[Block.Boat.ExternalAPs.DLL.waveCrest]	WaveCrest

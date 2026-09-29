@@ -1,0 +1,86 @@
+{
+  "TacksLossBenchmarks": {
+    "ManoeuversType": 1,
+    "Descrizione": "Tack Loss Entry to Exit [ss]",
+    "Colore": "#FF8B0000",
+    "ListaValoriLoss": [
+      {
+        "Tws": 6.0,
+        "GainSec": -12.0,
+        "VmgAvg": 7.0
+      },
+      {
+        "Tws": 8.0,
+        "GainSec": -6.92599087465555,
+        "VmgAvg": 9.0
+      },
+      {
+        "Tws": 10.0,
+        "GainSec": -6.6414203466050772,
+        "VmgAvg": 13.0
+      },
+      {
+        "Tws": 12.0,
+        "GainSec": -4.9297956588025862,
+        "VmgAvg": 16.5
+      },
+      {
+        "Tws": 15.0,
+        "GainSec": -3.217421839971113,
+        "VmgAvg": 20.5
+      },
+      {
+        "Tws": 20.0,
+        "GainSec": -5.0579653168936183,
+        "VmgAvg": 22.0
+      },
+      {
+        "Tws": 25.0,
+        "GainSec": -6.0,
+        "VmgAvg": 23.5
+      }
+    ]
+  },
+  "GybesLossBenchmarks": {
+    "ManoeuversType": 2,
+    "Descrizione": "Gybe Loss Entry to Exit [ss]",
+    "Colore": "#FF0000FF",
+    "ListaValoriLoss": [
+      {
+        "Tws": 6.0,
+        "GainSec": -28.0,
+        "VmgAvg": 7.0
+      },
+      {
+        "Tws": 8.0,
+        "GainSec": -7.5376119371737076,
+        "VmgAvg": 10.0
+      },
+      {
+        "Tws": 10.0,
+        "GainSec": -5.9930681066103091,
+        "VmgAvg": 17.5
+      },
+      {
+        "Tws": 12.0,
+        "GainSec": -4.1981963368024857,
+        "VmgAvg": 22.0
+      },
+      {
+        "Tws": 15.0,
+        "GainSec": -3.4410561582984798,
+        "VmgAvg": 27.0
+      },
+      {
+        "Tws": 20.0,
+        "GainSec": -4.0879860794639207,
+        "VmgAvg": 32.0
+      },
+      {
+        "Tws": 25.0,
+        "GainSec": -3.0,
+        "VmgAvg": 35.0
+      }
+    ]
+  }
+}

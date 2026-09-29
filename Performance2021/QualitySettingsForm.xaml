@@ -1,0 +1,226 @@
+﻿<Window x:Class="QualitySettingsForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPwpf"
+        mc:Ignorable="d"
+        Title="Quality Channels Settings" Height="680" Width="950"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+  <Window.Resources>
+    <local:clsDecimalFlexConverter x:Key="DecimalFlex" />
+    <Style TargetType="ToolTip">
+      <Setter Property="MaxWidth" Value="380" />
+      <Setter Property="ContentTemplate">
+        <Setter.Value>
+          <DataTemplate>
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+          </DataTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="LabelStyle" TargetType="Label">
+      <Setter Property="Width" Value="235" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="NumBoxStyle" TargetType="TextBox">
+      <Setter Property="Width" Value="80" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Margin" Value="0,3,0,3" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Right" />
+    </Style>
+    <Style x:Key="HintStyle" TargetType="TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="10,0,0,0" />
+      <Setter Property="Foreground" Value="Gray" />
+    </Style>
+  </Window.Resources>
+
+  <Grid Margin="8">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <TabControl Grid.Row="0" Name="tab_Quality">
+
+      <!-- ================= GENERAL ================= -->
+      <TabItem Header="General" Name="tabGeneral">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="12">
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12"
+                       Text="The three indexes answer different questions. EnvironmentQuality and AttitudeQuality measure how steady wind and boat handling were, so they say whether a data point is real and repeatable, whether we were sailing well or badly. PerformanceQuality says how fast we were going, compared with the typical rate of the surrounding minutes." />
+
+            <GroupBox Header="Sampling" Padding="8">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Sampling window (seconds)"
+                         ToolTip="How many seconds of data each score looks back on. Every channel's standard deviation is computed over this moving window: a shorter window reacts faster but is noisier, a longer one smooths out brief disturbances." />
+                  <TextBox Name="txt_SecondiSampling" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="How many seconds of data each score looks back on. Every channel's standard deviation is computed over this moving window: a shorter window reacts faster but is noisier, a longer one smooths out brief disturbances." />
+                  <TextBlock Style="{StaticResource HintStyle}" Text="typically 15" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="SeaState reference"
+                         ToolTip="The SeaState at which SeaState driven channels tolerate exactly the delta you set. Above this value the tolerance of trim, heel, boat speed and TWA widens, because that movement is imposed by the waves rather than by the crew." />
+                  <TextBox Name="txt_SeaRef" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="The SeaState at which SeaState driven channels tolerate exactly the delta you set. Above this value the tolerance of trim, heel, boat speed and TWA widens, because that movement is imposed by the waves rather than by the crew." />
+                  <TextBlock Style="{StaticResource HintStyle}" Text="flat water reference for the SeaState driven channels" />
+                </StackPanel>
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Performance reference" Padding="8" Margin="0,10,0,0">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Reference window (± minutes)"
+                         ToolTip="Half width of the neighbourhood the boat speed is compared against: 12 means the twelve minutes before plus the twelve after, so a 24 minute span. Only samples on the same point of sail and steady enough to pass the two minimum scores below are used. Shorter windows adapt better to changing conditions but make the comparison more local." />
+                  <TextBox Name="txt_RefWindowMinutes" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Half width of the neighbourhood the boat speed is compared against: 12 means the twelve minutes before plus the twelve after, so a 24 minute span. Only samples on the same point of sail and steady enough to pass the two minimum scores below are used. Shorter windows adapt better to changing conditions but make the comparison more local." />
+                  <TextBlock Style="{StaticResource HintStyle}" Text="12 means 12 before and 12 after" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min Env score for reference"
+                         ToolTip="A sample only helps build the reference rate if its EnvironmentQuality reaches this score. This keeps unsteady wind out of the benchmark, so performance is measured against moments that were actually comparable." />
+                  <TextBox Name="txt_MinEnvQPerRiferimento" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="A sample only helps build the reference rate if its EnvironmentQuality reaches this score. This keeps unsteady wind out of the benchmark, so performance is measured against moments that were actually comparable." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min Att score for reference"
+                         ToolTip="Same as above for AttitudeQuality: manoeuvres and badly steered stretches are excluded from the benchmark, otherwise the reference rate would drop and be too easy to beat." />
+                  <TextBox Name="txt_MinAttQPerRiferimento" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Same as above for AttitudeQuality: manoeuvres and badly steered stretches are excluded from the benchmark, otherwise the reference rate would drop and be too easy to beat." />
+                  <TextBlock Style="{StaticResource HintStyle}" Text="only steady samples build the reference" />
+                </StackPanel>
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Automatic periods" Padding="8" Margin="0,10,0,0">
+              <StackPanel>
+                <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8"
+                           Text="A row is eligible for a straight line period only if all three scores reach their minimum. Set a threshold to 0 to switch that filter off." />
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min EnvironmentQuality (0-5)"
+                         ToolTip="Minimum wind steadiness for a row to be usable. Raise it to keep only stretches sailed in a settled breeze; set 0 to ignore wind steadiness altogether." />
+                  <TextBox Name="txt_MinEnvironmentQualityIndex" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Minimum wind steadiness for a row to be usable. Raise it to keep only stretches sailed in a settled breeze; set 0 to ignore wind steadiness altogether." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min AttitudeQuality (0-5)"
+                         ToolTip="Minimum steadiness of boat handling for a row to be usable. Raise it to keep only cleanly steered stretches; set 0 to ignore handling altogether." />
+                  <TextBox Name="txt_MinAttitudeQualityIndex" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Minimum steadiness of boat handling for a row to be usable. Raise it to keep only cleanly steered stretches; set 0 to ignore handling altogether." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min PerformanceQuality (0-5)"
+                         ToolTip="Minimum speed performance for a row to be usable. Leave it low to collect every valid stretch including the slow ones, which is what you want when studying mistakes; raise it to extract only the fast stretches." />
+                  <TextBox Name="txt_MinDataQualityIndex" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Minimum speed performance for a row to be usable. Leave it low to collect every valid stretch including the slow ones, which is what you want when studying mistakes; raise it to extract only the fast stretches." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <Label Style="{StaticResource LabelStyle}" Content="Min period duration (s)"
+                         ToolTip="Stretches shorter than this are discarded: too brief to say anything meaningful about speed or trim." />
+                  <TextBox Name="txt_MinPeriodSeconds" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Stretches shorter than this are discarded: too brief to say anything meaningful about speed or trim." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Style="{StaticResource LabelStyle}" Content="Max period duration (s)"
+                         ToolTip="Longer stretches are split into consecutive periods of this length. A tail shorter than the minimum duration is never produced: when the leftover would be too short the cut is stretched to the end of the stretch instead." />
+                  <TextBox Name="txt_MaxPeriodSeconds" Style="{StaticResource NumBoxStyle}"
+                           ToolTip="Longer stretches are split into consecutive periods of this length. A tail shorter than the minimum duration is never produced: when the leftover would be too short the cut is stretched to the end of the stretch instead." />
+                  <TextBlock Style="{StaticResource HintStyle}" Text="long stretches are split for continuity" />
+                </StackPanel>
+              </StackPanel>
+            </GroupBox>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ================= CHANNELS ================= -->
+      <TabItem Header="Channels" Name="tabChannels">
+        <Grid Margin="8">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <TextBlock Grid.Row="0" TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8"
+                     Text="A delta is how much that channel is allowed to move, as a standard deviation over the sampling window, before it starts costing score. A smaller delta makes the channel stricter. Which channels feed which index is part of the algorithm and is not editable here. On SeaState driven channels the delta is what applies in flat water: above the SeaState reference the allowance widens on its own." />
+
+          <DataGrid Grid.Row="1" Name="grd_Channels" AutoGenerateColumns="False" CanUserAddRows="False"
+                    CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="All"
+                    RowHeaderWidth="0" AlternatingRowBackground="#FFF5F5F5">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Channel" Width="110" IsReadOnly="True" Binding="{Binding NomeCanale}" />
+              <DataGridTextColumn Header="Index" Width="100" IsReadOnly="True" Binding="{Binding DescrizioneIndice}" />
+              <DataGridTextColumn Header="Delta Up" Width="90" Binding="{Binding DeltaEquivalenteUpwind, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DecimalFlex}}" />
+              <DataGridTextColumn Header="Delta Reach" Width="90" Binding="{Binding DeltaEquivalenteReaching, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DecimalFlex}}" />
+              <DataGridTextColumn Header="Delta Down" Width="90" Binding="{Binding DeltaEquivalenteDownwind, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DecimalFlex}}" />
+              <DataGridTextColumn Header="Notes" Width="*" IsReadOnly="True" Binding="{Binding Note}" />
+            </DataGrid.Columns>
+          </DataGrid>
+
+          <TextBlock Grid.Row="2" Name="txt_CanaliAssenti" Margin="0,8,0,0" Foreground="#FFB05000" TextWrapping="Wrap" />
+        </Grid>
+      </TabItem>
+
+      <!-- ================= SCORE THRESHOLDS ================= -->
+      <TabItem Header="Score thresholds" Name="tabThresholds">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="12">
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                       Text="Every channel is allowed to move by its delta. Tolerance used is how much of that allowance was actually consumed, averaged over the channels present in the file: 100% means the average channel moved exactly as much as it was allowed, 50% means half of it, 200% twice as much. The best score whose limit is not exceeded wins, so these numbers grow from 5 down to 1." />
+
+            <GroupBox Header="Environment Quality - max tolerance used (%)" Padding="8" Margin="0,0,0,10"
+                      ToolTip="Applies to the wind channels: TWS, TWD and TWA. Lower numbers make the top scores harder to earn.">
+              <StackPanel Orientation="Horizontal">
+                <Label Content="5" /><TextBox Name="txt_EnvQ5" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="4" Margin="10,0,0,0" /><TextBox Name="txt_EnvQ4" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="3" Margin="10,0,0,0" /><TextBox Name="txt_EnvQ3" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="2" Margin="10,0,0,0" /><TextBox Name="txt_EnvQ2" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="1" Margin="10,0,0,0" /><TextBox Name="txt_EnvQ1" Style="{StaticResource NumBoxStyle}" />
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Attitude Quality - max tolerance used (%)" Padding="8" Margin="0,0,0,10"
+                      ToolTip="Applies to the handling channels: HDG, AWA, boat speed, heel and trim. Lower numbers make the top scores harder to earn.">
+              <StackPanel Orientation="Horizontal">
+                <Label Content="5" /><TextBox Name="txt_AttQ5" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="4" Margin="10,0,0,0" /><TextBox Name="txt_AttQ4" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="3" Margin="10,0,0,0" /><TextBox Name="txt_AttQ3" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="2" Margin="10,0,0,0" /><TextBox Name="txt_AttQ2" Style="{StaticResource NumBoxStyle}" />
+                <Label Content="1" Margin="10,0,0,0" /><TextBox Name="txt_AttQ1" Style="{StaticResource NumBoxStyle}" />
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Performance Quality - max distance from local reference (% of target)" Padding="8"
+                      ToolTip="How far the boat speed sat from the typical rate of the surrounding minutes, on the same point of sail, in percentage points of polar target. The distance is taken in absolute value: running well above the local rate is an anomaly too, usually a gust, a helpful wave or a dirty reading, rather than a repeatable performance.">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Content="5" /><TextBox Name="txt_Perf5" Style="{StaticResource NumBoxStyle}" />
+                  <Label Content="4" Margin="10,0,0,0" /><TextBox Name="txt_Perf4" Style="{StaticResource NumBoxStyle}" />
+                  <Label Content="3" Margin="10,0,0,0" /><TextBox Name="txt_Perf3" Style="{StaticResource NumBoxStyle}" />
+                  <Label Content="2" Margin="10,0,0,0" /><TextBox Name="txt_Perf2" Style="{StaticResource NumBoxStyle}" />
+                  <Label Content="1" Margin="10,0,0,0" /><TextBox Name="txt_Perf1" Style="{StaticResource NumBoxStyle}" />
+                </StackPanel>
+                <TextBlock Margin="0,6,0,0" Foreground="Gray" TextWrapping="Wrap"
+                           Text="Increasing values. 1 means the boat speed stayed within one point of target of the local reference, either side of it, which is the steadiest and most repeatable case." />
+              </StackPanel>
+            </GroupBox>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+    </TabControl>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button Name="btn_Defaults" Content="Reset Defaults" Width="120" Margin="5" Click="btn_Defaults_Click" />
+      <Button Name="btn_SaveAndRefresh" Content="Save and Refresh" Width="130" Margin="5" Click="btn_SaveAndRefresh_Click"
+              ToolTip="Save the settings and recalculate the quality channels" />
+      <Button Name="btn_Save" Content="Save" Width="100" Margin="5" IsDefault="True" Click="btn_Save_Click" />
+      <Button Name="btn_Cancel" Content="Cancel" Width="100" Margin="5" IsCancel="True" Click="btn_Cancel_Click" />
+    </StackPanel>
+  </Grid>
+</Window>

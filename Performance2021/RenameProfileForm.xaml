@@ -1,0 +1,40 @@
+<Window x:Class="RenameProfileForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPwpf"
+        mc:Ignorable="d"
+        Title="Rename Profile" Height="220" Width="480"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False">
+  <Grid Margin="10">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
+               Text="Change the boat / profile name. The profile file and its folders are not affected." />
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+      <Label Content="Current name" Width="110" />
+      <TextBlock Name="txt_CurrentName" VerticalAlignment="Center" FontWeight="Bold" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal">
+      <Label Content="New name" Width="110" />
+      <TextBox Name="txt_NewName" Width="300" FontSize="14" VerticalContentAlignment="Center" Height="26" />
+    </StackPanel>
+
+    <TextBlock Grid.Row="3" Name="txt_ProfilePath" TextWrapping="Wrap" Margin="0,10,0,0"
+               Foreground="Gray" FontSize="11" />
+
+    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Name="btn_Ok" Content="Rename" Width="100" Margin="5" IsDefault="True" Click="btn_Ok_Click" />
+      <Button Name="btn_Cancel" Content="Cancel" Width="100" Margin="5" IsCancel="True" Click="btn_Cancel_Click" />
+    </StackPanel>
+  </Grid>
+</Window>

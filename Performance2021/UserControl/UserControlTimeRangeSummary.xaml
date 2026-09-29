@@ -1,0 +1,219 @@
+﻿<UserControl x:Class="UserControlTimeRangeSummary"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:nud="clr-namespace:NumericUpDownLib;assembly=NumericUpDownLib"
+             mc:Ignorable="d" 
+             SizeChanged="UserControl_SizeChanged"
+             d:DesignHeight="450" d:DesignWidth="800">
+  <UserControl.Resources>
+    <Style x:Key="PortColumn" TargetType="DataGridCell">
+      <Setter Property="Background" Value="IndianRed" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="StbdColumn" TargetType="DataGridCell">
+      <Setter Property="Background" Value="Lightgreen" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="PavarotColumn" TargetType="DataGridCell">
+      <Setter Property="Background" Value="LightBlue" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="GroupColumn" TargetType="DataGridCell">
+      <Setter Property="Background" Value="Gold" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="TwsColumn" TargetType="DataGridCell">
+      <Setter Property="Background" Value="LightYellow" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style TargetType="DataGridCell">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="30" ></RowDefinition>
+      <RowDefinition Height="*" ></RowDefinition>
+    </Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal">
+      <Button Content="Refresh" Click="Button_Click" Margin="2" Width="80"></Button>
+      <Button Content="Periods Check" Click="Button_Click_2" ToolTip="Check visible time range periods" Margin="2,2,2,2" Width="80"></Button>
+      <Button Content="Pdf" Click="Button_Click_1" Margin="2,2,2,2" Width="80"></Button>
+      <Label Content="Summary Header:"></Label>
+      <TextBox Text="{Binding SummaryHeader, Mode=TwoWay}" Grid.Row="1" FontSize="12" Width="100" Height="25" ></TextBox>
+      <Label Content="SL Order:" Grid.Row="1" FontSize="12" FontWeight="Bold" Margin="10,0,0,0"></Label>
+      <nud:NumericUpDown Value="{Binding TrendLineOrder,Mode=TwoWay}" MaxValue="8" MinValue="0" VerticalAlignment="Top"  ></nud:NumericUpDown>
+      <Label Content="{Binding PeriodDescription}" Grid.Row="1" FontSize="12" FontWeight="Bold" Margin="10,0,0,0"></Label>
+    </StackPanel>
+
+
+    <ScrollViewer Grid.Row="1">
+    <Grid >
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="2" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="10" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="2" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="150" ></RowDefinition>
+        <RowDefinition Height="2" ></RowDefinition>
+        <RowDefinition Height="150" ></RowDefinition>
+        <RowDefinition Height="2" ></RowDefinition>
+        <RowDefinition Height="{Binding PlotHeight}" ></RowDefinition>
+        <RowDefinition Height="{Binding PlotHeight}" ></RowDefinition>
+        <RowDefinition Height="{Binding PlotHeight}" ></RowDefinition>
+        <RowDefinition Height="{Binding PlotHeight}" ></RowDefinition>
+        <RowDefinition Height="{Binding PlotHeight}" ></RowDefinition>
+      </Grid.RowDefinitions>
+
+
+        <ScrollViewer Grid.Column="0" Grid.ColumnSpan="3" >
+          <StackPanel Orientation="Vertical">
+          <Label Content="Upwind Vmg" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"></Label>
+            
+
+              <DataGrid x:Name="VmgUp" VerticalAlignment="Top"
+                ItemsSource="{Binding RigheVmgUp}"
+                AutoGenerateColumns="False" CanUserResizeColumns="True"
+                FontSize="10" 
+                GridLinesVisibility="Vertical" AlternatingRowBackground="LightGray" HeadersVisibility="Column"
+                CanUserReorderColumns="False" 
+                    >
+
+                <DataGrid.Columns>
+
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=GroupColumn}" Width="*" Header="Tws" Binding="{Binding Group}"/>
+              <DataGridTextColumn Width="*" Header="Avg" Binding="{Binding Tws}"/>
+              <DataGridTextColumn Width="*" Header="Vmg%" Binding="{Binding Both.VmgTgtP}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=StbdColumn}" Width="*" Header="S" Binding="{Binding Stbd.VmgTgtP}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=PortColumn}" Width="*" Header="P" Binding="{Binding Port.VmgTgtP}"/>
+              <DataGridTextColumn Width="*" Header="BsT%" Binding="{Binding Both.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="S" CellStyle="{StaticResource ResourceKey=StbdColumn}" Binding="{Binding Stbd.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="P" CellStyle="{StaticResource ResourceKey=PortColumn}" Binding="{Binding Port.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="TwaD"  Binding="{Binding Both.TwaTgtD}"/>
+              <DataGridTextColumn Width="*" Header="S" CellStyle="{StaticResource ResourceKey=StbdColumn}" Binding="{Binding Stbd.TwaTgtD}"/>
+              <DataGridTextColumn Width="*" Header="P" CellStyle="{StaticResource ResourceKey=PortColumn}" Binding="{Binding Port.TwaTgtD}"/>
+                <DataGridTextColumn Width="*" Header="Tacks" CellStyle="{StaticResource ResourceKey=PavarotColumn}" Binding="{Binding Both.ManoeuversNr}"/>
+                <DataGridTextColumn Width="*" Header="LossBL" CellStyle="{StaticResource ResourceKey=PavarotColumn}" Binding="{Binding Both.ManoeuversLossAvg}"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </StackPanel>
+    </ScrollViewer>
+
+    <ScrollViewer Grid.Column="4" Grid.ColumnSpan="3" >
+          <StackPanel Orientation="Vertical" >
+          <Label Content="Downwind Vmg" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"></Label>
+    <DataGrid x:Name="VmgDn" VerticalAlignment="Top"
+            ItemsSource="{Binding RigheVmgDn}"
+            AutoGenerateColumns="False" CanUserResizeColumns="True"
+            FontSize="10"
+            GridLinesVisibility="Vertical" AlternatingRowBackground="LightGray" HeadersVisibility="Column"
+            CanUserReorderColumns="False" 
+      >
+            <DataGrid.Columns>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=GroupColumn}" Width="*" Header="Tws" Binding="{Binding Group}"/>
+              <DataGridTextColumn Width="*" Header="Avg" Binding="{Binding Tws}"/>
+              <DataGridTextColumn Width="*" Header="Vmg%" Binding="{Binding Both.VmgTgtP}"/>
+              <DataGridTextColumn Width="*" Header="S" CellStyle="{StaticResource ResourceKey=StbdColumn}" Binding="{Binding Stbd.VmgTgtP}"/>
+              <DataGridTextColumn Width="*" Header="P" CellStyle="{StaticResource ResourceKey=PortColumn}" Binding="{Binding Port.VmgTgtP}"/>
+              <DataGridTextColumn Width="*" Header="BsT%"  Binding="{Binding Both.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="S" CellStyle="{StaticResource ResourceKey=StbdColumn}" Binding="{Binding Stbd.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="P" CellStyle="{StaticResource ResourceKey=PortColumn}" Binding="{Binding Port.BsTgtP}"/>
+              <DataGridTextColumn Width="*" Header="TwaD"  Binding="{Binding Both.TwaTgtD}"/>
+              <DataGridTextColumn Width="*" Header="S" CellStyle="{StaticResource ResourceKey=StbdColumn}" Binding="{Binding Stbd.TwaTgtD}"/>
+              <DataGridTextColumn Width="*" Header="P" CellStyle="{StaticResource ResourceKey=PortColumn}" Binding="{Binding Port.TwaTgtD}"/>
+                <DataGridTextColumn Width="*" Header="Gybes" CellStyle="{StaticResource ResourceKey=PavarotColumn}" Binding="{Binding Both.ManoeuversNr}"/>
+                <DataGridTextColumn Width="*" Header="LossBL" CellStyle="{StaticResource ResourceKey=PavarotColumn}" Binding="{Binding Both.ManoeuversLossAvg}"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" >
+          <StackPanel Orientation="Vertical">
+          <Label Content="Reaching" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"></Label>
+    <DataGrid x:Name="Reaching" VerticalAlignment="Top"
+          ItemsSource="{Binding RigheReaching}"
+          AutoGenerateColumns="False" CanUserResizeColumns="True"
+          FontSize="10"
+          GridLinesVisibility="Vertical" AlternatingRowBackground="LightGray" HeadersVisibility="Column"
+          CanUserReorderColumns="False" 
+                  >
+            <DataGrid.Columns>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=GroupColumn}" Width="*" Header="Tws" Binding="{Binding Group}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws60" Binding="{Binding PolPercAtTwa60.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa60.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa60.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa60.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws70" Binding="{Binding PolPercAtTwa70.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa70.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa70.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs%" Binding="{Binding PolPercAtTwa70.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws80"  Binding="{Binding PolPercAtTwa80.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa80.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa80.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa80.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws90" Binding="{Binding PolPercAtTwa90.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa90.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa90.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa90.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws100" Binding="{Binding PolPercAtTwa100.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa"  Binding="{Binding PolPercAtTwa100.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa100.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa100.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws110" Binding="{Binding PolPercAtTwa110.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa110.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa110.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa110.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws120" Binding="{Binding PolPercAtTwa120.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa120.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa120.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa120.Bs}"/>
+                <DataGridTextColumn CellStyle="{StaticResource ResourceKey=TwsColumn}" Width="*" Header="Tws130" Binding="{Binding PolPercAtTwa130.Tws}"/>
+                <DataGridTextColumn Width="*" Header="Twa" Binding="{Binding PolPercAtTwa130.Twa}"/>
+                <DataGridTextColumn Width="*" Header="Pol%" Binding="{Binding PolPercAtTwa130.BsPolP}"/>
+                <DataGridTextColumn Width="*" Header="Bs" Binding="{Binding PolPercAtTwa130.Bs}"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </StackPanel>
+        </ScrollViewer>
+
+        <local:UserControlSciChartPlot x:Name="Plot1" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot19" Grid.Row="4" Grid.Column="6" Grid.ColumnSpan="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot20" Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot2" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="2"></local:UserControlSciChartPlot>
+      
+      <local:UserControlSciChartPlot x:Name="Plot11" Grid.Row="5" Grid.Column="0"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot3" Grid.Row="5" Grid.Column="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot14" Grid.Row="5" Grid.Column="4"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot4" Grid.Row="5" Grid.Column="6"></local:UserControlSciChartPlot>
+
+      <local:UserControlSciChartPlot x:Name="Plot12" Grid.Row="6" Grid.Column="0"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot5" Grid.Row="6" Grid.Column="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot15" Grid.Row="6" Grid.Column="4"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot6" Grid.Row="6" Grid.Column="6"></local:UserControlSciChartPlot>
+
+      <local:UserControlSciChartPlot x:Name="Plot13" Grid.Row="7" Grid.Column="0"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot7" Grid.Row="7" Grid.Column="2"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot16" Grid.Row="7" Grid.Column="4"></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot8" Grid.Row="7" Grid.Column="6"></local:UserControlSciChartPlot>
+
+      <local:UserControlSciChartPlot x:Name="Plot17" Grid.Row="8" Grid.Column="0" ></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot18" Grid.Row="8" Grid.Column="2" ></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot9" Grid.Row="8" Grid.Column="4" ></local:UserControlSciChartPlot>
+      <local:UserControlSciChartPlot x:Name="Plot10" Grid.Row="8" Grid.Column="6" ></local:UserControlSciChartPlot>
+
+    </Grid>
+  </ScrollViewer>
+  </Grid>
+</UserControl>
+

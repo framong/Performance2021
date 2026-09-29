@@ -1,0 +1,448 @@
+﻿<UserControl x:Class="UserControlStartExpedition"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             SizeChanged="UserControl_SizeChanged"
+             >
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition></ColumnDefinition>
+      <ColumnDefinition Width="3"></ColumnDefinition>
+      <ColumnDefinition></ColumnDefinition>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="30"></RowDefinition>
+      <RowDefinition Height="3"></RowDefinition>
+      <RowDefinition Height="150"></RowDefinition>
+      <RowDefinition MinHeight="400" Height="{Binding StartPlotHeight}"></RowDefinition>
+      <RowDefinition Height="3"></RowDefinition>
+      <RowDefinition Height="*"></RowDefinition>
+    </Grid.RowDefinitions>
+
+
+
+    <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.ColumnSpan="3">
+      <Button Content="Load Starts" Click="Button_Click" Margin="5"></Button>
+      <ComboBox DisplayMemberPath="StartDescription" ItemsSource="{Binding StartsList}" SelectedItem="{Binding SelectedStart}" Width="150" Margin="5"></ComboBox>
+
+      <Menu Margin="10,0,0,0" HorizontalAlignment="Right" >
+        <MenuItem Header="Tools" ToolTip="Plot Settings" Height="30" Width="80" >
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Print Start Pdf" Click="Button_Click_1"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Print Race Report Pdf" Click="Button_Click_12"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Send Last Report by email" Click="Button_Click_13"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Export To Csv" Click="Button_Click_2"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Zoom To Start" Click="Button_Click_10"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Width="140" Content="Open Reports Folder" Click="Button_Click_11"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Content="Boat Length m:"></Label>
+                <TextBox Text="{Binding BoatLenghtInMeters}" Width="50" PreviewTextInput="NumberValidationTextBox" ></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+
+
+
+      <!--<Button Content="Export Csv" Click="Button_Click_2" ToolTip="Copy Starts Table to Clipboard" Margin="5"></Button>
+      <Button Content="ZoomTo" Click="Button_Click_10" ToolTip="Zoom to start time range" Margin="5"></Button>
+      <Button Content="Print Pdf" Click="Button_Click_1" Margin="5,5,25,5" ToolTip="Current start pdf report"></Button>-->
+    </StackPanel>
+
+    <Viewbox Stretch="Uniform" Margin="0" Grid.Column="2" Grid.Row="0" Grid.ColumnSpan="1" >
+      <TextBlock FontWeight="Bold" Text="{Binding SelectedStart.StartDescription}" TextAlignment="Center"></TextBlock>
+    </Viewbox>
+
+
+    <!--<StackPanel Orientation="Horizontal">
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal" Grid.Column="2">
+    </StackPanel>-->
+
+    <ListView x:Name="listBoatConfig" Grid.Row="2" Grid.Column="0" Grid.RowSpan="2" SelectionMode="Single" 
+              ItemsSource="{Binding SelectedStart.BoatDataTable}"  ScrollViewer.VerticalScrollBarVisibility="Visible"
+              SelectionChanged="listBoatConfig_SelectionChanged"
+              >
+      <ListView.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Orientation="Vertical">
+            <Grid Visibility="{Binding HeaderVisible}" Margin="0,0,0,5">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="STS" Grid.Column="0" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Tws" Grid.Column="1" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Twd" Grid.Column="2" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Bs" Grid.Column="3" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Twa" Grid.Column="4" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="VmgP" Grid.Column="5" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="BstP" Grid.Column="6" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="TwaD" Grid.Column="7" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Heel" Grid.Column="8" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Rdr" Grid.Column="9" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="Vdist" Grid.Column="10" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="eVdist" Grid.Column="12" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="TTL" Grid.Column="11" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="eTTL" Grid.Column="13" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="eTTK" Grid.Column="14" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="AccKM" Grid.Column="15" TextAlignment="Right" FontWeight="Bold" ></TextBlock>
+              <!--<TextBlock Text="F S" Grid.Column="15" TextAlignment="Right" FontWeight="Bold"></TextBlock>
+              <TextBlock Text="FSm" Grid.Column="16" TextAlignment="Right" FontWeight="Bold"></TextBlock>-->
+              <TextBlock Text="{Binding CustomData1h}" Grid.Column="16" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData1v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData2h}" Grid.Column="17" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData2v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData3h}" Grid.Column="18" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData3v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData4h}" Grid.Column="19" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData4v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData5h}" Grid.Column="20" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData5v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData6h}" Grid.Column="21" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData6v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData7h}" Grid.Column="22" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData7v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData8h}" Grid.Column="23" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData8v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData9h}" Grid.Column="24" TextAlignment="Right" FontWeight="Bold" Visibility="{Binding CustomData9v}"></TextBlock>
+            </Grid>
+            <Grid >
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
+              </Grid.ColumnDefinitions>
+              <Border Grid.Column="0" Grid.ColumnSpan="17" Background="{Binding RelativePositionXY.Brush}"></Border>
+              <TextBlock Text="{Binding SecondsToStart, StringFormat=F0}" Grid.Column="0" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Tws, StringFormat=F1}" Grid.Column="1" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Twd, StringFormat=F0}" Grid.Column="2" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Bs, StringFormat=F1}" Grid.Column="3" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Twa, StringFormat=F0}" Grid.Column="4" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding VmgP, StringFormat=F0}" Grid.Column="5" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding BstP, StringFormat=F0}" Grid.Column="6" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding TwaD, StringFormat=F0}" Grid.Column="7" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Heel, StringFormat=F0}" Grid.Column="8" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Rdr, StringFormat=F0}" Grid.Column="9" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding Vdist, StringFormat=F1}" Grid.Column="10" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding ExpVdist, StringFormat=F1}" Grid.Column="12" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding TtlAtTgtStbd, StringFormat=F0}" Grid.Column="11" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding ExpTimeToLine, StringFormat=F0}" Grid.Column="13" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding ExpTimeToBurn, StringFormat=F0}" Grid.Column="14" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding AccKtsMin, StringFormat=F1}" Grid.Column="15" TextAlignment="Right"></TextBlock>
+              <TextBlock Text="{Binding CustomData1, StringFormat=F0}" Grid.Column="16" TextAlignment="Right" Visibility="{Binding CustomData1v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData2, StringFormat=F0}" Grid.Column="17" TextAlignment="Right" Visibility="{Binding CustomData2v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData3, StringFormat=F0}" Grid.Column="18" TextAlignment="Right" Visibility="{Binding CustomData3v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData4, StringFormat=F0}" Grid.Column="19" TextAlignment="Right" Visibility="{Binding CustomData4v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData5, StringFormat=F0}" Grid.Column="20" TextAlignment="Right" Visibility="{Binding CustomData5v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData6, StringFormat=F0}" Grid.Column="21" TextAlignment="Right" Visibility="{Binding CustomData6v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData7, StringFormat=F0}" Grid.Column="22" TextAlignment="Right" Visibility="{Binding CustomData7v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData8, StringFormat=F0}" Grid.Column="23" TextAlignment="Right" Visibility="{Binding CustomData8v}"></TextBlock>
+              <TextBlock Text="{Binding CustomData9, StringFormat=F0}" Grid.Column="24" TextAlignment="Right" Visibility="{Binding CustomData9v}"></TextBlock>
+            </Grid>
+          </StackPanel>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+
+    <Grid Grid.Column="2" Grid.Row="2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition ></ColumnDefinition>
+        <ColumnDefinition ></ColumnDefinition>
+        <ColumnDefinition ></ColumnDefinition>
+        <ColumnDefinition ></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <!--<RowDefinition Height="40"></RowDefinition>-->
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
+      </Grid.RowDefinitions>
+
+      <Border Background="LightYellow" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>
+      <Border Background="WhiteSmoke" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>
+      <Border Background="LightYellow" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>
+      <Border Background="WhiteSmoke" Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>
+      <Border Background="MintCream" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>
+      <Border BorderThickness="2,2,2,2" BorderBrush="DarkGray" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Grid.RowSpan="5"></Border>
+      <Border BorderThickness="0,2,2,2" BorderBrush="DarkGray" Grid.Column="2" Grid.Row="0" Grid.ColumnSpan="2" Grid.RowSpan="5"></Border>
+
+      <!--<Viewbox Stretch="Fill" Margin="10,4,10,4" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" >
+        <TextBlock FontWeight="Bold" Text="{Binding SelectedStart.StartDescription}" TextAlignment="Center"></TextBlock>
+      </Viewbox>-->
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.LineGeometry}" TextAlignment="Left"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.StartBias}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.StartDetails}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.BasicDataAtGun}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.BasicDataAtPlusTwo}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+
+      <!--<TextBlock FontSize="24" FontWeight="Bold" Text="{Binding SelectedStart.StartDescription}" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" TextAlignment="Center"></TextBlock>
+      <TextBlock FontSize="14" Text="{Binding SelectedStart.StartDetails}" Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="14" Text="{Binding SelectedStart.LineGeometry}" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="14" Text="{Binding SelectedStart.StartBias}" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="14" Text="{Binding SelectedStart.BasicDataAtGun}" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>-->
+
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="2" Grid.Row="0" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.AccelerationLine1}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.AccelerationLine2}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.AccelerationLine3}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.AccelerationLine4}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+      <Viewbox Stretch="Uniform" HorizontalAlignment="Left" Margin="10,4,10,4" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" >
+        <TextBlock Text="{Binding SelectedStart.AccelerationLine5}" TextAlignment="Center"></TextBlock>
+      </Viewbox>
+
+      <!--<TextBlock FontSize="10" Text="{Binding SelectedStart.AccelerationLine1}" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="10" Text="{Binding SelectedStart.AccelerationLine2}" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="10" Text="{Binding SelectedStart.AccelerationLine3}" Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>
+      <TextBlock FontSize="10" Text="{Binding SelectedStart.AccelerationLine4}" Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" TextAlignment="Left"></TextBlock>-->
+    </Grid>
+
+    <sc:SciChartSurface x:Name="SCsurface" sc:ThemeManager.Theme="BrightSpark" Margin="0"
+                         Grid.Row="3" Grid.Column="2"
+                        SeriesSource="{Binding SelectedStart.SeriesSource}"
+                        Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
+                        >
+      <sc:SciChartSurface.Annotations>
+        <!--<sc:TextAnnotation Text="{Binding SelectedStart.StartDescription, Mode=OneWay}" X1="0.5" Y1="0.0" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>-->
+        <sc:TextAnnotation Text="{Binding SelectedStart.CurrentBoatData.SecondsToGun}" X1="0.5" Y1="0.05" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+        <!--<sc:TextAnnotation Text="{Binding SelectedStart.CurrentBoatData.VdistToLine, StringFormat=F1}" X1="0.5" Y1="0.2" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>-->
+        <!--<sc:TextAnnotation Text="{Binding SelectedStart.CurrentBoatData.ExpVdist, StringFormat=F1}" X1="0.7" Y1="0.2" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>-->
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineYminus1bl}" Y2="{Binding SelectedStart.LineYminus1bl}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="1" StrokeDashArray="2,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineYminus2bl}" Y2="{Binding SelectedStart.LineYminus2bl}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="1" StrokeDashArray="2,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineYminus3bl}" Y2="{Binding SelectedStart.LineYminus3bl}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="1" StrokeDashArray="2,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineYminus5bl}" Y2="{Binding SelectedStart.LineYminus5bl}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="1" StrokeDashArray="2,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineYminus10bl}" Y2="{Binding SelectedStart.LineYminus10bl}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="1" StrokeDashArray="2,2"></sc:LineAnnotation>
+
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.LineRcX}" Y1="{Binding SelectedStart.LineY}" Y2="{Binding SelectedStart.LineY}" CoordinateMode="Absolute" Stroke="DarkGray" StrokeThickness="4" StrokeDashArray="3,3"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.CurrentBoatData.PinSllX}" Y1="{Binding SelectedStart.LineY}" Y2="{Binding SelectedStart.CurrentBoatData.PinSllY}" CoordinateMode="Absolute" Stroke="DarkGreen" StrokeThickness="2" StrokeDashArray="3,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LineRcX}" X2="{Binding SelectedStart.CurrentBoatData.RcSllX}" Y1="{Binding SelectedStart.LineY}" Y2="{Binding SelectedStart.CurrentBoatData.RcSllY}" CoordinateMode="Absolute" Stroke="DarkGreen" StrokeThickness="2" StrokeDashArray="3,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LinePinX}" X2="{Binding SelectedStart.CurrentBoatData.PinPllX}" Y1="{Binding SelectedStart.LineY}" Y2="{Binding SelectedStart.CurrentBoatData.PinPllY}" CoordinateMode="Absolute" Stroke="DarkRed" StrokeThickness="2" StrokeDashArray="3,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.LineRcX}" X2="{Binding SelectedStart.CurrentBoatData.RcPllX}" Y1="{Binding SelectedStart.LineY}" Y2="{Binding SelectedStart.CurrentBoatData.RcPllY}" CoordinateMode="Absolute" Stroke="DarkRed" StrokeThickness="2" StrokeDashArray="3,2"></sc:LineAnnotation>
+
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatSternX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatSternY}" CoordinateMode="Absolute" Stroke="Black" StrokeThickness="4"></sc:LineAnnotation>
+
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatStbd1mX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatStbd1mY}" CoordinateMode="Absolute" Stroke="LimeGreen" StrokeThickness="1" StrokeDashArray="3,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatPort1mX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatPort1mY}" CoordinateMode="Absolute" Stroke="OrangeRed" StrokeThickness="1" StrokeDashArray="3,2"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatStbdStsX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatStbdStsY}" CoordinateMode="Absolute" Stroke="LimeGreen" StrokeThickness="3"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatPortStsX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatPortStsY}" CoordinateMode="Absolute" Stroke="OrangeRed" StrokeThickness="3"></sc:LineAnnotation>
+        <sc:LineAnnotation X1="{Binding SelectedStart.CurrentBoatData.BoatPositionX}" X2="{Binding SelectedStart.CurrentBoatData.BoatGpsStsX}" Y1="{Binding SelectedStart.CurrentBoatData.BoatPositionY}" Y2="{Binding SelectedStart.CurrentBoatData.BoatGpsStsY}" CoordinateMode="Absolute" Stroke="DarkBlue" StrokeThickness="3"></sc:LineAnnotation>
+
+        <sc:BoxAnnotation X1="{Binding SelectedStart.PinX1}" Y1="{Binding SelectedStart.LineY1}" X2="{Binding SelectedStart.PinX2}" Y2="{Binding SelectedStart.LineY2}" CoordinateMode="Absolute" CornerRadius="40" Background="OrangeRed" ></sc:BoxAnnotation>
+        <sc:BoxAnnotation X1="{Binding SelectedStart.RcX1}" Y1="{Binding SelectedStart.LineY1}" X2="{Binding SelectedStart.RcX2}" Y2="{Binding SelectedStart.LineY2}" CoordinateMode="Absolute" CornerRadius="40" Background="DarkGreen" ></sc:BoxAnnotation>
+
+      </sc:SciChartSurface.Annotations>
+      <sc:SciChartSurface.XAxes >
+        <sc:NumericAxis Id="DefaultAxisId" VisibleRange="{Binding VisibleRange}" ></sc:NumericAxis>
+      </sc:SciChartSurface.XAxes>
+      <sc:SciChartSurface.YAxes>
+        <sc:NumericAxis Id="DefaultAxisId" VisibleRange="{Binding VisibleRange}" ></sc:NumericAxis>
+      </sc:SciChartSurface.YAxes>
+      <sc:SciChartSurface.ChartModifier>
+        <sc:ModifierGroup >
+          <local:clsRubberBandModifier IsAnimated="False" ExecuteOn="MouseRightButton" IsEnabled="False" RubberBandFill="#99FF0000" ReceiveHandledEvents="False" ></local:clsRubberBandModifier>
+          <sc:MouseWheelZoomModifier Name="ScMouseWheelZoomModifier" IsEnabled="True" ReceiveHandledEvents="True" ></sc:MouseWheelZoomModifier>
+          <sc:ZoomPanModifier Name="ScZoomPanModifier" ReceiveHandledEvents="True" IsEnabled="True" XyDirection="XYDirection" ></sc:ZoomPanModifier>
+          <sc:CursorModifier IsEnabled="False"></sc:CursorModifier>
+          <sc:RolloverModifier IsEnabled="False" ShowAxisLabels="False" ShowTooltipOn="Never"></sc:RolloverModifier>
+          <sc:VerticalSliceModifier Name="BarraVericale" IsEnabled="False" Visibility="Visible"  >
+          </sc:VerticalSliceModifier>
+        </sc:ModifierGroup>
+      </sc:SciChartSurface.ChartModifier>
+    </sc:SciChartSurface>
+
+    <!--<Border BorderThickness="2" BorderBrush="DarkGray" Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="4" Grid.RowSpan="1"></Border>-->
+
+    <StackPanel Orientation="Horizontal"  Grid.Row="3" Grid.Column="2" Height="30" VerticalAlignment="Top" HorizontalAlignment="Right">
+      <Button Width="60" Content="Prev" Click="Button_Click_7" Margin="5"></Button>
+      <Button Width="60" Content="Next" Click="Button_Click_8" Margin="5"></Button>
+      <Button Width="60" Content="Gun" Click="Button_Click_4" Margin="5"></Button>
+      <Button Width="60" Content="-3m" Click="Button_Click_3" Margin="5"></Button>
+      <Button Width="60" Content="-1m" Click="Button_Click_9" Margin="5"></Button>
+      <Button Width="60" Content="+1m" Click="Button_Click_6" Margin="5"></Button>
+      <Button Width="60" Content="LineCross" Click="Button_Click_5" Margin="5"></Button>
+    </StackPanel>
+
+    <Grid Width="120" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,25,10,0" Background="WhiteSmoke" Opacity="0.7" Grid.Row="3" Grid.Column="2" >
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition></ColumnDefinition>
+        <ColumnDefinition Width="40"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="0"></RowDefinition>
+        <RowDefinition Height="0"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+        <RowDefinition Height="18"></RowDefinition>
+      </Grid.RowDefinitions>
+      <Border BorderBrush="DarkGray" BorderThickness="2" Grid.ColumnSpan="2" Grid.RowSpan="27" Margin="-3"></Border>
+      <TextBlock FontSize="12" Text="Tws" Grid.Column="0" Grid.Row="0" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Tws, StringFormat=F1}" Grid.Column="1" Grid.Row="0" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Twd" Grid.Column="0" Grid.Row="1" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Twd, StringFormat=0}" Grid.Column="1" Grid.Row="1" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Bs" Grid.Column="0" Grid.Row="2" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Bs, StringFormat=F1}" Grid.Column="1" Grid.Row="2" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Twa" Grid.Column="0" Grid.Row="3" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Twa, StringFormat=0}" Grid.Column="1" Grid.Row="3" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Vmg%" Grid.Column="0" Grid.Row="4" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.VmgP, StringFormat=0}" Grid.Column="1" Grid.Row="4" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Bst%" Grid.Column="0" Grid.Row="5" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.BstP, StringFormat=0}" Grid.Column="1" Grid.Row="5" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="TwaD" Grid.Column="0" Grid.Row="6" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.TwaD, StringFormat=0}" Grid.Column="1" Grid.Row="6" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Heel" Grid.Column="0" Grid.Row="7" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Heel, StringFormat=0}" Grid.Column="1" Grid.Row="7" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Rdr" Grid.Column="0" Grid.Row="8" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.Rdr, StringFormat=0}" Grid.Column="1" Grid.Row="8" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Ttl Stbd" Grid.Column="0" Grid.Row="9" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.TtlAtTgtStbd, StringFormat=0}" Grid.Column="1" Grid.Row="9" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Ttl Port" Grid.Column="0" Grid.Row="11" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.TtlAtTgtPort, StringFormat=0}" Grid.Column="1" Grid.Row="11" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Ttl Acc" Grid.Column="0" Grid.Row="10" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.AP.TimeToLine, StringFormat=0}" Grid.Column="1" Grid.Row="10" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Ttk Stbd" Grid.Column="0" Grid.Row="12" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.TTKstbdAtTgt}" Grid.Column="1" Grid.Row="12" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Ttk Acc" Grid.Column="0" Grid.Row="13" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.TTKstbdAcc}" Grid.Column="1" Grid.Row="13" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="Acc Loss" Grid.Column="0" Grid.Row="14" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CalculateAccelerationLoss, StringFormat=0}" Grid.Column="1" Grid.Row="14" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="expTTK" Grid.Column="0" Grid.Row="15" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.ExpTimeToBurn, StringFormat=0}" Grid.Column="1" Grid.Row="15" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="FinalShut" Grid.Column="0" Grid.Row="16" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.FinalShut, StringFormat=0}" Grid.Column="1" Grid.Row="16" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="FinalShutMt" Grid.Column="0" Grid.Row="17" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.FinalShutMt, StringFormat=0}" Grid.Column="1" Grid.Row="17" TextAlignment="Right" Margin="1"></TextBlock>
+
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData1h}" Grid.Column="0" Grid.Row="18" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData1, StringFormat=0}" Grid.Column="1" Grid.Row="18" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData2h}" Grid.Column="0" Grid.Row="19" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData2, StringFormat=0}" Grid.Column="1" Grid.Row="19" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData3h}" Grid.Column="0" Grid.Row="20" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData3, StringFormat=0}" Grid.Column="1" Grid.Row="20" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData4h}" Grid.Column="0" Grid.Row="21" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData4, StringFormat=0}" Grid.Column="1" Grid.Row="21" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData5h}" Grid.Column="0" Grid.Row="22" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData5, StringFormat=0}" Grid.Column="1" Grid.Row="22" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData6h}" Grid.Column="0" Grid.Row="23" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData6, StringFormat=0}" Grid.Column="1" Grid.Row="23" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData7h}" Grid.Column="0" Grid.Row="24" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData7, StringFormat=0}" Grid.Column="1" Grid.Row="24" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData8h}" Grid.Column="0" Grid.Row="25" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData8, StringFormat=0}" Grid.Column="1" Grid.Row="25" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData9h}" Grid.Column="0" Grid.Row="26" TextAlignment="Right" Margin="1"></TextBlock>
+      <TextBlock FontSize="12" Text="{Binding SelectedStart.CurrentBoatData.CustomData9, StringFormat=0}" Grid.Column="1" Grid.Row="26" TextAlignment="Right" Margin="1"></TextBlock>
+    </Grid>
+
+
+
+  </Grid>
+</UserControl>

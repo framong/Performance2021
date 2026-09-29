@@ -1,0 +1,148 @@
+{
+  "TacksLossBenchmarks": {
+    "ManoeuversType": 1,
+    "Descrizione": "Tack Loss Entry to Exit [ss]",
+    "Colore": "#FF8B0000",
+    "ListaValoriLoss": [
+      {
+        "Tws": 6.0,
+        "GainSec": -17.129404376783096,
+        "VmgAvg": 3.0,
+        "GainMeters": -49.225806134670329
+      },
+      {
+        "Tws": 7.0,
+        "GainSec": -3.7523379572634497,
+        "VmgAvg": 5.5,
+        "GainMeters": -11.815272171882896
+      },
+      {
+        "Tws": 8.0,
+        "GainSec": 7.4757064269433258,
+        "VmgAvg": 8.0,
+        "GainMeters": 25.595261790904587
+      },
+      {
+        "Tws": 10.0,
+        "GainSec": 26.102103940671114,
+        "VmgAvg": 13.0,
+        "GainMeters": 102.35645425573031
+      },
+      {
+        "Tws": 12.0,
+        "GainSec": 37.493809644404735,
+        "VmgAvg": 16.5,
+        "GainMeters": 158.07512545735304
+      },
+      {
+        "Tws": 14.0,
+        "GainSec": 48.227912958463833,
+        "VmgAvg": 19.5,
+        "GainMeters": 210.03488424469569
+      },
+      {
+        "Tws": 16.0,
+        "GainSec": 55.229066302155331,
+        "VmgAvg": 21.5,
+        "GainMeters": 245.06345648411349
+      },
+      {
+        "Tws": 18.0,
+        "GainSec": 58.633296827069529,
+        "VmgAvg": 22.5,
+        "GainMeters": 262.57774260382234
+      },
+      {
+        "Tws": 20.0,
+        "GainSec": 61.624155344910008,
+        "VmgAvg": 23.0,
+        "GainMeters": 273.54937354510838
+      },
+      {
+        "Tws": 22.0,
+        "GainSec": 62.672374665376637,
+        "VmgAvg": 23.2,
+        "GainMeters": 277.67036790653219
+      },
+      {
+        "Tws": 25.0,
+        "GainSec": 63.390535905565571,
+        "VmgAvg": 23.3,
+        "GainMeters": 280.04497055977885
+      }
+    ]
+  },
+  "GybesLossBenchmarks": {
+    "ManoeuversType": 2,
+    "Descrizione": "Gybe Loss Entry to Exit [ss]",
+    "Colore": "#FF0000FF",
+    "ListaValoriLoss": [
+      {
+        "Tws": 6.0,
+        "GainSec": -12.105794502282034,
+        "VmgAvg": 4.0,
+        "GainMeters": -37.025013380028781
+      },
+      {
+        "Tws": 7.0,
+        "GainSec": -0.093133285452417169,
+        "VmgAvg": 7.0,
+        "GainMeters": -0.33622963799896866
+      },
+      {
+        "Tws": 8.0,
+        "GainSec": 11.021240925866834,
+        "VmgAvg": 10.5,
+        "GainMeters": 45.869776326253088
+      },
+      {
+        "Tws": 10.0,
+        "GainSec": 33.576030912771714,
+        "VmgAvg": 17.5,
+        "GainMeters": 158.47121209777248
+      },
+      {
+        "Tws": 12.0,
+        "GainSec": 42.1823717808209,
+        "VmgAvg": 22.0,
+        "GainMeters": 223.08243452504314
+      },
+      {
+        "Tws": 14.0,
+        "GainSec": 45.46859669662571,
+        "VmgAvg": 25.5,
+        "GainMeters": 267.61061261658028
+      },
+      {
+        "Tws": 16.0,
+        "GainSec": 45.594599136192741,
+        "VmgAvg": 28.5,
+        "GainMeters": 299.46551456246397
+      },
+      {
+        "Tws": 18.0,
+        "GainSec": 43.094165236033717,
+        "VmgAvg": 30.5,
+        "GainMeters": 312.36159956539171
+      },
+      {
+        "Tws": 20.0,
+        "GainSec": 40.14525348184489,
+        "VmgAvg": 32.0,
+        "GainMeters": 316.96782373293667
+      },
+      {
+        "Tws": 22.0,
+        "GainSec": 41.201093608089835,
+        "VmgAvg": 33.3,
+        "GainMeters": 333.94916075067931
+      },
+      {
+        "Tws": 25.0,
+        "GainSec": 40.990737403715869,
+        "VmgAvg": 34.5,
+        "GainMeters": 345.14533294396045
+      }
+    ]
+  }
+}

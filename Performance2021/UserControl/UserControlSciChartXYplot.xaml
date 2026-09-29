@@ -1,0 +1,630 @@
+﻿<UserControl x:Class="UserControlSciChartXYplot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:nud="clr-namespace:NumericUpDownLib;assembly=NumericUpDownLib"
+             d:DataContext="{d:DesignInstance Type=local:clsRubberBandModifier}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="900"
+             GotFocus="UserControl_GotFocus"
+             >
+  <UserControl.Resources>
+    <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+  </UserControl.Resources>
+
+  <Grid Name="GrigliaGrafico">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="25" ></RowDefinition>
+      <RowDefinition Height="*" ></RowDefinition>
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal">
+      <Label FontSize="12" Content="Source" HorizontalContentAlignment="Right" Margin="5,0,0,0"></Label>
+      <ComboBox FontSize="12" Name="SorgenteDati" SelectedItem="{Binding CurrentPlotSettings.SorgenteDati}" MinWidth="100" Margin="1,0,5,0">
+      </ComboBox>
+
+      <Label HorizontalContentAlignment="Left">X
+        <!--<CheckBox FontSize="12" Content=" X Axis" IsChecked="{Binding CurrentPlotSettings.XAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
+      </Label>
+      <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" >
+        <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
+      </ComboBox>
+      <Label HorizontalContentAlignment="Left">Y
+        <!--<CheckBox FontSize="12" Content=" Y Axis" IsChecked="{Binding CurrentPlotSettings.YAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
+      </Label >
+      <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.YAxisChannel}" MinWidth="150" Margin="1,0,5,0">
+        <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
+      </ComboBox>
+      <Button Click="Button_Click_SwapAxes" Margin="10,0,10,0">Swap</Button>
+
+      <Label MinWidth="70" FontSize="12" Content="GroupBy:" HorizontalContentAlignment="Right" Margin="10,0,0,0"></Label>
+      <ComboBox FontSize="12" Name="GroupingType" SelectedItem="{Binding CurrentPlotSettings.GroupingType}" MinWidth="100" Margin="5,0,0,0">
+      </ComboBox>
+      <!--<ComboBox FontSize="12" Name="GroupingType" IsEnabled="{Binding HasPeriods}" SelectedItem="{Binding GroupingType}" MinWidth="100" Margin="5,0,0,0">
+      </ComboBox>-->
+
+      <Button Content="Refresh" Click="Button_Click" Width="80" Background="LightGreen" Margin="10,0,10,0"></Button>
+      <!--<Button Content="Pdf" Click="Button_Click_2" Margin="10,0,0,0"></Button>-->
+
+      <Menu VerticalAlignment="Center" Margin="3,0,3,0">
+        <MenuItem Header="Settings" ToolTip="Plot Settings" >
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="DataPoint Opacity (0:Trasparent 255:Solid)">DataPoint Opacity</Label>
+                <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputByte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointOpacity,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="DataPoint Opacity Size">DataPoint Size</Label>
+                <TextBox Height="20" MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputByte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointSize,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding DataPointSelEnabled}" x:Name="Chk_DataPointSelEnabled" Content="{Binding SelEnabledText}" ToolTip="Toggle between selection and pan modes" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.WindwardLeewardFunction}" x:Name="Chk_WindwardLeewardFunction" Content="Windward Leeward Function" ToolTip="When a channel name has port or stbd in the name and another channel with the other tack exists, stbd is treathd as the active side and port as the opposite" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.XAxisDerivative}" x:Name="Chk_XchannelDerivative" Content="X Axis Channel: plot the derivative" ToolTip="Plot the derivative of the X selected channel" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.YAxisDerivative}" x:Name="Chk_YchannelDerivative" Content="Y Axis Channel: plot the derivative" ToolTip="Plot the derivative of the Y selected channel" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ForceShowLegend}" x:Name="Chk_ShowLegend" Content="Show Legend" ToolTip="Show Legend" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Label ToolTip="Trend Line Degree">Show Custom Lines</Label>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Vertical">
+                <MenuItem>
+                  <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                      <CheckBox  IsChecked="{Binding CurrentPlotSettings.HLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Horizontal" Width="100" Background="BlueViolet"></CheckBox>
+                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom1Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                      <CheckBox  IsChecked="{Binding CurrentPlotSettings.HLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"  Content="Horizontal" Width="100" Background="Red"></CheckBox>
+                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom2Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                      <CheckBox  IsChecked="{Binding CurrentPlotSettings.VLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"  Content="Vertical" Width="100" Background="BlueViolet"></CheckBox>
+                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom1Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                      <CheckBox  IsChecked="{Binding CurrentPlotSettings.VLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Vertical" Width="100" Background="Red"></CheckBox>
+                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom2Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.PlotXDistribution}" x:Name="Chk_PlotXDist" Content="Plot X Distribution" ToolTip="Plot Distribution X Bars" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.PlotYDistribution}" x:Name="Chk_PlotYDist" Content="Plot Y Distribution" ToolTip="Plot Distribution Y Bars" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.VmcAutoFilter}" x:Name="Chk_VmcTwaAutoFilter" Content="Vmc Twa AutoFilter" ToolTip="When VMC is selected as Y channel set the TWA fileter in the defined range of his value" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+                <Label ToolTip="Trend Line Degree" VerticalAlignment="Top">, Twa Range in degrees</Label>
+                <TextBox MinWidth="30" Height="20" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.VmcAutoFilterRange,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <!--<CheckBox IsChecked="{Binding CurrentPlotSettings.VmcAutoFilterRange}" x:Name="Chk_VmcTwaAutoFilter" Content="Vmc Twa AutoFilter" ToolTip="When VMC is selected as Y channel set the TWA fileter in the defined range of his value" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>-->
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowTargetIfAvailable}" x:Name="Chk_ShowTargetIfAvailable" Content="Show Targets" ToolTip="Show Targets" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowBenchmarksIfAvailable}" x:Name="Chk_ShowBenchmarksIfAvailable" Content="Show Benchmarks" ToolTip="Show Benchmarks" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.StampaTrendLines}" x:Name="Chk_StampaTrenLines" Content="Plot Trend Lines" ToolTip="Plot Trend Lines" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.StampaMeanAverages}" x:Name="Chk_StampaMeanAverages" Content="Plot Mean Averages" ToolTip="Plot Mean Averages" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Trend Line Degree">Trend Line Grade</Label>
+                <TextBox MinWidth="40" Height="20" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.GradoTrendLines,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Label Width="100" HorizontalContentAlignment="Right" ToolTip="Minimum number of samples to consider a test valid">Min Samples</Label>
+                <TextBox MinWidth="40" Height="20" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.MinSamples,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Content="Line Color"></Label>
+                <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.ColorChannel}"  MinWidth="100" Margin="3,0,0,0" >
+                </ComboBox>
+                <Label ToolTip="Distribution Intervals" Content="Intervals" Margin="10,0,0,0"></Label>
+                <!--<nud:NumericUpDown Value="{Binding CurrentPlotSettings.ColorChannelIntervals}" ToolTip="Color Channel Intervals" Width="50" Height="25" MaxValue="30" MinValue="1"></nud:NumericUpDown>-->
+                <TextBox Height="20" MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.ColorChannelIntervals,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <!--<extucxy:IntegerUpDown x:Name="UsNud_ColorChannelIntervals" Value="{Binding CurrentPlotSettings.ColorChannelIntervals}" ToolTip="Color Channel Intervals" Width="50" Height="25" Maximum="30" Minimum="1"></extucxy:IntegerUpDown>-->
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem Height="4" Background="DarkGray" Margin="0,5,0,5"></MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowUpwindVmg}" Width="140">Show Upwind Vmg</CheckBox>
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowNotVmg}" Width="150">Show Reaching Angles</CheckBox>
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowDownwindVmg}" Width="140">Show Downwind Vmg</CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowStbd}" Width="140">Show Stbd</CheckBox>
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ShowPort}" Width="140">Show Port</CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter1,UpdateSourceTrigger=PropertyChanged}" Width="145">Visible Range Filter by</CheckBox>
+                <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels,UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding CurrentPlotSettings.FilterChannel,UpdateSourceTrigger=PropertyChanged}"  MinWidth="160" Margin="3,0,0,0" >
+                </ComboBox>
+              </StackPanel>
+            </MenuItem.Header>
+            <MenuItem>
+              <MenuItem.Header>
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilterAbsVal,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Absolute Value"></CheckBox>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMin,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem IsCheckable="True">
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMax,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2,UpdateSourceTrigger=PropertyChanged}" Width="145">And Filter by</CheckBox>
+                <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels,UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding CurrentPlotSettings.Filter2Channel,UpdateSourceTrigger=PropertyChanged}"  MinWidth="160" Margin="3,0,0,0" >
+                </ComboBox>
+              </StackPanel>
+            </MenuItem.Header>
+            <MenuItem>
+              <MenuItem.Header>
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2AbsVal,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Absolute Value"></CheckBox>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMin,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMax,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilterSailingState,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Sailing State Filter" Width="143"></CheckBox>
+                <ComboBox FontSize="12" Name="SailingState" SelectedItem="{Binding CurrentPlotSettings.SailingState,UpdateSourceTrigger=PropertyChanged}" MinWidth="100" Margin="5,1,0,0"></ComboBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.YaxisZeroIsNan,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="YAxis ZeroValue Is NaN" Width="143"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyGroupFilterPerc,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Apply Grouping Filter Percentage" Width="210"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.GroupFilterPerc,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyPercentileFilter,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Apply Percentile Boundary Filter" Width="210"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.PercentileFilter,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                </StackPanel>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                  <Label ToolTip="" Width="165">X Axis Channel Boundaries</Label>
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMinX,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="45"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MinX,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ></TextBox>
+                  <Label ToolTip="" Width="10" HorizontalAlignment="Right"></Label>
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMaxX,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="45"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MaxX,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label ToolTip="" Width="165">Y Axis Channel Boundaries</Label>
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMinY,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="45"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MinY,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ></TextBox>
+                  <Label ToolTip="" Width="10" HorizontalAlignment="Right"></Label>
+                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMaxY,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="45"></CheckBox>
+                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MaxY,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                </StackPanel>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding CurrentPlotSettings.Export360check}" x:Name="Export360check" Content="Export 360" ToolTip="Copy 360 to clipboard" VerticalAlignment="Center" Margin="0,20,0,0"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem Height="4" Background="DarkGray" Margin="0,5,0,5"></MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Distribution Intervals" Width="100">Dis. Intervals</Label>
+                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.DistributionIntervals,UpdateSourceTrigger=PropertyChanged}" ToolTip="Distribution Intervals"></TextBox>
+                <Label ToolTip="Distribution Intervals"></Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)" Width="100">Dis. Opacity</Label>
+                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.DistributionOpacity,UpdateSourceTrigger=PropertyChanged}"  ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></TextBox>
+                <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Distribution Bar Width (0:Thin 100:One Interval)" Width="100">Dis. Bar Width</Label>
+                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.DistributionBarWidth,UpdateSourceTrigger=PropertyChanged}" ToolTip="Distribution Bar Width (0:Thin 100:One Interval)" ></TextBox>
+                <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+      <Button Name="btn_Macro" Content="AddToReport" FontSize="12" Click="btn_Macro_Click" Margin="2,2,2,2" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+      <Button Name="btn_OpenDataFolder" Content="OpenDataFolder" FontSize="12" Click="btn_OpenDataFolder_Click" Margin="2,2,2,2" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+
+    </StackPanel>
+    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Name="btn_PrevReportPlot" Content="&lt;" Width="30" FontSize="12" Click="btn_PrevReportPlot_Click" Margin="2,2,5,2" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+      <Button Name="btn_NextReportPlot" Content="&gt;" Width="30" FontSize="12" Click="btn_NextReportPlot_Click" Margin="2,2,20,2" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+    </StackPanel>
+
+
+
+
+    <TabControl Name="MainTabControl" Grid.Column="0" Grid.Row="1" TabStripPlacement="Right">
+      <TabControl.Resources>
+        <Style TargetType="{x:Type TabItem}">
+          <Setter Property="HeaderTemplate">
+            <Setter.Value>
+              <DataTemplate>
+                <ContentPresenter Content="{TemplateBinding Content}">
+                  <ContentPresenter.LayoutTransform>
+                    <RotateTransform Angle="270" />
+                  </ContentPresenter.LayoutTransform>
+                </ContentPresenter>
+              </DataTemplate>
+            </Setter.Value>
+          </Setter>
+        </Style>
+      </TabControl.Resources>
+
+      <TabItem Name="PlotTab" Header="Plot" Height="100">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" ></RowDefinition>
+            <RowDefinition Height="25" ></RowDefinition>
+          </Grid.RowDefinitions>
+
+
+          <sc:SciChartSurface x:Name="Plot" Grid.Row="0"
+                        sc:ThemeManager.Theme="BrightSpark" Margin="3,2,3,2" 
+                        sc:SciChartGroup.VerticalChartGroup="LrPavarotGroup"
+                        SeriesSource="{Binding SeriesSource, Mode=OneWay}"
+												MouseMove="Plot_MouseMove"
+                        MouseDoubleClick="Plot_MouseDoubleClick"
+                        PreviewMouseRightButtonUp="Plot_PreviewMouseRightButtonUp"
+                        Rendered="Plot_Rendered"
+												>
+
+            <sc:SciChartSurface.XAxes >
+              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1" ></sc:NumericAxis>
+              <sc:NumericAxis Id="BottomX" Visibility="Hidden" GrowBy="0.1,0.1"></sc:NumericAxis>
+              <sc:NumericAxis Id="LeftX" AxisAlignment="Left" Visibility="Hidden" GrowBy="0.1,0" FlipCoordinates="True" ></sc:NumericAxis>
+            </sc:SciChartSurface.XAxes>
+            <sc:SciChartSurface.YAxes>
+              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1"></sc:NumericAxis>
+              <sc:NumericAxis Id="BottomY" Visibility="Hidden" GrowBy="0.1,0.1"></sc:NumericAxis>
+              <sc:NumericAxis Id="LeftY" Visibility="Hidden" GrowBy="0.1,0.1" FlipCoordinates="True"></sc:NumericAxis>
+            </sc:SciChartSurface.YAxes>
+
+            <sc:SciChartSurface.Annotations>
+              <sc:TextAnnotation Text="{Binding Titolo}" X1="0.5" Y1="0.0" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding SottoTitolo}" X1="0.5" Y1="0.07" FontSize="16" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding YLabel}" X1="0.1" Y1="0.1" FontSize="40" HorizontalAnchorPoint="Left" VerticalAnchorPoint="Bottom" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative">
+                <sc:TextAnnotation.RenderTransform>
+                  <RotateTransform Angle="90"></RotateTransform>
+                </sc:TextAnnotation.RenderTransform>
+              </sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding XLabel}" X1="0.98" Y1="0.9" FontSize="40" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding CursorStats}" X1="0.01" Y1="0.99" FontSize="12" VerticalAnchorPoint="Bottom" HorizontalAnchorPoint="left" AnnotationCanvas="AboveChart" Foreground="#FF000000" Background="LightYellow" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:HorizontalLineAnnotation Stroke="Gray" StrokeThickness="2" StrokeDashArray="2,2" X1="0" X2="1"
+                                    CoordinateMode="RelativeX" Y1="0"></sc:HorizontalLineAnnotation>
+              <sc:VerticalLineAnnotation Stroke="Gray" StrokeThickness="2" StrokeDashArray="2,2" Y1="0" Y2="1"
+                                    CoordinateMode="RelativeY" X1="0"></sc:VerticalLineAnnotation>
+              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLine0Visibility}" Stroke="DarkOrange" CoordinateMode="RelativeX" X1="0" X2="1" Y1="0" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLine1Visibility}" Stroke="Orange" CoordinateMode="RelativeX" X1="0" X2="1" Y1="1" StrokeThickness="3" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLine100Visibility}" Stroke="DarkGray" CoordinateMode="RelativeX" X1="0" X2="1" Y1="100" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+
+              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLineCustom1Visibility,Mode=TwoWay}" Stroke="BlueViolet" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom1Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLineCustom2Visibility,Mode=TwoWay}" Stroke="Red" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom2Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:VerticalLineAnnotation Visibility="{Binding CurrentPlotSettings.VLineCustom1Visibility,Mode=TwoWay}" Stroke="BlueViolet" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom1Value}"></sc:VerticalLineAnnotation>
+              <sc:VerticalLineAnnotation Visibility="{Binding CurrentPlotSettings.VLineCustom2Visibility,Mode=TwoWay}" Stroke="Red" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom2Value}"></sc:VerticalLineAnnotation>
+
+            </sc:SciChartSurface.Annotations>
+
+            <sc:SciChartSurface.Resources>
+            </sc:SciChartSurface.Resources>
+
+            <sc:SciChartSurface.ChartModifier>
+              <sc:ModifierGroup>
+                <sc:MouseWheelZoomModifier IsEnabled="True" XyDirection="XYDirection" ></sc:MouseWheelZoomModifier>
+                <sc:ZoomPanModifier ReceiveHandledEvents="True" IsEnabled="{Binding ZoomPanEnabled}"/>
+                <sc:CursorModifier IsEnabled="True" ></sc:CursorModifier>
+                <sc:RolloverModifier IsEnabled="False" ShowAxisLabels="True" ShowTooltipOn="MouseRightButtonDown"></sc:RolloverModifier>
+                <sc:DataPointSelectionModifier IsEnabled="{Binding DataPointSelEnabled}" SelectionChanged="DataPointSelectionModifier_SelectionChanged"></sc:DataPointSelectionModifier>
+                <sc:SeriesSelectionModifier IsEnabled="{Binding DataPointSelEnabled}" SelectionChanged="SeriesSelectionModifier_SelectionChanged"></sc:SeriesSelectionModifier>
+                <sc:LegendModifier  Name="lm" ShowLegend="{Binding CurrentPlotSettings.ShowLegend}" Orientation="Vertical" Margin="10"
+                           LegendPlacement="Inside" GetLegendDataFor="AllSeries" HorizontalAlignment="Right" 
+                       ShowVisibilityCheckboxes="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.IsDeferredScrollingEnabled="True"/>
+              </sc:ModifierGroup>
+            </sc:SciChartSurface.ChartModifier>
+
+          </sc:SciChartSurface>
+
+          <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Orientation="Horizontal" Grid.Row="0">
+            <Label Content="Points: " ></Label>
+            <Label Content="{Binding PuntiSelezionati}" MinWidth="50"></Label>
+          </StackPanel>
+
+          <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="0" Orientation="Horizontal">
+            <Menu IsMainMenu="False" Visibility="{Binding SelectedPeriodsVisible}">
+              <MenuItem Header="Selection">
+                <Menu ItemsSource="{Binding SelectedPeriods}" >
+                  <Menu.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <VirtualizingStackPanel Orientation="Vertical"></VirtualizingStackPanel>
+                    </ItemsPanelTemplate>
+                  </Menu.ItemsPanel>
+                  <Menu.ItemTemplate>
+                    <HierarchicalDataTemplate>
+                      <TextBlock FontSize="12" Cursor="Hand" MouseUp="TextBlock_MouseUp" Text="{Binding DescrizioneBreve}" ToolTip="Click to zoom to it in the Basic Chart Tab" Margin="0,3,0,3"/>
+                    </HierarchicalDataTemplate>
+                  </Menu.ItemTemplate>
+                </Menu>
+              </MenuItem>
+            </Menu>
+
+          </StackPanel>
+
+          <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,0,0,4">
+            <StackPanel Orientation="Horizontal" >
+              <Button Content="TrLines" Cursor="Hand" Click="CopyTrendLinesDataToClipboard" Margin="5,0,0,0" ToolTip="Copy Trend Lines Funtions and Tables to Clipboard"></Button>
+              <Button Content="Stats" Cursor="Hand" Click="CopyStatisticsToClipboard" Margin="5,0,0,0" ToolTip="Copy Statistic Table to Clipboard"></Button>
+              <Button Content="Table" Cursor="Hand" Click="CopyFullDataTableToClipboard" Margin="5,0,0,0" ToolTip="Copy Full Data Table to Clipboard"></Button>
+              <Button Content="Img" Cursor="Hand" Click="Button_Click_1" Margin="10,0,0,0" ToolTip="Copy Plot Image to Clipboard"></Button>
+              <ToggleButton Cursor="Hand" IsChecked="{Binding CollectImages}" Content="Pdf" ToolTip="Collect Plot Images and make a pdf whith all of those on the button up" MinWidth="40" Margin="3,0,0,0"></ToggleButton>
+              <Button Name="btn_YzoomIn" Content="Y zmIn" FontSize="12" Click="btn_YzoomIn_Click" Margin="20,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+              <Button Name="btn_YzoomOut" Content="Y zmOut" FontSize="12" Click="btn_YzoomOut_Click" Margin="2,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+              <Label Content="{Binding CursorPos}" Margin="10,0,0,0" Width="100" MouseDoubleClick="Label_MouseDoubleClick"></Label>
+              <!--<Button Name="btn_Macro" Content="AddToReport" FontSize="12" Click="btn_Macro_Click" Margin="2,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />-->
+              <!--<Button Name="btn_Macro1" Content="SaveMacro" FontSize="12" Click="btn_Macro1_Click" Margin="2,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />-->
+              <!--<Button Name="btn_Macro2" Content="ReportToPdf" FontSize="12" Click="btn_Macro2_Click" Margin="2,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />-->
+              <!--<Button Name="btn_Macro3" Content="Next" FontSize="12" IsEnabled="{Binding MacroEnabled}" Click="btn_Macro3_Click" Margin="2,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" />-->
+            </StackPanel>
+          </StackPanel>
+
+          <!--<StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,2,20,0" >
+        </StackPanel>-->
+
+        </Grid>
+      </TabItem>
+      <TabItem Name="ReportManagerTab" Header="Report Manager"  Height="100">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="25"></RowDefinition>
+            <RowDefinition Height="1"></RowDefinition>
+            <RowDefinition Height="25"></RowDefinition>
+            <RowDefinition Height="1"></RowDefinition>
+            <RowDefinition></RowDefinition>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.3*"></ColumnDefinition>
+            <ColumnDefinition Width="2"></ColumnDefinition>
+            <ColumnDefinition Width="5*"></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <StackPanel Orientation="Horizontal" Grid.ColumnSpan="3">
+            <Label Content="Active Report Name: "></Label>
+            <TextBox Text="{Binding XyReports.ActiveReport.Name, Mode=TwoWay}" Width="120" MouseLeave="TextBox_MouseLeave"></TextBox>
+            <Button Margin="2" Click="Button_Click_2" Content="New Report" Width="80"></Button>
+            <Button Margin="2" Click="Button_Click_14" Content="Clone Report" Width="80"></Button>
+            <Button Margin="2" Click="Button_Click_3" Content="Export2Pdf" Width="80"></Button>
+            <Label Content="Rows per page: "></Label>
+            <TextBox Text="{Binding XyReports.ActiveReport.PlotsXpage, Mode=TwoWay}" Width="30" MouseLeave="TextBox_MouseLeave"></TextBox>
+            <Label Content="Columns per page: "></Label>
+            <TextBox Text="{Binding XyReports.ActiveReport.ColsXpage, Mode=TwoWay}" Width="30" MouseLeave="TextBox_MouseLeave"></TextBox>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
+            <Button Margin="2" Click="Button_Click_9" Content="Top" Width="30" ></Button>
+            <Button Margin="2" Click="Button_Click_10" Content="Up" Width="30" ></Button>
+            <Button Margin="2" Click="Button_Click_11" Content="Dn" Width="30" ></Button>
+            <Button Margin="2" Click="Button_Click_12" Content="Btm" Width="30" ></Button>
+            <Button Margin="2" Click="Button_Click_13" Content="Del" Width="30" ></Button>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2">
+            <Button Margin="2" Click="Button_Click_4" Content="Top" Width="30"></Button>
+            <Button Margin="2" Click="Button_Click_5" Content="Up" Width="30"></Button>
+            <Button Margin="2" Click="Button_Click_6" Content="Dn" Width="30"></Button>
+            <Button Margin="2" Click="Button_Click_7" Content="Btm" Width="30"></Button>
+            <Button Margin="2" Click="Button_Click_8" Content="Del" Width="30" ></Button>
+            <Button Margin="2" Click="Button_Click_16" Content="Show" Width="30" ></Button>
+          </StackPanel>
+
+
+          <ListView Grid.Row="4" Grid.Column="0" ItemsSource="{Binding XyReports.Reports, Mode=TwoWay}" SelectedItem="{Binding XyReports.ActiveReport}" DisplayMemberPath="Name"></ListView>
+          <ListView Grid.Row="4" Grid.Column="2" ItemsSource="{Binding XyReports.ActiveReport.Plots, Mode=TwoWay}" SelectedItem="{Binding XyReports.ActiveReport.ActivePlot}" DisplayMemberPath="DescriptionExtended"></ListView>
+        </Grid>
+      </TabItem>
+      <TabItem Name="Plot3DTab" Header="3D Plot" Height="100">
+        <Grid>
+          <Grid.ColumnDefinitions></Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="2"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Label Content="Z Axis Channel"></Label>
+            <ComboBox Width="200" HorizontalAlignment="Left" DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.ZAxisChannel}"  Margin="3,2,2,2" ></ComboBox>
+            <Button Margin="10,3,3,3" Width="90" Click="Button_Click_15" Content="Refresh" ></Button>
+          </StackPanel>
+          <local:UserControlAb3D x:Name="Plot3D" Grid.Row="2"></local:UserControlAb3D>
+        </Grid>
+      </TabItem>
+      <!--<TabItem Name="Checks360Tab" Header="360 Checks" Height="100">
+        <Grid>
+          <Grid.ColumnDefinitions></Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="2"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Label Content="RefChannel"></Label>
+            <ComboBox Width="200" HorizontalAlignment="Left" DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.Available360Channels}" SelectedItem="{Binding CurrentPlotSettings.RefChannel360}"  Margin="3,2,2,2" ></ComboBox>
+            <Label Content="DeltaChannel"></Label>
+            <ComboBox Width="200" HorizontalAlignment="Left" DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.Available360Channels}" SelectedItem="{Binding CurrentPlotSettings.DeltaChannel360}"  Margin="3,2,2,2" ></ComboBox>
+            <Button Margin="10,3,3,3" Width="90" Click="Button_Click_17" Content="Refresh" ></Button>
+          </StackPanel>
+          <local:UserControl360Checks x:Name="Checks360" Grid.Row="2"></local:UserControl360Checks>
+        </Grid>
+      </TabItem>-->
+    </TabControl>
+
+  </Grid>
+
+
+</UserControl>

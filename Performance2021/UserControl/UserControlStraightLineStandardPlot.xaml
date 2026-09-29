@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="UserControlStraightLineStandardPlot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="300" MinWidth="300">
+	<Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition></RowDefinition>
+    </Grid.RowDefinitions>
+    <sc:SciChartSurface x:Name="Plots"  Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" 
+                        Grid.Row="0" Grid.Column="0" 
+                        sc:ThemeManager.Theme="BrightSpark" Margin="3,2,3,2" 
+                        sc:SciChartGroup.VerticalChartGroup="LrPavarotGroup"
+                        SeriesSource="{Binding SeriesSource, Mode=OneWay}"
+												>
+      <!--MouseMove="SyncChartsMouseMove">-->
+      <sc:SciChartSurface.XAxes >
+        <!--<sc:NumericAxis GrowBy="0.5,0.5" VisibleRange="{Binding StraightLineChartSync.SharedXVisibleRange, Mode=TwoWay}"></sc:NumericAxis>-->
+        <sc:NumericAxis GrowBy="0.5,0.5" VisibleRange="{Binding StraightLineChartSync.SharedXVisibleRange, Mode=TwoWay}"></sc:NumericAxis>
+      </sc:SciChartSurface.XAxes>
+      <sc:SciChartSurface.YAxes >
+        <sc:NumericAxis GrowBy="0.2,0.2"></sc:NumericAxis>
+      </sc:SciChartSurface.YAxes>
+      <sc:SciChartSurface.Annotations>
+        <sc:TextAnnotation Text="{Binding TitoloPlot}" X1="0.0" Y1="0.0" FontSize="30" AnnotationCanvas="BelowChart" Foreground="#CC000000" CoordinateMode="Relative"></sc:TextAnnotation>
+				<sc:VerticalLineAnnotation Stroke="OrangeRed" StrokeThickness="1" X1="{Binding StraightLineChartSync.CurrentPosition}"
+                                    CoordinateMode="RelativeY" ></sc:VerticalLineAnnotation>
+        <!--<sc:HorizontalLineAnnotation Stroke="Gray" StrokeThickness="2" StrokeDashArray="2,2" X1="0" X2="1"
+                                    CoordinateMode="RelativeX" Y1="0"></sc:HorizontalLineAnnotation>-->
+      </sc:SciChartSurface.Annotations>
+      <sc:SciChartSurface.ChartModifier>
+        <sc:ModifierGroup>
+          <sc:LegendModifier ShowLegend="{Binding ShowLegend}" Orientation="Vertical" LegendPlacement="Inside" GetLegendDataFor="AllSeries" ShowVisibilityCheckboxes="False" Margin="5,30,0,0" ></sc:LegendModifier>
+					<sc:MouseWheelZoomModifier XyDirection="XDirection" IsEnabled="{Binding StraightLineChartSync.WheelZoomEnabled}"></sc:MouseWheelZoomModifier>
+          <sc:ZoomPanModifier ReceiveHandledEvents="True" IsEnabled="{Binding StraightLineChartSync.ZoomPanEnabled}"/>
+          <sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick" IsAnimated="False"/>
+          <sc:CursorModifier IsEnabled="True"></sc:CursorModifier>
+          <sc:RolloverModifier IsEnabled="True" ShowAxisLabels="True" ShowTooltipOn="MouseRightButtonDown"></sc:RolloverModifier>
+          <sc:SeriesSelectionModifier IsEnabled="{Binding StraightLineChartSync.SeriesSelectionEnabled}" SelectionChanged="SeriesSelectionModifier_SelectionChanged"></sc:SeriesSelectionModifier>
+          <sc:DataPointSelectionModifier IsEnabled="{Binding StraightLineChartSync.DataPointSelectionEnabled}" SelectionChanged="DataPointSelectionModifier_SelectionChanged"></sc:DataPointSelectionModifier>
+        </sc:ModifierGroup>
+      </sc:SciChartSurface.ChartModifier>
+    </sc:SciChartSurface>
+  </Grid>
+</UserControl>

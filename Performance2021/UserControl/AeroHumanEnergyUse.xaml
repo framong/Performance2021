@@ -1,0 +1,82 @@
+﻿<UserControl x:Class="AeroHumanEnergyUse"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPwpf"
+        mc:Ignorable="d"
+        MinHeight="100" MinWidth="150">
+  <UserControl.Resources>
+    <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+  </UserControl.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="20"></RowDefinition>
+      <RowDefinition Height="*"></RowDefinition>
+    </Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Orientation="Horizontal">
+      <Button Content="Period Report" ToolTip="Create an Xlsx file with the visible period data" Click="Button_Click" Margin="2,0,2,0"></Button>
+      <Button Content="Full Report" ToolTip="Create an Xlsx file with the visible period data, straight line, manoeuvers and acceleration tables" Click="Button_Click_1" Margin="2,0,2,0"></Button>
+    </StackPanel>
+    <ItemsControl Grid.Row="1" ItemsSource="{Binding Pedestals}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="2" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+
+      <!-- ItemTemplate -->
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid Margin="1,1,1,1" Background="{Binding PedestalColor, Converter={StaticResource converter}}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="1*"/>
+              <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="1*"></RowDefinition>
+              <RowDefinition Height="2*"></RowDefinition>
+              <RowDefinition Height="2*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Border Grid.Column="0" Grid.Row="0" BorderBrush="DarkGray" BorderThickness="0,0,0,1" Grid.ColumnSpan="2" ></Border>
+            <Border Grid.Column="0" Grid.Row="1" BorderBrush="DarkGray" BorderThickness="0,0,0,1" Grid.ColumnSpan="2" ></Border>
+            <Border Grid.Column="0" Grid.Row="1" BorderBrush="DarkGray" BorderThickness="0,0,1,0" Grid.RowSpan="2" ></Border>
+            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" >
+              <TextBlock VerticalAlignment="Center" HorizontalAlignment="left" FontSize="12" Grid.ColumnSpan="2" Text="{Binding PedestalDescription}" Margin="2,0,4,0"/>
+              <TextBlock VerticalAlignment="Center" FontSize="12" FontWeight="Bold" Grid.ColumnSpan="2" TextAlignment="Right" ToolTip="{Binding SailingFunction}" Text="{Binding SailingFunction}" Margin="0,0,0,0"/>
+            </StackPanel>
+            <StackPanel  Grid.Column="0" Grid.Row="1" Orientation="Horizontal">
+              <!--<TextBlock MinWidth="32" FontSize="24" TextAlignment="Right" Text="{Binding PedestalPower}" Margin="20,0,2,0"/>-->
+              <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+                <Label Content="{Binding PedestalPower}" ></Label>
+              </Viewbox>
+            </StackPanel>
+            <Label Grid.Column="0" Grid.Row="1" FontSize="14" Content="Watt" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,2,0"></Label>
+            <StackPanel  Grid.Column="1" Grid.Row="1"  Orientation="Horizontal">
+              <!--<TextBlock MinWidth="32" FontSize="24" TextAlignment="Right" Text="{Binding PedestalGear}" Margin="20,0,2,0"/>-->
+              <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+                <Label Content="{Binding PedestalGear}" ></Label>
+              </Viewbox>
+            </StackPanel>
+            <Label Grid.Column="1" Grid.Row="1" FontSize="14" Content="Gear" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,2,0"></Label>
+            <StackPanel  Grid.Column="0" Grid.Row="2"  Orientation="Horizontal">
+              <!--<TextBlock MinWidth="32" FontSize="24" TextAlignment="Right" Text="{Binding PedestalRpm}" Margin="20,0,2,0"/>-->
+              <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+                <Label Content="{Binding PedestalRpm}" ></Label>
+              </Viewbox>
+            </StackPanel>
+            <Label Grid.Column="0" Grid.Row="2" FontSize="14" Content="RPM" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,2,0"></Label>
+            <StackPanel  Grid.Column="1" Grid.Row="2"  Orientation="Horizontal">
+              <!--<TextBlock MinWidth="32" FontSize="24" TextAlignment="Right" Text="{Binding FunctionPressure}" Margin="20,0,2,0"/>-->
+              <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" >
+                <Label Content="{Binding FunctionPressure}" ></Label>
+              </Viewbox>
+            </StackPanel>
+            <Label Grid.Column="1" Grid.Row="2" FontSize="14" Content="Bar" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,2,0"></Label>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+      
+    </Grid>
+</UserControl>

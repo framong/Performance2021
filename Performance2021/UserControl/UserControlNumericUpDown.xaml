@@ -1,0 +1,42 @@
+﻿<UserControl x:Class="UserControlNumericUpDown"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="150" d:DesignWidth="270">
+  <Grid>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="60*"></ColumnDefinition>
+        <ColumnDefinition Width="40*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
+      </Grid.RowDefinitions>
+			<Viewbox Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Width="Auto" Stretch="Fill" >
+				<TextBox Name="txtValore" PreviewTextInput="txtValore_PreviewTextInput" >10</TextBox>
+			</Viewbox>
+      <Button Grid.Column="1" Grid.Row="0" Click="ButtonUp_Click" >
+        <Viewbox>
+          <Image Source="/Performance2021;component/ArrowUp.ico" Width="56" RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+              <TransformGroup>
+                <ScaleTransform/>
+                <RotateTransform Angle="180"/>
+              </TransformGroup>
+            </Image.RenderTransform>
+          </Image>
+        </Viewbox>
+      </Button>
+      <Button Grid.Column="1" Grid.Row="1" Click="ButtonDn_Click" >
+        <Viewbox>
+          <!--<Image Source="/SPwpf;component/ArrowUp.ico" ></Image>-->
+          <Image Source="/Performance2021;component/ArrowUp.ico" ></Image>
+        </Viewbox>
+      </Button>
+    </Grid>
+  </Grid>
+</UserControl>

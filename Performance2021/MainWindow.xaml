@@ -1,0 +1,556 @@
+﻿<Window x:Name="wpfMain" x:Class="MainWindow"
+					xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+					xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+  					xmlns:mp="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf"
+  				xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+					xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+					xmlns:local="clr-namespace:SPwpf"
+				xmlns:fa="http://schemas.fontawesome.io/icons/"
+				mc:Ignorable="d"
+					Title="{Binding Titolo}" Height="800" Width="1200">
+
+  <Window.Resources>
+    <local:clsColorConverterLineUp x:Key="ConverterLineUp"></local:clsColorConverterLineUp>
+    <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+  </Window.Resources>
+
+  <Grid Name="GrigliaBase">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="30" />
+    </Grid.RowDefinitions>
+    <TabControl Name="MainTabControl" Grid.Row="0" >
+      <TabItem Name="LoadFile" Header="File Load">
+        <Grid Name="BarraAlta" ShowGridLines="False" MinHeight="400">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="100" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3"  Orientation="Horizontal">
+            <Button x:Name="btn_FileOpen" Click="btn_FileOpen_Click" Content="Load Data" HorizontalAlignment="Left" Margin="0,0,5,0" Width="100" ToolTip="Select or Load Selected Source File"/>
+            <Label Margin="10,0,0,0" Content="Filter" ToolTip="Filter Channels Grid"></Label>
+            <TextBox x:Name="txt_Search" TextChanged="FiltraGrigliaCanali" Margin="2,0,0,0" Width="150" Background="Beige" TextAlignment="Left" FontSize="16" Text=""></TextBox>
+            <Button Content="x" ToolTip="Clear search" Cursor="Hand" Click="Button_Click" Width="15" Margin="2,2,2,2"></Button>
+            <Menu Margin="10,0,0,0" HorizontalAlignment="Right" >
+              <MenuItem Header="File Utilities" ToolTip="Plot Settings" Height="30" Width="150" >
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_RenameProfile" Content="Rename Profile" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Change the boat name stored in the active profile" Click="btn_RenameProfile_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <Separator />
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_FileExpSelect" Content="Import Expedition Log File" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Select Expedition Text File" Click="btn_FileExpselect_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_FileFaRoSelect" Content="Import FaRo Log File" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Select FaRo File (txt,gz,bin)" Click="btn_FileFaRoSelect_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_FileDfwSelect" Content="Import Deckman Log File" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Select Deckman Exported File" Click="btn_FileDfwSelect_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <!--<MenuItem >
+									<MenuItem.Header>
+										<Button x:Name="btn_FileFastSkipper" Content="Import Fast Skipper Log Files" HorizontalContentAlignment="Left" Width="160" ToolTip="Select Fast Skipper Log Files" Click="btn_FileFastSkipper_Click"/>
+									</MenuItem.Header>
+								</MenuItem>-->
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ImportaFileEventi" Content="Import Events xml Sail File" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Add Sail Usage Channels" Click="btn_CreaFileSails_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ImportaDatiVeleDaSailShape" Content="Import SailShape Files" HorizontalContentAlignment="Left" Width="160" 
+                            ToolTip="Import SailShape JIB and MAIN .csv files" Click="btn_FileSailShapeSelect_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ExportToCsv" HorizontalContentAlignment="Left" Width="160" Content="Export To Csv" 
+                            ToolTip="Export Loaded data to CSV" Click="ExportToCsv"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ExportToExpedition" HorizontalContentAlignment="Left" Width="160" Content="Export To Expedition" 
+                            ToolTip="Export current file to a csv expedition like format" Click="Button_Click_2"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <!--<MenuItem >
+									<MenuItem.Header>
+										<Button x:Name="btn_PowerZoneReport" HorizontalContentAlignment="Left" Width="160" Content="PowerZoneReport" ToolTip="Copy the power zone report to the clipboard" Click="btn_PowerZoneReport_Click"></Button>
+									</MenuItem.Header>
+								</MenuItem>-->
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_Test2020" HorizontalContentAlignment="Left" Width="160" Content=" Compact Parquet" 
+                            ToolTip="Make a compact version of loaded parquet files with data of periods only" Click="CompactCurrentFile"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ExportParquet" HorizontalContentAlignment="Left" Width="160" Content=" Export to Parquet" 
+                            ToolTip="Make a compact version of loaded parquet files with data of periods only including math channels" Click="ExportToParquet"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ToggleExpAllChannels" HorizontalContentAlignment="Left" Width="160" Content="Set All Channels to Export " 
+                            ToolTip="Set All channels as to be exported" Click="ToggleExportAll"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_Test2025" HorizontalContentAlignment="Left" Width="160" Content="Super CompactParquet" 
+                            ToolTip="Make a compact version of loaded parquet files with data of periods and selected channels only" Click="CompactCurrentFileExportSelected"></Button>
+                  </MenuItem.Header>
+                </MenuItem> -->
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ApriDataFolder" HorizontalContentAlignment="Left" Width="160" Content="Open Data Folder" 
+                            ToolTip="Open Data Folder" Click="ApriDataFolder"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_ApriCurrentFolder" HorizontalContentAlignment="Left" Width="160" Content="Open Current File Folder" 
+                            ToolTip="Open Current File Folder" Click="ApriCurrentFileFolder"></Button>
+                  </MenuItem.Header>
+                </MenuItem>
+              </MenuItem>
+            </Menu>
+            <Button x:Name="btn_FileSelect" Content="Select File" HorizontalAlignment="Left" Margin="5,0,5,0" Width="100" ToolTip="Select Source File"/>
+          </StackPanel>
+          <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
+            <TextBox Name="txtSelectedFiles" FontSize="16" Margin="5,5,5,0" Background="LightYellow" MinLines="4" TextWrapping="Wrap" VerticalAlignment="Top" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible"/>
+          </Grid>
+          <Grid Name="Grafici" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+            <DataGrid Name="dg_LoadedFileChannels" AutoGenerateColumns="False" MouseDoubleClick="dg_LoadedFileChannels_MouseDoubleClick" CellEditEnding="Dg_LoadedFileChannels_CellEditEnding" CanUserAddRows="False" CanUserDeleteRows="False">
+              <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                  <Setter Property="Visibility" Value="{Binding Visibility}" />
+                </Style>
+              </DataGrid.RowStyle>
+            </DataGrid>
+          </Grid>
+
+          <!--<Canvas Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+						<Polygon Points="30,30 100,50 120,100 200,200 100,250 50,180 40,100" Stroke="DarkBlue" Fill="Chartreuse" StrokeThickness="2"></Polygon>
+						<Polygon Points="40,40 80,70 150,120 180,220 90,300 90,230 70,80" Stroke="DarkBlue" Fill="Beige" StrokeThickness="2"></Polygon>
+						<Path Stroke="Black" StrokeThickness="3">
+							<Path.Data>
+								<PathGeometry>
+									<PathFigure StartPoint="70,20" IsClosed="False">
+										<LineSegment Point="130,90"></LineSegment>
+										<LineSegment Point="180,120"></LineSegment>
+										<LineSegment Point="260,150"></LineSegment>
+										<LineSegment Point="200,230"></LineSegment>
+									</PathFigure>
+								</PathGeometry>
+							</Path.Data>
+						</Path>
+						<Path Stroke="Red" StrokeThickness="10" 
+									Data="M 241,200         
+									A 20,20 0 0 0 200,240        
+									C 210,250 240,270 240,270        
+									C 240,270 260,260 280,240        
+									A 20,20 0 0 0 240,200">
+						</Path>
+						<Label Content="Suka" Margin="100,20,20,20"></Label>
+					</Canvas>-->
+
+        </Grid>
+      </TabItem>
+
+      <TabItem Name="BasicCharts" Header="Data Plots" Width="80">
+        <Grid Name="GrigliaGraficiBase" ShowGridLines="False" MinHeight="400">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="3" MinWidth="3"/>
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="35" />
+            <RowDefinition Height="300" />
+            <RowDefinition Height="3" MinHeight="3" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="3" MinHeight="3" />
+            <RowDefinition Height="200" />
+          </Grid.RowDefinitions>
+          <GridSplitter Name="SplitGraficiBasic" Grid.Column="1" Grid.Row="0" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" Grid.RowSpan="6" AllowDrop="True">
+          </GridSplitter>
+          <GridSplitter Name="SplitTrack" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+          </GridSplitter>
+          <ToolBar Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" ToolBarTray.IsLocked="True">
+            <Button Name="btn_AddNewBasicChart" BorderThickness="1" Margin="2,0,2,0" Width="100" Click="btn_AddNewBasicChart_Click">Add Plot</Button>
+            <Button Visibility="Collapsed" Name="btn_BasicMouseWheel" BorderThickness="1" Margin="2,0,2,0" Width="100">mWheelOff</Button>
+            <Button Visibility="Collapsed" Name="btn_BasicPanSelection" BorderThickness="1" Margin="2,0,2,0" Width="100">selModeZoomX</Button>
+            <Menu>
+              <MenuItem Header="Periods" Width="120" HorizontalContentAlignment="Center">
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Visibility="Collapsed" Name="btn_UpdateSailingState" Click="btn_UpdateSailingState_Click" Width="150" HorizontalContentAlignment="Left" Content="Update SailingState" ToolTip="Update SailingState with different settings"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_CheckNewPeriods" Margin="5,0,0,0" Click="CheckNewPeriods" Width="150" HorizontalContentAlignment="Left" Content="Auto Periods" ToolTip="Loop into loaded data to automatically make periods"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_CheckVisibles" Margin="5,0,0,0" Click="btn_CheckVisibles_Click" Width="150" HorizontalContentAlignment="Left" Content="Check Visible" ToolTip="Check periods of the visible time range only"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_DeleteVisible" Margin="5,0,0,0" Click="btn_DeleteVisible_Click" Width="150" HorizontalContentAlignment="Left" Content="Del Visible" ToolTip="Delete all periods in the visible range"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_QualitySettings" Margin="5,0,0,0" Click="btn_QualitySettings_Click" Width="150" HorizontalContentAlignment="Left" Content="Quality Settings" ToolTip="Settings of the PerformanceQuality, EnvironmentQuality and AttitudeQuality math channels"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_ImportTest" Margin="5,0,0,0" Click="btn_ImportTest_Click" Width="150" HorizontalContentAlignment="Left" Content="Import Test" ToolTip="Import Test"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_ExportPrd" Margin="5,0,0,0" Click="btn_ExportPrd_Click" Width="150" HorizontalContentAlignment="Left" Content="Export Periods" ToolTip="Export periods to prd file"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_UpdateKeys" Margin="5,0,0,0" Click="btn_UpdateKeys_Click" Width="150" HorizontalContentAlignment="Left" Content="UpdateKeys" ToolTip="Update periods Keys property of the visible range"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_UpdateRace" Margin="5,0,0,0" Click="btn_UpdateRace_Click" Width="150" HorizontalContentAlignment="Left" Content="UpdateRace" ToolTip="Update periods RaceName property of the visible range"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_UpdateLeg" Margin="5,0,0,0" Click="btn_UpdateLeg_Click" Width="150" HorizontalContentAlignment="Left" Content="UpdateLeg" ToolTip="Update periods LegName property of the visible range"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_UpdateRaceLeg" Margin="5,0,0,0" Click="btn_KeysToRaceLeg_Click" Width="150" HorizontalContentAlignment="Left" Content="KeysToRaceLeg" ToolTip="Split existing Keys description to Race Leg descriptions"/>
+                  </MenuItem.Header>
+                </MenuItem>
+              </MenuItem>
+            </Menu>
+            <Menu>
+              <MenuItem Header="Tools" Width="120" HorizontalContentAlignment="Center">
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_RefreshPlots" Margin="5,0,0,0" Click="btn_RefreshPlots_Click" Width="150" HorizontalContentAlignment="Left" Content="Refresh Plots" ToolTip="Rebuild the plot series from the current channel values"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <Separator />
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_MeteoReport" Margin="5,0,0,0" Click="btn_MeteoReport_Click" Width="150" HorizontalContentAlignment="Left" Content="Meteo Report" ToolTip="Create Meteo Report and copy it to the clipboard"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_SelectionQuickStats" Margin="5,0,0,0" Click="btn_SelectionQuickStats_Click" Width="150" HorizontalContentAlignment="Left" Content="Quick Stats" ToolTip="Selected period percentage of upwind, downwind and reaching"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_CustomFunction" Margin="5,0,0,0" Click="btn_CustomFunction_Click" Width="150" HorizontalContentAlignment="Left" Content="Custom" ToolTip="Custom Function"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_Corrections" Margin="5,0,0,0" Click="btn_Corrections_Click" Width="150" HorizontalContentAlignment="Left" Content="Corrections" ToolTip="Apply Corrections"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_TestStats" Margin="5,0,0,0" Click="btn_TestStats_Click" Width="150" HorizontalContentAlignment="Left" Content="Test Stats" ToolTip="Test statistics"/>
+                  </MenuItem.Header>
+                </MenuItem>
+              </MenuItem>
+            </Menu>
+            <Menu>
+              <MenuItem Header="Current Utilities" Width="120" HorizontalContentAlignment="Center">
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_Curr1stSegm" Margin="5,0,0,0" Click="btn_Curr1stSegm_Click" Width="200" HorizontalContentAlignment="Left" Content="Set Visible as 1st segment" ToolTip="Use the visible range as the first segment of the current calculation"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_Curr2ndSegm" Margin="5,0,0,0" Click="btn_Curr2ndSegm_Click" Width="200" HorizontalContentAlignment="Left" Content="Set Visible as 2nd segment" ToolTip="Use the visible range as the second segment of the current calculation"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_CurrRes" Margin="5,0,0,0" Click="btn_CurrRes_Click" Width="200" HorizontalContentAlignment="Left" Content="Check result" ToolTip="Compute the current from the two segments and copy the result to the clipboard"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
+                    <Button Name="btn_CurrAnalyzer" Margin="5,0,0,0" Click="btn_CurrAnalyzer_Click" Width="200" HorizontalContentAlignment="Left" Content="Long Range Auto Check" ToolTip="Analyze the current over the whole visible range automatically"/>
+                  </MenuItem.Header>
+                </MenuItem>
+              </MenuItem>
+            </Menu>
+
+            <Button Visibility="Collapsed" Name="btn_ProveGraficoEventi" BorderThickness="1" Margin="2,0,2,0" Width="100" Click="Btn_ProveGraficoEventi_Click">TEST</Button>
+
+            <Button Visibility="Collapsed"  Name="btn_PesestalStatistics" BorderThickness="1" Margin="5,0,0,0" Click="btn_PesestalStatistics_Click" Content="PedStats"></Button>
+          </ToolBar>
+
+          <ListView Name="ListViewPeriodi" ItemsSource="{Binding ListaPeriodi, Mode=TwoWay}" 
+										ScrollViewer.VerticalScrollBarVisibility="Visible" 
+										MouseDoubleClick="ListViewPeriodi_MouseDoubleClick"
+										MouseUp="ListViewPeriodi_MouseUp"
+										Grid.Column="0" Grid.Row="3" >
+            <ListView.ItemTemplate>
+              <DataTemplate>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="15"></ColumnDefinition>
+                    <ColumnDefinition Width="500"></ColumnDefinition>
+                  </Grid.ColumnDefinitions>
+                  <Border BorderBrush="{Binding ColoreTipoPeriodo, Converter={StaticResource converter}}" BorderThickness="2" Grid.Column="0" Grid.ColumnSpan="2" ></Border>
+                  <Label Margin="2"  Background="{Binding Mure,Converter={StaticResource converter}}" Grid.Column="0"></Label>
+                  <Label Padding="2" Content="{Binding Descrizione,Mode=OneWay}" FontSize="14" Grid.Column="1" Background="{Binding SfondoTipoPeriodo,Converter={StaticResource converter}}"></Label>
+                </Grid>
+              </DataTemplate>
+            </ListView.ItemTemplate>
+
+            <!--<ListView.ItemContainerStyle>
+							<Style TargetType="ListViewItem">
+								<Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+							</Style>
+						</ListView.ItemContainerStyle>-->
+          </ListView>
+
+          <mp:MapControl x:Name="TrackPlot" MouseUp="TrackPlot_MouseUp" Grid.Row="1" Grid.Column="0" >
+            <StackPanel Orientation="Horizontal"  HorizontalAlignment="Right" VerticalAlignment="Top">
+              <ToggleButton Unchecked="MapControlStopDrawing" x:Name="mcDrawLine" Width="40" Content="R,B&amp;A" ToolTip="Range, Bearing and Angles" Margin="0,2,2,2"></ToggleButton>
+              <Button Click="MapControlZoomAll" Width="30" Content="All" ToolTip="Zoom to the whole track" Margin="2,2,2,2"></Button>
+              <Button Click="MapControlZoomSel" Width="30" Content="Sel" ToolTip="Zoom to the actual selection" Margin="0,2,2,2"></Button>
+              <Button Click="MapControlZoomIn" Width="30" Content="In" ToolTip="Zoom IN" Margin="0,2,2,2"></Button>
+              <Button Click="MapControlZoomOut" Width="30" Content="Out" ToolTip="Zoom OUT" Margin="0,2,2,2"></Button>
+              <Button Click="MapControlToggleChart" Width="40" Content="Chart" ToolTip="{Binding CurrentMapsuiChart}" Margin="0,2,2,2"></Button>
+              <ToggleButton Checked="MapControl20Hz" Unchecked="MapControl1Hz" x:Name="MapControlHz" Width="40" Content="Hz" ToolTip="Draw track 1 or 20 Hz" Margin="0,2,2,2"></ToggleButton>
+              <Button Click="ExportWayPoint" Width="25" Content="Gpx" ToolTip="Export Waypoint to Gpx" Margin="0,2,2,2"></Button>
+            </StackPanel>
+            <TextBlock x:Name="lbl_MapCorrente" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+								   Margin="0,0,6,4" FontSize="11" Foreground="#FF202020" IsHitTestVisible="False"
+								   Text="">
+              <TextBlock.Effect>
+                <DropShadowEffect Color="White" ShadowDepth="0" BlurRadius="4" Opacity="1"/>
+              </TextBlock.Effect>
+            </TextBlock>
+            <Label FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Bottom" MinWidth="1" Name="Cursor" Background="WhiteSmoke"></Label>
+          </mp:MapControl>
+
+
+          <!--qui vengono messi i grafici base - ListBox virtualizzata: crea solo i plot visibili-->
+          <ListBox Name="ItmCtrl_BasicCharts" Grid.Column="3" Grid.Row="1" Grid.RowSpan="3"
+							 HorizontalAlignment="Stretch"
+							 HorizontalContentAlignment="Stretch"
+							 BorderThickness="0" Background="Transparent"
+							 Focusable="False"
+							 KeyboardNavigation.DirectionalNavigation="None"
+							 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+							 ScrollViewer.VerticalScrollBarVisibility="Visible"
+							 ScrollViewer.CanContentScroll="True"
+							 VirtualizingPanel.IsVirtualizing="True"
+							 VirtualizingPanel.VirtualizationMode="Standard"
+							 VirtualizingPanel.ScrollUnit="Pixel"
+							 VirtualizingPanel.CacheLength="1,1"
+							 VirtualizingPanel.CacheLengthUnit="Page">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel Orientation="Vertical" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemContainerStyle>
+              <Style TargetType="{x:Type ListBoxItem}">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                  <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                      <ContentPresenter HorizontalAlignment="Stretch"/>
+                    </ControlTemplate>
+                  </Setter.Value>
+                </Setter>
+              </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <local:UserControlTimePlotView />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <TextBlock Name="TB_CurrentPeriodDescription" FontSize="{Binding PeriodDetailsFontSize}" Grid.Column="0" Grid.Row="5" Text="{Binding CurrentPeriodDescription}" TextWrapping="Wrap">
+          </TextBlock>
+          <StackPanel Grid.Column="0" Grid.Row="5" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Orientation="Horizontal">
+            <Button Click="FontSizeBigger" Content="+" Height="18" Width="20" Cursor="Hand"></Button>
+            <Button Click="FontSizeSmaller" Content="-" Height="18" Width="20" Cursor="Hand"></Button>
+          </StackPanel>
+
+          <GridSplitter Name="SplitEventi" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+          </GridSplitter>
+
+
+          <sc:SciChartSurface x:Name="SciChartEventi" sc:ThemeManager.Theme="Electric"
+							Grid.Column="2" Grid.Row="5" 
+							Margin="2,2,2,2"
+							Annotations="{Binding Annotazioni}"
+							YAxes="{Binding Yassi, Mode=OneWay}" 
+							XAxes="{Binding Xassi, Mode=OneWay}" 
+							SeriesSource="{Binding SeriesSource}"
+							MouseDoubleClick="SciChartEventi_MouseDoubleClick"
+							MouseMove="SciChartEventi_MouseMove"
+							PreviewMouseLeftButtonDown="SciChartEventi_PreviewMouseLeftButtonDown"
+							PreviewMouseRightButtonDown="SciChartEventi_PreviewMouseRightButtonDown"
+							MouseLeftButtonUp="SciChartEventi_MouseLeftButtonUp"
+							MouseRightButtonUp="SciChartEventi_MouseRightButtonUp"
+						>
+
+            <sc:SciChartSurface.ChartModifier>
+              <sc:ModifierGroup>
+                <sc:RubberBandXyZoomModifier Name="ScRubberBandXyZoomModifier" ExecuteOn="MouseRightButton" IsEnabled="{Binding RubberBandEnabled}" IsXAxisOnly="True" RubberBandFill="#99FF0000"></sc:RubberBandXyZoomModifier>
+                <sc:MouseWheelZoomModifier Name="ScMouseWheelZoomModifier" ReceiveHandledEvents="True" XyDirection="XDirection" IsEnabled="True"></sc:MouseWheelZoomModifier>
+                <sc:ZoomPanModifier ClipModeX="ClipAtExtents" Name="ScZoomPanModifier" XyDirection="XDirection"  ReceiveHandledEvents="True" IsEnabled="True"/>
+                <sc:CursorModifier IsEnabled="{Binding ShowCursorValues}"></sc:CursorModifier>
+                <sc:RolloverModifier IsEnabled="{Binding ShowCursorValues}" ShowAxisLabels="False" ShowTooltipOn="Never"></sc:RolloverModifier>
+              </sc:ModifierGroup>
+            </sc:SciChartSurface.ChartModifier>
+          </sc:SciChartSurface>
+
+
+
+          <Label Name="lbl_ValoriEventi" Content="{Binding StringaPosizione}" Visibility="{Binding ShowPositionLabel}" Grid.Column="2" Grid.Row="5" MinWidth="300" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="80,3,0,0" Foreground="White" FontWeight="Bold" Background="Transparent" ToolTip="Show Cursor and values label" Cursor="Hand"></Label>
+          <Button Name="btn_AddPeriod" Grid.Column="2" Grid.Row="5" Width="70" Height="20" Background="LightGreen" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="5,5,0,0" ToolTip="Add Period of displayed time range">AddPeriod</Button>
+          <Button Name="btn_MarkAsNotValid" Visibility="Hidden" Grid.Column="2" Grid.Row="5" Width="70" Height="20" Background="LightGray" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="90,5,0,0" ToolTip="Mark as NOT valid the rows of displayed time range">AsNotValid</Button>
+          <Button Name="btn_MarkAsValid" Visibility="Hidden" Grid.Column="2" Grid.Row="5" Width="70" Height="20" Background="Gold" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="165,5,0,0" ToolTip="Mark as valid the rows of displayed time range">AsValid</Button>
+          <Button Name="btn_GraficoEventiZoomExtents" Grid.Column="2" Grid.Row="5" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,5,5,0" ToolTip="Zoom Extents">Extend</Button>
+          <ToggleButton x:Name="btn_RubberBandEnabled" IsChecked="{Binding RubberBandEnabled}" Grid.Column="2" Grid.Row="5" Width="60" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,5,120,0" ToolTip="Toggle between right button selection and zoon">Selection</ToggleButton>
+          <ToggleButton Name="btn_ShowCursor" IsChecked="{Binding ShowCursorValues}"  Grid.Column="2" Grid.Row="5" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,5,60,0" ToolTip="Zoom Extents">Cursor</ToggleButton>
+        </Grid>
+
+      </TabItem>
+
+      <TabItem Name="TimeRangeSummary" Header="Summary" Width="80">
+        <TabControl TabStripPlacement="Bottom">
+          <TabItem Header="Visible Time Range Summary">
+            <ContentControl x:Name="hostRaceReport"/>
+          </TabItem>
+          <TabItem Header="Channels Highlight" GotFocus="TabItem_GotFocus">
+            <ContentControl x:Name="hostHighlight"/>
+          </TabItem>
+        </TabControl>
+      </TabItem>
+
+      <TabItem Name="StartAnalysis" Header="Starts" Width="80">
+        <ContentControl x:Name="hostStarts"/>
+      </TabItem>
+
+      <TabItem Name="VmgUpAnalysis" Header="Upwind" Width="80">
+        <ContentControl x:Name="hostVmgUp" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="VmgDnAnalysis" Header="Downwind" Width="80">
+        <ContentControl x:Name="hostVmgDn" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="ReachingAnalysis" Header="Reaching" Width="80">
+        <ContentControl x:Name="hostReaching" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="LineUpsAnalysis" Header="StraightLine" Width="80">
+        <ContentControl x:Name="hostLineUp" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="TackGybesAnalysis" Header="TacksGybes" Width="80">
+        <ContentControl x:Name="hostPavarot" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="CrossoversAnalysis" Header="Crossover" Width="80">
+        <ContentControl x:Name="hostXover"/>
+      </TabItem>
+
+      <TabItem Name="XYplot" Header="XY Plots" Width="80" >
+        <ContentControl x:Name="hostXYplot"/>
+      </TabItem>
+
+
+      <TabItem Name="PolarChecks" Header="Polars"  Width="80">
+        <ContentControl x:Name="hostPolars"/>
+      </TabItem>
+      <TabItem Name="Benchmarks" Header="Benchmarks"  Width="80">
+        <ContentControl x:Name="hostBenchmarks"/>
+      </TabItem>
+    </TabControl>
+
+    <Grid Grid.Column="0" Grid.Row="3" >
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+      <StatusBar Margin="4,0,0,0" Grid.Row="0" Grid.Column="1" Width="Auto" Height="Auto" VerticalAlignment="Bottom">
+        <StatusBarItem >
+          <Label FontSize="10" Name="lbl_sb_LoadedFiles" Width="Auto" MinWidth="200" MaxWidth="700" MinHeight="25" Height="Auto" BorderThickness="1"></Label>
+        </StatusBarItem>
+        <StatusBarItem >
+          <Label FontSize="8" Width="50" MinWidth="200" MinHeight="25" Height="Auto" BorderThickness="0" Content="{Binding HdwID}"></Label>
+        </StatusBarItem>
+        <StatusBarItem >
+          <Label FontSize="8" Name="lbl_Version" Width="Auto" MinWidth="100" MinHeight="25" Height="Auto" BorderThickness="1" Content="{Binding Versione}"></Label>
+        </StatusBarItem>
+        <StatusBarItem HorizontalAlignment="Right">
+          <StackPanel Orientation="Horizontal">
+            <ProgressBar Name="pb_sb_Loading" Width="150" Height="30" Visibility="Visible" Minimum="0" Maximum="1" Value="0" />
+            <Label FontSize="10" Name="lbl_StBarVal" Width="50" MinWidth="50" MinHeight="25" Height="Auto" BorderThickness="0"></Label>
+          </StackPanel>
+        </StatusBarItem>
+      </StatusBar>
+    </Grid>
+  </Grid>
+
+</Window>
+
+
+

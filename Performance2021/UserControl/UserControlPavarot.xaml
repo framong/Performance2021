@@ -1,0 +1,411 @@
+﻿<UserControl x:Class="UserControlPavarot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             xmlns:estensioni="http://schemas.xceed.com/wpf/xaml/toolkit" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+	<UserControl.Resources>
+		<local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+	</UserControl.Resources>
+	
+	<Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal">
+      <Button Height="20" x:Name="btn_Refresh" Content="Refresh" Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" VerticalAlignment="center"></Button>
+      <Menu Height="20" Margin="10,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray" >
+        <MenuItem Header="Period Selection">
+          <StackPanel Orientation="Horizontal">
+            <Label FontSize="12" Content="Output Type" HorizontalContentAlignment="Right" Margin="5,0,0,0"></Label>
+            <ComboBox FontSize="12" Name="OutPutType" SelectedItem="{Binding OutputType}" MinWidth="130" Margin="5,0,0,0">
+            </ComboBox>
+          </StackPanel>
+          <CheckBox IsChecked="{Binding AutoRefreshGroupBy}" >Autorefresh also when in GroupBy/ColorBy OutputTypes</CheckBox>
+          <CheckBox IsChecked="{Binding PlotTargetsIfAvailable}" >Plot Targets when available</CheckBox>
+          <CheckBox IsChecked="{Binding PlotTrendLines}" >Plot Trend Lines</CheckBox>
+          <Label Content="Manoeuvers selecton filters:"></Label>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding PavarotSelectionSettings.PerformanceSelected}" Padding="2,0,10,0" >Performances</CheckBox>
+                <CheckBox IsChecked="{Binding PavarotSelectionSettings.TechnicalSelected}" >TecnicsAndSystems</CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox Content="Tacks" IsChecked="{Binding PavarotSelectionSettings.UpwindSelected}" Width="80"></CheckBox>
+                <CheckBox Content="Gybes" IsChecked="{Binding PavarotSelectionSettings.DownwindSelected}" Width="80" Padding="0,0,5,0"></CheckBox>
+                <CheckBox Content="Stbd Entry" IsChecked="{Binding PavarotSelectionSettings.StbdSelected}" Width="80"></CheckBox>
+                <CheckBox Content="Port Entry" IsChecked="{Binding PavarotSelectionSettings.PortSelected}" Width="80"></CheckBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <CheckBox IsChecked="{Binding PavarotSelectionSettings.ApplyTwsFilter}" Width="100">TWS Range</CheckBox>
+            </MenuItem.Header>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMin}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                  <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMin" IsEnabled="{Binding PavarotSelectionSettings.TwsMinEnabled}" Value="{Binding PavarotSelectionSettings.TwsMin}" ToolTip="Tws Min Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem>
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMax}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
+                  <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMax" IsEnabled="{Binding PavarotSelectionSettings.TwsMaxEnabled}" Value="{Binding PavarotSelectionSettings.TwsMax}" ToolTip="Tws Max Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+
+      <Menu Height="20"  Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" Background="LightGray" BorderThickness="1" BorderBrush="Gray" >
+        <MenuItem Header="Settings" ToolTip="Manoueuver Settings" >
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Seconds before the head to wind when the tack's calculation starts" Width="100">Tacks Entry (ss)</Label>
+                <estensioni:IntegerUpDown Value="{Binding PavSettings.TackSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the head to wind when the tack's calculation starts"></estensioni:IntegerUpDown>
+                <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation starts">ss</Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                    <Label ToolTip="Seconds after the head to wind when the tack's calculation ends" Width="100">Tacks Exit (ss)</Label>
+                    <estensioni:IntegerUpDown Value="{Binding PavSettings.TackSecPost}" Width="50" Height="25"  ToolTip="Seconds after the head to wind when the tack's calculation ends"></estensioni:IntegerUpDown>
+                    <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation ends">ss</Label>
+                </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Seconds before the dead to wind when the gybe's calculation starts" Width="100">Gybes Entry (ss)</Label>
+                <estensioni:IntegerUpDown Value="{Binding PavSettings.GybeSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the dead to wind when the gybe's calculation starts"></estensioni:IntegerUpDown>
+                <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation starts">ss</Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                    <Label ToolTip="Seconds after the dead to wind when the gybe's calculation ends" Width="100">Gybes Exit (ss)</Label>
+                    <estensioni:IntegerUpDown Value="{Binding PavSettings.GybeSecPost}" Width="50" Height="25"  ToolTip="Seconds after the dead to wind when the gybe's calculation ends"></estensioni:IntegerUpDown>
+                    <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation ends">ss</Label>
+                </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+                    <!--<MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Seconds before the head/dead to wind when the investment time starts"  Width="100">Invest@ minus</Label>
+                <estensioni:IntegerUpDown Value="{Binding PavarotSettings.SecsInvestment}" Width="50" Height="25" ToolTip="Seconds before the head/dead to wind when the investment time starts" ></estensioni:IntegerUpDown>
+                <Label ToolTip="Seconds before the head/dead to wind when the investment time starts" >ss</Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>-->
+          <!--<MenuItem >
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Seconds after the head/dead to wind when the xtra acceleration time ends"  Width="100">ExtraAcc@</Label>
+                <estensioni:IntegerUpDown Value="{Binding PavarotSettings.SecsExtraAccel}" Width="50" Height="25" ToolTip="Seconds after the head/dead to wind when the xtra acceleration time ends" ></estensioni:IntegerUpDown>
+                <Label ToolTip="Seconds after the head/dead to wind when the xtra acceleration time ends" >ss</Label>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>-->
+        </MenuItem>
+      </Menu>
+
+      <Menu Height="20" Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" HorizontalContentAlignment="Center" Background="LightGray" BorderThickness="1" BorderBrush="Gray">
+        <MenuItem Header="Tools" >
+          <MenuItem>
+            <MenuItem.Header>
+              <Button MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" x:Name="btn_Add" Command="{Binding CmdAggiungiCanale}" Content="Add Chart"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button x:Name="btn_SelectChannels"  MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" ToolTip="Select Report's Channels">Channels</Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button x:Name="btn_Pdf" Content="Pdf Report" ToolTip="Export Pdf Reports" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" Click="btn_Pdf_Click"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button x:Name="btn_ExportToBazzo" Content="Bazzo's file" Click="Btn_ExportToBazzo_Click" ToolTip="Export Bazzos File" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" ></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <!--<MenuItem>
+            <MenuItem.Header>
+              <Button Name="btn_PedestalStats" ToolTip="Export to Clipboard selected manoeuvers pedestals statistics" Click="btn_PedestalStats_Click" Content="PedStats"></Button>
+            </MenuItem.Header>
+          </MenuItem>-->
+          <MenuItem>
+            <MenuItem.Header>
+              <Button Name="btn_UpdateKeys" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left"  Click="btn_UpdateKeys_Click" Width="100" Content="Update Keys" ToolTip="update KEYS property of the selected periods"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+      <ToggleButton IsChecked="{Binding PavarotSelectionSettings.WheelZoomEnabled}" Content="WheelZoom" ToolTip="Toggle mouse wheel zoom On/Off" MinWidth="80" Margin="5,0,5,0"  Padding="5,0,5,0" ></ToggleButton>
+      <ToggleButton IsChecked="{Binding PavarotSelectionSettings.MouseModeSelEnabled}" Content="{Binding PavarotSelectionSettings.MouseModeSelDescription}" ToolTip="Mouse Move Mode: Selection/Pan" MinWidth="80"  Margin="5,0,5,0" Padding="5,0,5,0" ></ToggleButton>
+      <Button Height="20" x:Name="btn_Recalc" Content="Recalc" Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" VerticalAlignment="center"></Button>
+
+      <Label  ToolTip="Daily/Selection Vmg Percentage (equivalent Tws) @ Tws" MinWidth="100" MinHeight="20" Content="{Binding PeriodsMng.VmgPercentage.Descrizione}"></Label>
+
+
+
+    </StackPanel>
+    <ToolBar Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="5" ToolBarTray.IsLocked="True" Visibility="Hidden">
+          <!--<ComboBox x:Name="PavarotType" Width="90" SelectedIndex="0" Margin="10,0,10,0">
+              <ComboBoxItem Content="All Manoeuvres"></ComboBoxItem>
+              <ComboBoxItem Content="Tacks"></ComboBoxItem>
+              <ComboBoxItem Content="Gybes"></ComboBoxItem>
+          </ComboBox>
+				<ToggleButton x:Name="Port" IsChecked="True" Checked="TackState" Unchecked="TackState" >
+					<Viewbox>
+						<Label Name="lblPort" >P</Label>
+					</Viewbox>
+				</ToggleButton>
+				<ToggleButton x:Name="Stbd" IsChecked="True" Checked="TackState" Unchecked="TackState" >
+					<Viewbox>
+						<Label Name="lblStbd" >S</Label>
+					</Viewbox>
+				</ToggleButton>-->
+
+      
+      <!--<ToggleButton Checked="GroupByCheckStatusChanged" Unchecked="GroupByCheckStatusChanged" IsChecked="{Binding PavarotStatusSync.GroupByTack}" Content="GrByTack" ToolTip="Show Plots with data aggregated by tack" MinWidth="80" Margin="0,0,0,0"></ToggleButton>
+      <ToggleButton Checked="GroupByKeysCheckStatusChanged" Unchecked="GroupByKeysCheckStatusChanged" IsChecked="{Binding PavarotStatusSync.GroupByKeys}" Content="GrByK" ToolTip="Show Plots with data aggregated by period keys" MinWidth="60" Margin="0,0,0,0"></ToggleButton>
+      <ToggleButton Checked="ColorByTackCheckStatusChanged" Unchecked="ColorByTackCheckStatusChanged" IsChecked="{Binding PavarotStatusSync.ColorByTack}" Content="ClByTk" ToolTip="Show Plots with data colored by entry tack" MinWidth="60" Margin="0,0,0,0"></ToggleButton>-->
+          <!--<Button x:Name="btn_Refresh" Content="Recalculate" Margin="5,0,10,0" VerticalAlignment="center"></Button>-->
+      <!--<Button x:Name="btn_Add" Command="{Binding CmdAggiungiCanale}" Content="Add Chart" Margin="0,0,0,0" VerticalAlignment="center"></Button>
+			<Button x:Name="btn_SelectChannels" Margin="0,0,0,0" ToolTip="Select Report's Channels">Channels</Button>
+			<Button x:Name="btn_Pdf" Content="Pdf" ToolTip="Export Pdf Reports" Margin="0,0,0,0" VerticalAlignment="center" Click="btn_Pdf_Click"></Button>
+			<Button x:Name="btn_ExportToBazzo" Content="Bazzo" Click="Btn_ExportToBazzo_Click" ToolTip="Export Bazzos File" Margin="0,0,0,0" VerticalAlignment="center"></Button>
+      <Button Name="btn_PedestalStats" ToolTip="Export to Clipboard selected manoeuvers pedestals statistics" Click="btn_PedestalStats_Click" Content="PedStats"></Button>
+      <ToggleButton IsChecked="{Binding WheelZoomEnabled}" Content="WheelZoom" ToolTip="Toggle mouse wheel zoom On/Off" MinWidth="80" Margin="0,0,0,0"></ToggleButton>
+      <ToggleButton IsChecked="{Binding MouseModeSelEnabled}" Content="{Binding MouseModeSelDescription}" ToolTip="Mouse Move Mode: Selection/Pan" MinWidth="80" Margin="0,0,0,0"></ToggleButton>
+      <Button Name="btn_UpdateKeys" Margin="5,0,0,0" Click="btn_UpdateKeys_Click" Width="100" Content="UpdateKeys" ToolTip="update KEYS property of the selected periods"></Button>
+
+      <Label  ToolTip="Daily/Selection Vmg Percentage (equivalent Tws) @ Tws" MinWidth="100" MinHeight="20" Content="{Binding PeriodsMng.VmgPercentage.Descrizione}"></Label>-->
+
+        </ToolBar>
+		    <!--<TabControl Grid.Column="0" Grid.Row="1" TabStripPlacement="Left" HorizontalContentAlignment="Center">-->
+			    <!--<TabItem Header="Basic" Width="100">
+				    <TabItem.LayoutTransform>
+					    <RotateTransform Angle="-90"></RotateTransform>
+				    </TabItem.LayoutTransform>-->
+        <Grid Grid.Column="0" Grid.Row="1" >
+					    <Grid.ColumnDefinitions>
+						    <ColumnDefinition Width="1*" />
+						    <ColumnDefinition Width="3" MinWidth="3"/>
+						    <ColumnDefinition Width="3*" />
+					    </Grid.ColumnDefinitions>
+					    <Grid.RowDefinitions>
+						    <RowDefinition Height="220" />
+						    <RowDefinition Height="3" MinHeight="3" />
+						    <RowDefinition Height="5*" />
+						    <RowDefinition Height="3" />
+						    <RowDefinition Height="1*" />
+					    </Grid.RowDefinitions>
+					    <GridSplitter Name="PeriodsSplitter" Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+					    <GridSplitter Name="HorizontalSplitter" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+					    <GridSplitter Name="HorizontalSplitter1" Grid.Column="0" Grid.Row="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+
+
+				      <ScrollViewer Grid.Column="0" Grid.Row="2">
+					      <ItemsControl Name="IcTackGybesSelPeriods" ItemsSource="{Binding Lista}" >
+							      <ItemsControl.ItemContainerStyle>
+								      <Style>
+									      <Setter Property="FrameworkElement.Margin" Value="0"/>
+								      </Style>
+							      </ItemsControl.ItemContainerStyle>
+							      <ItemsControl.ItemTemplate>
+								      <DataTemplate>
+									      <Grid Margin="2,1,0,0">
+										      <Grid.ColumnDefinitions>
+										        <ColumnDefinition Width="20" />
+										        <ColumnDefinition Width="25" />
+											      <ColumnDefinition Width="*" />
+											      <ColumnDefinition Width="50" />
+										      </Grid.ColumnDefinitions>
+										      <Grid.RowDefinitions>
+											      <RowDefinition Height="30"></RowDefinition>
+										      </Grid.RowDefinitions>
+											      <Border BorderBrush="{Binding Colore, Converter={StaticResource converter}}" BorderThickness="3" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" ></Border>
+											      <!--<CheckBox Checked="ItemChkBx_Checked" Unchecked="ItemChkBx_Unchecked" Name="ItemChkBx" HorizontalAlignment="Left" VerticalAlignment="Center"  Margin="0,3,0,3" Grid.Column="1" Grid.Row="0" IsChecked="{Binding IsChecked, Mode=TwoWay}"></CheckBox>-->
+											      <CheckBox Click="ItemChbx_Click" Name="ItemChkBx" HorizontalAlignment="Left" VerticalAlignment="Center"  Margin="0,3,0,3" Grid.Column="1" Grid.Row="0" IsChecked="{Binding IsChecked, Mode=TwoWay}"></CheckBox>
+														<TextBlock PreviewMouseRightButtonUp="TextBlock_PreviewMouseRightButtonUp" MouseMove="Period_MouseMove"  MouseLeave="Period_MouseLeave" FontSize="16" PreviewMouseUp="TextBlock_PreviewMouseUp" Grid.Column="2" Grid.Row="0" Background="{Binding ColoreSfondo, Converter={StaticResource converter}}" Text="{Binding DescrizioneBreve}" Margin="0,3,0,3"/>
+				                    <TextBlock PreviewMouseRightButtonUp="TextBlock_PreviewMouseRightButtonUp" MouseMove="Period_MouseMove"  MouseLeave="Period_MouseLeave" FontSize="18" PreviewMouseUp="TextBlock_PreviewMouseUp"  Grid.Column="3" FontWeight="Bold" Grid.Row="0" Background="{Binding ColoreSfondo, Converter={StaticResource converter}}" TextAlignment="Right" Text="{Binding StrTempVal}" Margin="0,3,5,3"/>
+														<Label MouseMove="Period_MouseMove"  MouseLeave="Period_MouseLeave" Background="{Binding Mure, Converter={StaticResource converter}}" Width="20" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0"  Margin="4,4,4,4"></Label>
+									      </Grid>
+								      </DataTemplate>
+							      </ItemsControl.ItemTemplate>
+						      </ItemsControl>
+					      </ScrollViewer>
+
+                <!--<DockPanel Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" Grid.Row="0" Grid.Column="0">-->
+      <ScrollViewer Grid.Column="0" Grid.Row="0" Grid.RowSpan="1" HorizontalScrollBarVisibility="Visible" CanContentScroll="False" VerticalScrollBarVisibility="Disabled" >
+        
+        <sc:SciChartSurface x:Name="GainLossVsTws" Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" 
+															        sc:ThemeManager.Theme="BrightSpark" 
+															        Margin="3,2,3,2" Annotations="{Binding AnnotazioniGainLossVsTws}"
+															        SeriesSource="{Binding GainLossVsTwsSeriesSource, Mode=OneWay}"
+														        >
+						         <sc:SciChartSurface.XAxes >
+							          <sc:NumericAxis GrowBy="0.1,0.1"></sc:NumericAxis>
+						         </sc:SciChartSurface.XAxes>
+						         <sc:SciChartSurface.YAxes >
+							          <sc:NumericAxis GrowBy="0.1,0.1"></sc:NumericAxis>
+						         </sc:SciChartSurface.YAxes>
+						         <sc:SciChartSurface.ChartModifier>
+							        <sc:ModifierGroup>
+                <sc:MouseWheelZoomModifier IsEnabled="{Binding PavarotSelectionSettings.WheelZoomEnabled}" ></sc:MouseWheelZoomModifier>
+                <sc:ZoomPanModifier ReceiveHandledEvents="True" IsEnabled="{Binding PavarotSelectionSettings.ZoomPanEnabled}"/>
+                  <sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick" IsAnimated="False"/>
+								        <sc:CursorModifier IsEnabled="True"></sc:CursorModifier>
+                <sc:DataPointSelectionModifier IsEnabled="{Binding PavarotSelectionSettings.DataPointSelEnabled}" SelectionChanged="DataPointSelectionModifier_SelectionChanged"></sc:DataPointSelectionModifier>
+	  				          </sc:ModifierGroup>
+  						       </sc:SciChartSurface.ChartModifier>
+					        </sc:SciChartSurface>
+      </ScrollViewer>
+
+      <!--</DockPanel>-->
+          
+					      <ScrollViewer Grid.Column="2" Grid.Row="0" HorizontalScrollBarVisibility="Visible" CanContentScroll="False" VerticalScrollBarVisibility="Hidden">
+                  <ItemsControl Name="ItmCtrl_BasicAvg" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotBasicAvg.ListaControlli,Mode=TwoWay}" >
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" >
+                        </StackPanel>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                  </ItemsControl>
+                </ScrollViewer>
+
+					      <ScrollViewer Grid.Column="2" Grid.Row="2" Grid.RowSpan="3" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False" VerticalScrollBarVisibility="Visible" >
+					        <ItemsControl Name="ItmCtrl_PavarotCharts" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotBasicPlot.ListaControlli,Mode=TwoWay}" >
+						        </ItemsControl>
+					      </ScrollViewer>
+
+		          <TextBlock FontSize="{Binding PeriodDetailsFontSize}" Grid.Column="0" Grid.Row="4" Text="{Binding CurrentPeriodDescription}" TextWrapping="Wrap">
+							</TextBlock>
+							<StackPanel Grid.Column="0" Grid.Row="4" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Orientation="Horizontal">
+								<Button Click="FontSizeBigger" Content="+" Height="18" Width="20" Cursor="Hand"></Button>
+								<Button Click="FontSizeSmaller" Content="-" Height="18" Width="20" Cursor="Hand"></Button>
+							</StackPanel>
+            </Grid>
+			    <!--</TabItem>-->
+
+          <!--<TabItem Header="Advanced" Width="100">
+				    <TabItem.LayoutTransform>
+            <RotateTransform Angle="-90">
+            </RotateTransform>
+				  </TabItem.LayoutTransform>
+        <Grid>
+          <ScrollViewer>
+				    <Grid>
+					    <Grid.ColumnDefinitions>
+						    <ColumnDefinition Width="*" />
+					    </Grid.ColumnDefinitions>
+					    <Grid.RowDefinitions>
+						    <RowDefinition Height="Auto" />
+						    <RowDefinition Height="3" />
+						    <RowDefinition Height="Auto" />
+						    <RowDefinition Height="3" />
+						    <RowDefinition Height="Auto" />
+						    <RowDefinition Height="3" />
+						    <RowDefinition Height="Auto" />
+						    <RowDefinition Height="3" />
+						    <RowDefinition Height="10" />
+						    <RowDefinition Height="3" />
+					    </Grid.RowDefinitions>
+              <GridSplitter DragCompleted="Splitter_DragCompleted" Name="SplitterRot" Grid.Column="0" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+					    <GridSplitter DragCompleted="Splitter_DragCompleted" Name="SplitterDrop" Grid.Column="0" Grid.Row="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+					    <GridSplitter DragCompleted="Splitter_DragCompleted" Name="SplitterUp" Grid.Column="0" Grid.Row="5" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+					    <GridSplitter DragCompleted="Splitter_DragCompleted" Name="SplitterEntryExit" Grid.Column="0" Grid.Row="7" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="#77000000" AllowDrop="True">
+					    </GridSplitter>
+
+              <ScrollViewer Grid.Column="2" Grid.Row="0" HorizontalScrollBarVisibility="Auto" CanContentScroll="False" VerticalScrollBarVisibility="Disabled" >
+									<ItemsControl Name="ItmCtrl_Rotation" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotAdvRotation.ListaControlli,Mode=TwoWay}" >
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+                      <StackPanel Height="{Binding ControlliPavarotAdvRotation.Altezza}" Orientation="Horizontal" >
+
+												</StackPanel>
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</ScrollViewer>
+
+              <ScrollViewer Grid.Column="2" Grid.Row="2" HorizontalScrollBarVisibility="Auto" CanContentScroll="False" VerticalScrollBarVisibility="Disabled" >
+									<ItemsControl Name="ItmCtrl_BoardDrop" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotAdvBoardDrop.ListaControlli,Mode=TwoWay}" >
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+                      <StackPanel Height="{Binding ControlliPavarotAdvBoardDrop.Altezza}" Orientation="Horizontal" >
+
+												</StackPanel>
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</ScrollViewer>
+
+              <ScrollViewer Grid.Column="2" Grid.Row="4" HorizontalScrollBarVisibility="Auto" CanContentScroll="False" VerticalScrollBarVisibility="Disabled" >
+									<ItemsControl Name="ItmCtrl_BoardUp" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotAdvBoardUp.ListaControlli,Mode=TwoWay}" >
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+                      <StackPanel Height="{Binding ControlliPavarotAdvBoardUp.Altezza}" Orientation="Horizontal" >
+
+												</StackPanel>
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</ScrollViewer>
+
+              <ScrollViewer Grid.Column="2" Grid.Row="6" HorizontalScrollBarVisibility="Auto" CanContentScroll="False" VerticalScrollBarVisibility="Disabled" >
+									<ItemsControl Name="ItmCtrl_BoardEntryExit" HorizontalAlignment="Stretch" ItemsSource="{Binding ControlliPavarotAdvEntryExit.ListaControlli,Mode=TwoWay}" >
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+                      <StackPanel Height="{Binding ControlliPavarotAdvEntryExit.Altezza}" Orientation="Horizontal" >
+
+												</StackPanel>
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+
+									</ItemsControl>
+								</ScrollViewer>
+    
+            </Grid>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>-->
+		    <!--</TabControl>-->
+    </Grid>
+</UserControl>
