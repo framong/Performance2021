@@ -567,35 +567,6 @@ Public Class clsLeg
   '  End Set
   'End Property
 
-  Private Sub ImpostaRighe()
-    Dim cTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
-    Dim VnotNan As Double() = DataProvider2020.ValoriIntervallo(cTwa, TR, Nothing, Nothing, True, True)
-    _IsUpwind = VnotNan.Average <= 90
-
-    For i As Integer = _TR.IdRigaIniziale To _TR.IdRigaFinale
-      Dim m As New clsFaseLeg
-      m.IdRiga = i
-      m.IsStbd = cTwa.Valori(i) > 0
-      m.Type = clsFaseLeg.eType.eStraightLine
-      _MomentiLeg.Add(m)
-    Next
-    For Each manovra In _Manovre
-      Dim InizioInvestimento As Integer = DataProvider2020.TrovaIndice(manovra.KeyMoment.AddSeconds(-_SecInvestimento))
-      Dim Inizio As Integer = DataProvider2020.TrovaIndice(manovra.KeyMoment.AddSeconds(-_SecAnte))
-      Dim Fine As Integer = DataProvider2020.TrovaIndice(manovra.KeyMoment.AddSeconds(_SecPost))
-      For Each M In _MomentiLeg
-        If M.IdRiga > Fine Then Exit For
-        If M.IdRiga >= Inizio Then
-          M.Type = clsFaseLeg.eType.eManoeuver
-          M.IsStbdEntry = manovra.IsStbd
-        ElseIf M.IdRiga >= InizioInvestimento Then
-          M.Type = clsFaseLeg.eType.eInvestment
-          M.IsStbdEntry = manovra.IsStbd
-        End If
-      Next
-    Next
-  End Sub
-
   Private Sub ImpostaRigheDaPeriodi()
     Dim cTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
     Dim VnotNan As Double() = DataProvider2020.ValoriIntervallo(cTwa, TR, Nothing, Nothing, True, True)
@@ -628,16 +599,6 @@ Public Class clsLeg
     Next
   End Sub
 
-  Public Function ValoriTotali(Canale As clsChannel2020) As List(Of Double)
-    Dim Indici = _MomentiLeg.ToList
-    Dim Valori As New List(Of Double)
-    For Each indice In Indici
-      Valori.Add(Canale.Valori(indice.IdRiga))
-    Next
-    'Return Valori.Where(Function(x) Not Double.IsNaN(x)).ToList
-    Return Valori
-  End Function
-
   Public Function ValoriTotaliStbd(Canale As clsChannel2020) As List(Of Double)
     Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eStraightLine AndAlso x.IsStbd).ToList
     Dim Valori As New List(Of Double)
@@ -668,16 +629,6 @@ Public Class clsLeg
     Next
 
     Indici = _MomentiLeg.Where(Function(x) Not x.Type = clsFaseLeg.eType.eStraightLine AndAlso Not x.IsStbdEntry).ToList
-    For Each indice In Indici
-      Valori.Add(Canale.Valori(indice.IdRiga))
-    Next
-    'Return Valori.Where(Function(x) Not Double.IsNaN(x)).ToList
-    Return Valori
-  End Function
-
-  Public Function ValoriStraightLine(Canale As clsChannel2020) As List(Of Double)
-    Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eStraightLine).ToList
-    Dim Valori As New List(Of Double)
     For Each indice In Indici
       Valori.Add(Canale.Valori(indice.IdRiga))
     Next
@@ -726,16 +677,6 @@ Public Class clsLeg
 
 
 
-  Public Function ValoriManoeuvers(Canale As clsChannel2020) As List(Of Double)
-    Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eManoeuver).ToList
-    Dim Valori As New List(Of Double)
-    For Each indice In Indici
-      Valori.Add(Canale.Valori(indice.IdRiga))
-    Next
-    'Return Valori.Where(Function(x) Not Double.IsNaN(x)).ToList
-    Return Valori
-  End Function
-
   Public Function ValoriManoeuversPortEntry(Canale As clsChannel2020) As List(Of Double)
     Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eManoeuver AndAlso Not x.IsStbdEntry).ToList
     Dim Valori As New List(Of Double)
@@ -748,16 +689,6 @@ Public Class clsLeg
 
   Public Function ValoriManoeuversStbdEntry(Canale As clsChannel2020) As List(Of Double)
     Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eManoeuver AndAlso x.IsStbdEntry).ToList
-    Dim Valori As New List(Of Double)
-    For Each indice In Indici
-      Valori.Add(Canale.Valori(indice.IdRiga))
-    Next
-    'Return Valori.Where(Function(x) Not Double.IsNaN(x)).ToList
-    Return Valori
-  End Function
-
-  Public Function ValoriInvestments(Canale As clsChannel2020) As List(Of Double)
-    Dim Indici = _MomentiLeg.Where(Function(x) x.Type = clsFaseLeg.eType.eInvestment).ToList
     Dim Valori As New List(Of Double)
     For Each indice In Indici
       Valori.Add(Canale.Valori(indice.IdRiga))
@@ -846,17 +777,6 @@ Public Class clsLegs
   '  End Set
   'End Property
 
-  Private Function NormalizzaLoss(Valore As Double, LossUM As eLossUM, Secondi As Double) As Double
-    Select Case LossUM
-      Case eLossUM.e30mins
-        Return Valore / Secondi * 60 * 30
-      Case eLossUM.eMinute
-        Return Valore / Secondi * 60
-      Case Else
-        Return Valore
-    End Select
-  End Function
-
   Private Function StringaLoss(LossUM As eLossUM) As String
     Select Case LossUM
       Case eLossUM.e30mins
@@ -870,17 +790,6 @@ Public Class clsLegs
 
   Private Function Media(Valori As List(Of Double)) As Double
     If Valori.Count > 0 Then Return Valori.Where(Function(x) Not Double.IsNaN(x)).Average
-    Return 0
-  End Function
-
-  Private Function VmgTgtPerc(ValoriVmgPerc As List(Of Double), ValoriVmg As List(Of Double), Tgt As clsValoriPuntoPolare) As Double
-    If Tgt Is Nothing Then
-      If ValoriVmgPerc.Count > 0 Then Return ValoriVmgPerc.Average
-    Else
-      If ValoriVmg.Count > 0 Then
-        Return ValoriVmg.Average / Tgt.Vmg * 100
-      End If
-    End If
     Return 0
   End Function
 
@@ -1539,28 +1448,6 @@ Public Class clsStatVals
     eRc = 2
     eAll = 3
   End Enum
-
-  Public Function AverageV1() As Double
-    If Valori.Count = 0 Then Return 0
-    Return Valori.Average
-  End Function
-
-  Public Function StDevV1() As Double
-    Dim ds As Double
-    alglib.basestat.sampleadev(Valori.ToArray, Valori.Count, ds)
-    Return ds
-  End Function
-
-  Public Function AverageV2() As Double
-    If Valori2.Count = 0 Then Return 0
-    Return Valori2.Average
-  End Function
-
-  Public Function StDevV2() As Double
-    Dim ds As Double
-    alglib.basestat.sampleadev(Valori2.ToArray, Valori2.Count, ds)
-    Return ds
-  End Function
 
   Public Sub AggiungiCoppia(v1 As Double, v2 As Double)
     _Valori.Add(v1)
@@ -2396,21 +2283,6 @@ Public Class clsMySongLeeway
     Return 1
   End Function
 
-  Private Sub LeggiTabelleDaFaroFiles(PathCartella As String)
-    For Each file In System.IO.Directory.GetFiles(PathCartella)
-      Dim fi As New System.IO.FileInfo(file)
-
-      Select Case fi.Name
-        Case AppConfig.ActiveProfile.MySongLeewaySettings.LwyTwsTableName
-        Case AppConfig.ActiveProfile.MySongLeewaySettings.LwyTwaTableName
-        Case AppConfig.ActiveProfile.MySongLeewaySettings.LwySeaStateTableName
-        Case AppConfig.ActiveProfile.MySongLeewaySettings.LwyDaggerBs2dTableName
-        Case Else
-      End Select
-    Next
-
-  End Sub
-
 
   Public Function CalculateNormalizedLeeway(HeelingNormalized As Double, BoatSpeed As Double, Twa As Double, Tws As Double, SeaState As Double, KeelAngle As Double, DaggerImmersion As Double, DaggerAngle As Double) As Double
 
@@ -3140,24 +3012,6 @@ Public Class clsDataProvider2020
     'OnPropertyChanged("SelectedFilesList")
   End Sub
 
-  Private Sub VerificaIntestazioniComuniFileParquetCaricati()
-    Dim IntTmp As New List(Of String)
-    For Each Intestazione In pIntestazioni
-      Dim Comune As Boolean = True
-      For Each File In ParquetFiles
-        If File.Intestazioni.Where(Function(x) x.ToLower = Intestazione.ToLower).FirstOrDefault Is Nothing Then
-          Comune = False
-          Exit For
-        End If
-      Next
-      If Comune Then
-        IntTmp.Add(Intestazione)
-      End If
-    Next
-    pIntestazioni.Clear()
-    pIntestazioni = IntTmp
-  End Sub
-
 
   Private Sub AggiungiIntestazioniUnivoche(Intestazioni As List(Of String))
     For Each Intestazione In Intestazioni
@@ -3171,41 +3025,6 @@ Public Class clsDataProvider2020
   Public Sub OrcRaceReplay()
     Dim Testo As String = clsRatingUtilities.RaceReplay()
     Clipboard.SetText(Testo)
-  End Sub
-
-  Public Sub QuickStatsUpDnRc()
-    'Dim twa As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eAbsTwa)
-    Dim twa As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTwaRecLeeway)
-    Dim c As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTWAd)
-
-    Dim Miniz As Integer = DataPlotSync.VisibleRange.IdRigaIniziale
-    Dim Mfin As Integer = DataPlotSync.VisibleRange.IdRigaFinale
-    Dim Upwind As Integer = 0
-    Dim Downwind As Integer = 0
-    Dim Reaching As Integer = 0
-    If Miniz > -1 AndAlso Mfin > -1 Then
-      For i As Integer = Miniz To Mfin
-        If twa.Valori(i) < 90 Then
-          If c.Valori(i) > 20 Then
-            Reaching += 1
-          Else
-            Upwind += 1
-          End If
-        Else
-          If c.Valori(i) > 20 Then
-            Reaching += 1
-          Else
-            Downwind += 1
-          End If
-        End If
-      Next
-    End If
-    Dim Tot As Integer = Upwind + Downwind + Reaching
-    Dim txt As String = "Upwind: " & Format(Upwind / Tot * 100, "F0")
-    txt &= vbCrLf & "Downwind: " & Format(Downwind / Tot * 100, "F0")
-    txt &= vbCrLf & "Reaching: " & Format(Reaching / Tot * 100, "F0")
-    MsgBox(txt, MsgBoxStyle.OkOnly)
-    Clipboard.SetText(txt)
   End Sub
 
   Public Sub FunzioneCustom()
@@ -3367,15 +3186,6 @@ Public Class clsDataProvider2020
 
   'End Sub
 
-  Public Sub CaricaNuoviCanaliDaFileEsterni()
-    ' bisogna selezionare dei file ed aggiungerli tanto ai file parquet caricati quanto al dataprovider
-    ' vanno anche aggiunte le intestazioni al file ilseectperformance
-    'Dim frm As New UserControlImportChannelsData
-    'frm.ShowDialog()
-
-
-  End Sub
-
   'Public Sub AggiungiCanali()
   '  Dim Lista As New List(Of clsChannel2020)
   '  For Each canale In Channels.ListaCanali
@@ -3392,11 +3202,6 @@ Public Class clsDataProvider2020
   '    'CaricaCanaliMathParquet()
   '  End If
   'End Sub
-
-  Private Sub CaricaEtCorreggiParquet(FileSource As String)
-
-
-  End Sub
 
 
   Private Sub AzzeraValoriCanali()
@@ -3428,20 +3233,6 @@ Public Class clsDataProvider2020
     Next
     _TimeStamps = TStmp.ToArray
   End Sub
-
-  Public Function HasValidValues(Canale As clsChannel2020) As Boolean
-    If Canale.Valori Is Nothing Then Return False
-    If Canale.Valori.Count < 2 Then Return False
-    Dim allNaN As Boolean = True
-
-    For Each v In Canale.Valori
-      If Not Double.IsNaN(v) Then
-        allNaN = False
-        Exit For
-      End If
-    Next
-    Return Not allNaN
-  End Function
 
 
   Public Sub VerificaSeValoriCaricati(Canale As clsChannel2020, ExportMath As Boolean)
@@ -3539,10 +3330,6 @@ Public Class clsDataProvider2020
 
     Return CanaleTgt.Valori.Count > 0
 
-  End Function
-
-  Private Function CalcolaVmg(Twa As Double, Bs As Double) As Double
-    Return If(Double.IsNaN(Twa), Double.NaN, If(Double.IsNaN(Bs), Double.NaN, Bs * System.Math.Abs(Radians(Twa))))
   End Function
 
   Public Function CseFromHdgAndLeeway() As clsChannel2020
@@ -5730,84 +5517,12 @@ Public Class clsDataProvider2020
     Return HeelStbd.Average < 0
   End Function
 
-  Private Function VerificaSeTuttiCanaliValidi(Canali As List(Of clsChannel2020)) As Boolean
-    For Each c In Canali
-      If c Is Nothing Then Return False
-    Next
-    Return True
-  End Function
-
-  Private Function TuttiValoriNotNan(Canali As List(Of clsChannel2020), Indice As Integer) As Boolean
-    For Each c In Canali
-      If Double.IsNaN(c.Valori(Indice)) Then Return False
-    Next
-    Return True
-  End Function
-
   Private Function ApproxBulbRh(CantAngle As Double) As Double
     Dim PinOffset As Double = 0.6
     Dim ArmLenght As Double = 3.6
     Dim BulbOffset As Double = ArmLenght * System.Math.Sin(Radians(CantAngle - 47))
     Return PinOffset + BulbOffset
   End Function
-
-  Public Sub TestProjectedArea()
-    Dim txt As String = "PortCant" & vbTab & "PortInLift" & vbTab & "PortInLwy" & vbTab & "PortOutLift" & vbTab & "PortOutLwy" & vbTab
-    txt &= "StbdCant" & vbTab & "StbdInLift" & vbTab & "StbdInLwy" & vbTab & "StbdOutLift" & vbTab & "StbdOutLwy" & vbTab
-    txt &= "GlobalLift" & vbTab & "GlobalLwy" & vbCrLf
-
-
-
-    For i As Integer = 0 To 45
-      Dim PortCant As Double = 0
-      Dim StbdCant As Double = 0
-      Select Case i
-        Case 0 To 14
-          PortCant = -40 + (i * 5) 'arriva fino +30
-          StbdCant = 70
-        Case 15 To 22 'cala l altra board
-          PortCant = 30 'rimane a 30
-          StbdCant = 70 - ((i - 14) * 5) 'arriva fino a 30
-        Case 23 To 30 'sale la vecchia
-          PortCant = 70 + ((i - 30) * 5) 'rimane a 30
-          StbdCant = 30 'arriva fino a 30
-        Case 31 To 45
-          PortCant = 70
-          StbdCant = -40 + ((45 - i) * 5)
-      End Select
-
-
-      Dim ChPortWingInnerProjPercLift As Double = UnderwaterProjectedArea(True, True, PortCant, ApproxBulbRh(PortCant))
-      Dim ChPortWingInnerProjPercLwy As Double = UnderwaterProjectedArea(True, False, PortCant, ApproxBulbRh(PortCant))
-      Dim ChPortWingOuterProjPercLift As Double = UnderwaterProjectedArea(False, True, PortCant, ApproxBulbRh(PortCant))
-      Dim ChPortWingOuterProjPercLwy As Double = UnderwaterProjectedArea(False, False, PortCant, ApproxBulbRh(PortCant))
-      Dim ChStbdWingInnerProjPercLift As Double = UnderwaterProjectedArea(True, True, StbdCant, ApproxBulbRh(StbdCant))
-      Dim ChStbdWingInnerProjPercLwy As Double = UnderwaterProjectedArea(True, False, StbdCant, ApproxBulbRh(StbdCant))
-      Dim ChStbdWingOuterProjPercLift As Double = UnderwaterProjectedArea(False, True, StbdCant, ApproxBulbRh(StbdCant))
-      Dim ChStbdWingOuterProjPercLwy As Double = UnderwaterProjectedArea(False, False, StbdCant, ApproxBulbRh(StbdCant))
-
-      Dim ChUnderwaterWingGlobalProjPercLift As Double = ChPortWingInnerProjPercLift
-      ChUnderwaterWingGlobalProjPercLift += ChPortWingOuterProjPercLift
-      ChUnderwaterWingGlobalProjPercLift += ChStbdWingInnerProjPercLift
-      ChUnderwaterWingGlobalProjPercLift += ChStbdWingOuterProjPercLift
-
-      Dim ChUnderwaterWingGlobalProjPercLwy As Double = ChPortWingInnerProjPercLwy
-      ChUnderwaterWingGlobalProjPercLwy += ChPortWingOuterProjPercLwy
-      ChUnderwaterWingGlobalProjPercLwy += ChStbdWingInnerProjPercLwy
-      ChUnderwaterWingGlobalProjPercLwy += ChStbdWingOuterProjPercLwy
-
-      Console.WriteLine("Port Cant: " & PortCant & ", LIFT In: " & ChPortWingInnerProjPercLift.ToString("F2") & " Out: " & ChPortWingOuterProjPercLift.ToString("F2") & ", LWY In: " & ChPortWingInnerProjPercLwy.ToString("F2") & " Out: " & ChPortWingOuterProjPercLwy.ToString("F2"))
-      Console.WriteLine("Stbd Cant: " & StbdCant & ", LIFT In: " & ChStbdWingInnerProjPercLift.ToString("F2") & " Out: " & ChStbdWingOuterProjPercLift.ToString("F2") & ", LWY In: " & ChStbdWingInnerProjPercLwy.ToString("F2") & " Out: " & ChStbdWingOuterProjPercLwy.ToString("F2"))
-      Console.WriteLine("Global LIFT: " & ChUnderwaterWingGlobalProjPercLift.ToString("F2") & " LWY: " & ChUnderwaterWingGlobalProjPercLwy.ToString("F2"))
-
-      txt &= PortCant & vbTab & ChPortWingInnerProjPercLift.ToString("F2") & vbTab & ChPortWingInnerProjPercLwy.ToString("F2") & vbTab & ChPortWingOuterProjPercLift.ToString("F2") & vbTab & ChPortWingOuterProjPercLwy.ToString("F2") & vbTab
-      txt &= StbdCant & vbTab & ChStbdWingInnerProjPercLift.ToString("F2") & vbTab & ChStbdWingInnerProjPercLwy.ToString("F2") & vbTab & ChStbdWingOuterProjPercLift.ToString("F2") & vbTab & ChStbdWingOuterProjPercLwy.ToString("F2") & vbTab
-      txt &= ChUnderwaterWingGlobalProjPercLift.ToString("F2") & vbTab & ChUnderwaterWingGlobalProjPercLwy.ToString("F2") & vbCrLf
-      'Stop
-    Next
-    Clipboard.SetText(txt)
-    Stop
-  End Sub
 
   Private Function UnderwaterProjectedArea(IsInner As Boolean, IsLift As Boolean, EffCant As Double, BulbRh As Double) As Double
     If Double.IsNaN(EffCant) Then Return Double.NaN
@@ -5861,95 +5576,11 @@ Public Class clsDataProvider2020
     End If
   End Sub
 
-  Public Function TrovaFile(Momento As DateTime) As System.IO.FileInfo
-
-    For i As Integer = 0 To pFiles.Count - 1
-      Select Case pFileType
-        Case eFileType.eParquet
-          For Each File In ParquetFiles.OrderBy(Function(x) x.TimeRangeRealDateTime.Start)
-            If File.TimeRangeRealDateTime.IsInRange(Momento, True, True) Then
-              Return File.FileInfo
-            End If
-          Next
-        'Case eFileType.eGombocSqlLite
-        '  For Each File In pSqLiteGombocFiles
-        '    If File.TimeRange.IsInRange(Momento, True, True) Then
-        '      Return File.FileInfo
-        '    End If
-        '  Next
-        Case eFileType.eFaRoBin
-          For Each File In pFaRoBinFiles
-            If File.TimeRange.IsInRange(Momento, True, True) Then
-              Return File.FileInfo
-            End If
-          Next
-        Case Else
-          Stop
-      End Select
-    Next
-    Return Nothing
-  End Function
-
   Public Enum eZonaVerifica
     eSoloPrima
     eSoloDopo
     eClosest
   End Enum
-
-  Public Function VerificaDataFileCaricati(Momento As DateTime, ZonaVerifica As eZonaVerifica) As DateTime
-    Dim AlmenoInUno As Boolean = False
-    Dim ClosestTime As DateTime = Nothing
-    Select Case pFileType
-      Case eFileType.eParquet
-        For Each File In ParquetFiles.OrderBy(Function(x) x.TimeRangeRealDateTime.Start)
-          If File.TimeRangeRealDateTime.IsInRange(Momento, True, True) Then
-            AlmenoInUno = True
-            Exit For
-          End If
-        Next
-        If AlmenoInUno Then
-          ClosestTime = Momento
-        Else
-          For Each File In ParquetFiles.OrderBy(Function(x) x.TimeRangeRealDateTime.Start)
-            Select Case ZonaVerifica
-              Case eZonaVerifica.eSoloPrima
-                If ClosestTime = Nothing Then
-                  ClosestTime = File.TimeRangeRealDateTime.Finish
-                Else
-                  If System.Math.Abs(ClosestTime.Subtract(File.TimeRangeRealDateTime.Finish).TotalSeconds) < ClosestTime.Subtract(Momento).TotalSeconds Then
-                    ClosestTime = File.TimeRangeRealDateTime.Finish
-                  End If
-                End If
-              Case eZonaVerifica.eSoloDopo
-                If ClosestTime = Nothing Then
-                  ClosestTime = File.TimeRangeRealDateTime.Start
-                Else
-                  If System.Math.Abs(ClosestTime.Subtract(File.TimeRangeRealDateTime.Start).TotalSeconds) < ClosestTime.Subtract(Momento).TotalSeconds Then
-                    ClosestTime = File.TimeRangeRealDateTime.Start
-                  End If
-                End If
-              Case Else
-                If ClosestTime = Nothing Then
-                  ClosestTime = File.TimeRangeRealDateTime.Start
-                  If System.Math.Abs(ClosestTime.Subtract(File.TimeRangeRealDateTime.Finish).TotalSeconds) < ClosestTime.Subtract(Momento).TotalSeconds Then
-                    ClosestTime = File.TimeRangeRealDateTime.Finish
-                  End If
-                Else
-                  If System.Math.Abs(ClosestTime.Subtract(File.TimeRangeRealDateTime.Start).TotalSeconds) < ClosestTime.Subtract(Momento).TotalSeconds Then
-                    ClosestTime = File.TimeRangeRealDateTime.Start
-                  End If
-                  If System.Math.Abs(ClosestTime.Subtract(File.TimeRangeRealDateTime.Finish).TotalSeconds) < ClosestTime.Subtract(Momento).TotalSeconds Then
-                    ClosestTime = File.TimeRangeRealDateTime.Finish
-                  End If
-                End If
-            End Select
-          Next
-        End If
-      Case Else
-        Stop
-    End Select
-    Return ClosestTime
-  End Function
 
 
   Public Sub ExportInExpeditionFormat()
@@ -6042,15 +5673,6 @@ Public Class clsChannels2020
     CaricaCanaliChiave()
     CaricaCanaliConosciutiJson()
     'pCanaleValidRows.CanaleNVR = Canale(eCanaliChiave.eCanaleNVR)
-  End Sub
-
-  Public Sub ForzaCanaliMath()
-    If Not Canale(eCanaliChiave.eRdrNorm) Is Nothing Then
-      Dim cRdrAng As clsChannel2020 = Canale(eCanaliChiave.eRdrAngle)
-      If Not cRdrAng Is Nothing Then
-        cRdrAng.IsMath = True
-      End If
-    End If
   End Sub
 
   Public Enum eToggleImporta
@@ -7558,16 +7180,6 @@ Public Class clsChannels2020
   End Sub
 
 
-  Public Sub SalvaCanali()
-    SalvaCanaliJson()
-    'Exit Sub
-    'For Each Ch In _ListaCanali
-    '  SalvaCanale(Ch, False)
-    'Next
-    'AppConfig.SalvaFileXML()
-    ''salva il file xml
-  End Sub
-
   'Public Sub SalvaCanale(Canale As clsChannel2020, SalvaXml As Boolean)
   '  If SalvaXml Then
   '    Canale.SalvaSuXML(pParentDataProvider.SuffissoFileType, SalvaXml)
@@ -7634,27 +7246,6 @@ Public Class clsDataCorrections
     Dim TwaUpwashRc As Double = 0
     Dim TwaUpwashDn As Double = 0.0
     ApplyCalibs(TimeRange, BsCoeffPort, BsCoeffStbd, AwsCoeff, AwaOffset, HdgOffset, TwaUpwashUp, TwaUpwashRc, TwaUpwashDn)
-  End Sub
-
-  Public Shared Sub ApplyTrimOffset(TimeRange As clsTimeRange, TrimOffset As Double)
-    Dim chTrim As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTRIM)
-    For i As Long = TimeRange.IdRigaIniziale To TimeRange.IdRigaFinale
-      chTrim.Valori(i) += TrimOffset
-    Next
-
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTrimNorm)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTrimDelta)
-
-  End Sub
-
-  Public Shared Sub ApplyTrimSignInversion(TimeRange As clsTimeRange)
-    Dim chTrim As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTRIM)
-    For i As Long = TimeRange.IdRigaIniziale To TimeRange.IdRigaFinale
-      chTrim.Valori(i) = -chTrim.Valori(i)
-    Next
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTrimNorm)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTrimDelta)
-
   End Sub
 
   Public Shared Sub ApplyCalibs(TimeRange As clsTimeRange, BsCoeffPort As Double, BsCoeffStbd As Double, AwsCoeff As Double, AwaOffset As Double, HdgOffset As Double, TwaUpwashUp As Double, TwaUpwashRc As Double, TwaUpwashDn As Double)
@@ -9415,31 +9006,6 @@ Public Class clsFileParquet2020
 
   End Sub
 
-  Public Sub AccodaValoriCanale(Canale As clsChannel2020)
-    Dim ChannelName As String = Canale.LongName
-    Dim fsTmp As New System.IO.FileStream(pFileInfo.FullName, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite, 65536)
-    Dim ParquetReader As Parquet.ParquetReader = New Parquet.ParquetReader(fsTmp)
-    Dim PqDataFiled As Parquet.Data.DataField = ParquetReader.Schema.GetDataFields.Where(Function(x) x.Name.Replace(vbNullChar, "").ToLower = ChannelName.ToLower).FirstOrDefault
-    Dim StaminchiaRaw = ParquetReader.OpenRowGroupReader(0)
-    Dim StaminchiaDiDati = StaminchiaRaw.ReadColumn(PqDataFiled).Data
-    Dim ArrayDiQuelParaculoDiDenis(StaminchiaDiDati.Length - 1) As Double
-    Array.Copy(StaminchiaDiDati, ArrayDiQuelParaculoDiDenis, StaminchiaDiDati.Length - 1)
-    If Canale.Valori Is Nothing Then
-      Canale.Valori = ArrayDiQuelParaculoDiDenis.Cast(Of Double)
-    Else
-      Dim ValoriOld As Integer = Canale.Valori.Count
-      Dim ValoriNew As Integer = ArrayDiQuelParaculoDiDenis.Count
-      Dim Valori As Integer = ValoriNew + ValoriOld
-      ReDim Preserve Canale.Valori(Valori - 1)
-      For i As Integer = 0 To ValoriNew - 1
-        Canale.Valori(ValoriOld + i) = ArrayDiQuelParaculoDiDenis(i)
-      Next
-    End If
-    ParquetReader.Dispose()
-    fsTmp.Close()
-    fsTmp.Dispose()
-  End Sub
-
   Public Function CaricaValoriCanale(Canale As String) As Double()
     Dim fsTmp As New System.IO.FileStream(pFileInfo.FullName, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite, 65536)
     Dim ParquetReader As Parquet.ParquetReader = New Parquet.ParquetReader(fsTmp)
@@ -9463,21 +9029,6 @@ Public Class clsFileParquet2020
     Dim ArrayDiQuelParaculoDiDenis(StaminchiaDiDati.Length - 1) As Double
     Array.Copy(StaminchiaDiDati, ArrayDiQuelParaculoDiDenis, StaminchiaDiDati.Length - 1)
     Return ArrayDiQuelParaculoDiDenis.Cast(Of Double)
-  End Function
-
-  Public Function CaricaValoriCanaleSimul(Canale As String) As Double()
-    Dim fsTmp As New System.IO.FileStream(pFileInfo.FullName, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite, 65536)
-    Dim ParquetReader As Parquet.ParquetReader = New Parquet.ParquetReader(fsTmp)
-    Dim PqDataFiled As Parquet.Data.DataField = ParquetReader.Schema.GetDataFields.Where(Function(x) x.Name.Replace(vbNullChar, "").ToLower = Canale.ToLower).FirstOrDefault
-    Dim StaminchiaRaw = ParquetReader.OpenRowGroupReader(0)
-    Dim StaminchiaDiDati = StaminchiaRaw.ReadColumn(PqDataFiled).Data
-    Dim ArrayDiQuelParaculoDiDenis(StaminchiaDiDati.Length - 1) As Double
-    Array.Copy(StaminchiaDiDati, ArrayDiQuelParaculoDiDenis, StaminchiaDiDati.Length - 1)
-    ParquetReader.Dispose()
-    fsTmp.Close()
-    fsTmp.Dispose()
-    Return ArrayDiQuelParaculoDiDenis.Cast(Of Double)
-
   End Function
 
 End Class
@@ -10006,35 +9557,6 @@ Public Class clsTgtManager
   '    OnPropertyChanged("Tgt")
   '  End Set
   'End Property
-
-  Public Sub CreaFileTargetTest()
-    _Tgt = New clsTgt
-    Dim Canali As String() = {"twa", "bs", "leeway", "heel", "minsink", "cantangle"}
-    _Tgt.MainVarName = "tws"
-    For i As Integer = 8 To 26 Step 2
-      _Tgt.TgtRowValues.Add(New clsTgtRowValues(i, _Tgt))
-      Dim tgtType As clsTgtColonna.eTgtType
-      For ii As Integer = 30 To 150 Step 20
-        tgtType = clsTgtColonna.eTgtType.None
-        Dim Twa As Double = ii
-        If ii = 50 Then
-          Twa = 44
-          tgtType = clsTgtColonna.eTgtType.Upwind
-        ElseIf ii = 130 Then
-          Twa = 146
-          tgtType = clsTgtColonna.eTgtType.Downwind
-        End If
-        _Tgt.TgtRowValues.Last.TgtPoints.Add(New clsTgtColonna(tgtType, _Tgt.TgtRowValues.Last))
-        For Each Canale In Canali
-          Dim idx As Integer = Canali.ToList.IndexOf(Canale)
-          _Tgt.TgtRowValues.Last.TgtPoints.Last.Values.Add(Canale, idx + i + ii)
-        Next
-      Next
-    Next
-    _Tgt.AggiornaTgtValues()
-
-    SalvaJsonTgtFile()
-  End Sub
 
 
   Public Sub SalvaJsonTgtFile(TgtFile As clsTgt)
@@ -10887,204 +10409,6 @@ Public Class clsTgt
     MetodoTrendLine(awas, awss, minTws, maxTws)
   End Sub
 
-  Public Sub MetodoInterpolatore(awas As List(Of clsXYZ), awss As List(Of clsXYZ), minTws As Double, maxTws As Double)
-
-    Dim Interpolatore As MathNet.Numerics.Interpolation.IInterpolation
-    Dim AwaIsoTmp As New List(Of clsIsolinea)
-    Dim AwsIsoTmp As New List(Of clsIsolinea)
-    Dim stp As Double = 5
-    For awa As Double = 5 To 180 Step stp
-      Dim app As Double = awa
-      For tws As Double = minTws To maxTws Step 2
-        Dim ws As Double = tws
-        Dim r = awas.Where(Function(x) x.Y = ws AndAlso x.X <= 90).ToList ' righe di bolina per quella tws
-        Dim il = AwaIsoTmp.Where(Function(x) x.RefVal = app).FirstOrDefault
-        If il Is Nothing Then
-          il = New clsIsolinea(app)
-          AwaIsoTmp.Add(il)
-        End If
-        If r.Count > 0 Then
-          Interpolatore = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(r.Select(Function(x) x.Z).ToArray, r.Select(Function(x) x.X).ToArray)
-          Dim Twa As Double = Interpolatore.Interpolate(awa)
-          If Twa < 180 AndAlso Twa > 30 Then
-            il.ValoriTwaTws.Add(New clsDoubleXY(Twa, tws))
-          End If
-        End If
-        r = awas.Where(Function(x) x.Y = ws AndAlso x.X > 90).ToList ' righe di poppa per quella tws
-        If r.Count > 0 Then
-          Interpolatore = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(r.Select(Function(x) x.Z).ToArray, r.Select(Function(x) x.X).ToArray)
-          Dim Twa As Double = Interpolatore.Interpolate(awa)
-          If Twa < 180 AndAlso Twa > 30 Then
-            il.ValoriTwaTws.Add(New clsDoubleXY(Twa, tws))
-          End If
-        End If
-      Next
-    Next
-
-    For aws As Double = 5 To 70 Step 2
-      Dim app As Double = aws
-      For tws As Double = minTws To maxTws Step 2
-        Dim ws As Double = tws
-        Dim r = awss.Where(Function(x) x.Y = ws AndAlso x.X <= 90).ToList ' righe di bolina per quella tws
-        Dim il = AwsIsoTmp.Where(Function(x) x.RefVal = app).FirstOrDefault
-        If il Is Nothing Then
-          il = New clsIsolinea(app)
-          AwsIsoTmp.Add(il)
-        End If
-        If r.Count > 0 Then
-          Interpolatore = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(r.Select(Function(x) x.Z).ToArray, r.Select(Function(x) x.X).ToArray)
-          Dim Twa As Double = Interpolatore.Interpolate(aws)
-          If Twa < 180 AndAlso Twa > 30 Then
-            il.ValoriTwaTws.Add(New clsDoubleXY(Twa, tws))
-          End If
-        End If
-        r = awss.Where(Function(x) x.Y = ws AndAlso x.X > 90).ToList ' righe di poppa per quella tws
-        If r.Count > 0 Then
-          Interpolatore = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(r.Select(Function(x) x.Z).ToArray, r.Select(Function(x) x.X).ToArray)
-          Dim Twa As Double = Interpolatore.Interpolate(aws)
-          If Twa < 180 AndAlso Twa > 30 Then
-            il.ValoriTwaTws.Add(New clsDoubleXY(Twa, tws))
-          End If
-        End If
-      Next
-    Next
-
-    AwaIsolines.Clear()
-    AwsIsolines.Clear()
-    For Each i In AwaIsoTmp
-      Dim o = New clsIsolinea(i.RefVal)
-      o.ValoriTwaTws = i.ValoriTwaTws.OrderBy(Function(x) x.X).ToList
-      AwaIsolines.Add(o)
-    Next
-    For Each i In AwsIsoTmp
-      Dim o = New clsIsolinea(i.RefVal)
-      o.ValoriTwaTws = i.ValoriTwaTws.OrderBy(Function(x) x.X).ToList
-      AwsIsolines.Add(o)
-    Next
-
-
-  End Sub
-
-  Public Sub MetodoTrendLineUpDn(awas As List(Of clsXYZ), awss As List(Of clsXYZ), minTws As Double, maxTws As Double)
-
-    Dim AwaIsoTmp As New List(Of clsIsolinea)
-    Dim AwsIsoTmp As New List(Of clsIsolinea)
-    Dim stp As Double = 5
-    Dim Ordine As Integer = 8
-    Dim awarange As Double = 1
-    Dim awsrange As Double = 0.3
-    For awa As Double = 5 To 160 Step stp
-      Dim mn As Double = awa - awarange
-      Dim mx As Double = awa + awarange
-      Dim r = awas.Where(Function(x) x.Z >= mn AndAlso x.Z <= mx AndAlso x.X <= 90).ToList ' righe di bolina con quell awa
-      Dim o = r.OrderBy(Function(x) x.X).ToList ' ordinate per twa
-      Dim il = New clsIsolinea(awa)
-      If o.Count <= 2 Then
-
-      ElseIf o.Count <= Ordine + 1 Then
-        For Each oo In o
-          il.ValoriTwaTws.Add(New clsDoubleXY(oo.X, oo.Y))
-        Next
-      Else
-        Dim twa = o.Select(Function(x) x.X).ToArray
-        Dim tws = o.Select(Function(x) x.Y).ToArray
-        Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(twa, tws, Ordine) ', MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquation)
-        For i As Double = 30 To 175 Step 5
-          Dim ii As Double = p.Coefficients(0)
-          For g As Integer = 1 To Ordine
-            ii += p.Coefficients(g) * i ^ g
-          Next
-          il.ValoriTwaTws.Add(New clsDoubleXY(i, ii))
-        Next
-        AwaIsoTmp.Add(il)
-      End If
-      r = awas.Where(Function(x) x.Z >= mn AndAlso x.Z <= mx AndAlso x.X > 90).ToList ' righe di poppa con quell awa
-      o = r.OrderBy(Function(x) x.X).ToList ' ordinate per twa
-      If o.Count <= 2 Then
-
-      ElseIf o.Count <= Ordine + 1 Then
-        For Each oo In o
-          il.ValoriTwaTws.Add(New clsDoubleXY(oo.X, oo.Y))
-        Next
-      Else
-        Dim twa = o.Select(Function(x) x.X).ToArray
-        Dim tws = o.Select(Function(x) x.Y).ToArray
-        Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(twa, tws, Ordine) ', MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquation)
-        For i As Double = 30 To 175 Step 5
-          Dim ii As Double = p.Coefficients(0)
-          For g As Integer = 1 To Ordine
-            ii += p.Coefficients(g) * i ^ g
-          Next
-          il.ValoriTwaTws.Add(New clsDoubleXY(i, ii))
-        Next
-        AwaIsoTmp.Add(il)
-      End If
-    Next
-
-    For aws As Double = 5 To 70 Step 2
-      Dim mn As Double = aws - awsrange
-      Dim mx As Double = aws + awsrange
-      Dim r = awss.Where(Function(x) x.Z >= mn AndAlso x.Z <= mx AndAlso x.X <= 90).ToList ' righe di bolina con quell awa
-      Dim o = r.OrderBy(Function(x) x.X).ToList ' ordinate per twa
-      Dim il = New clsIsolinea(aws)
-      If o.Count <= 2 Then
-
-      ElseIf o.Count <= Ordine + 1 Then
-        For Each oo In o
-          il.ValoriTwaTws.Add(New clsDoubleXY(oo.X, oo.Y))
-        Next
-      Else
-        Dim twa = o.Select(Function(x) x.X).ToArray
-        Dim tws = o.Select(Function(x) x.Y).ToArray
-        Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(twa, tws, Ordine) ', MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquation)
-        For i As Double = 30 To 175 Step 5
-          Dim ii As Double = p.Coefficients(0)
-          For g As Integer = 1 To Ordine
-            ii += p.Coefficients(g) * i ^ g
-          Next
-          il.ValoriTwaTws.Add(New clsDoubleXY(i, ii))
-        Next
-        AwsIsoTmp.Add(il)
-      End If
-      r = awss.Where(Function(x) x.Z >= mn AndAlso x.Z <= mx AndAlso x.X > 90).ToList ' righe di poppa con quell awa
-      o = r.OrderBy(Function(x) x.X).ToList ' ordinate per twa
-      If o.Count <= 2 Then
-
-      ElseIf o.Count <= Ordine + 1 Then
-        For Each oo In o
-          il.ValoriTwaTws.Add(New clsDoubleXY(oo.X, oo.Y))
-        Next
-      Else
-        Dim twa = o.Select(Function(x) x.X).ToArray
-        Dim tws = o.Select(Function(x) x.Y).ToArray
-        Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(twa, tws, Ordine) ', MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquation)
-        For i As Double = 30 To 175 Step 5
-          Dim ii As Double = p.Coefficients(0)
-          For g As Integer = 1 To Ordine
-            ii += p.Coefficients(g) * i ^ g
-          Next
-          il.ValoriTwaTws.Add(New clsDoubleXY(i, ii))
-        Next
-        AwsIsoTmp.Add(il)
-      End If
-    Next
-
-    AwaIsolines.Clear()
-    AwsIsolines.Clear()
-    For Each i In AwaIsoTmp
-      Dim o = New clsIsolinea(i.RefVal)
-      o.ValoriTwaTws = i.ValoriTwaTws.OrderBy(Function(x) x.X).ToList
-      AwaIsolines.Add(o)
-    Next
-    For Each i In AwsIsoTmp
-      Dim o = New clsIsolinea(i.RefVal)
-      o.ValoriTwaTws = i.ValoriTwaTws.OrderBy(Function(x) x.X).ToList
-      AwsIsolines.Add(o)
-    Next
-
-
-  End Sub
-
   Public Sub MetodoTrendLine(awas As List(Of clsXYZ), awss As List(Of clsXYZ), minTws As Double, maxTws As Double)
 
     Dim AwaIsoTmp As New List(Of clsIsolinea)
@@ -11561,121 +10885,6 @@ Public Class SailTable
 End Class
 
 Public Class SailsTable
-
-  'aaaaa
-  Public Sub TabellaVeleMySong()
-    ' filtra per bsp > 80, bolina heel > 7 e 
-    Dim Miniz As Integer = DataPlotSync.VisibleRange.IdRigaIniziale
-    Dim Mfin As Integer = DataPlotSync.VisibleRange.IdRigaFinale
-    Dim bstp As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eVMGp)
-    Dim tws As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
-    Dim twa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eAbsTwa)
-    Dim MainSail As clsChannel2020 = DataProvider2020.CanaleDbl("MainSail")
-    Dim Gennaker As clsChannel2020 = DataProvider2020.CanaleDbl("J3")
-    Dim Jib As clsChannel2020 = DataProvider2020.CanaleDbl("J4")
-
-    Dim mains As New List(Of SailTable)
-    Dim gennakers As New List(Of SailTable)
-    Dim jibs As New List(Of SailTable)
-
-
-    For i As Integer = Miniz To Mfin
-      Dim prf = bstp.Valori(i)
-      If prf > 80 Then
-        Dim mn = MainSail.Valori(i)
-        If Not mn = Nothing Then
-          Dim mnc = mn.ToString("F2")
-          Dim cmn = mains.Where(Function(x) x.SailCode = mnc).FirstOrDefault()
-          If cmn Is Nothing Then
-            cmn = New SailTable(mnc)
-            mains.Add(cmn)
-          End If
-          cmn.AddOneSecond(tws.Valori(i), twa.Valori(i))
-        End If
-        Dim jb = Jib.Valori(i)
-        If Not jb = Nothing Then
-          Dim jbc = jb.ToString("F2")
-          Dim jbn = jibs.Where(Function(x) x.SailCode = jbc).FirstOrDefault()
-          If jbn Is Nothing Then
-            jbn = New SailTable(jbc)
-            jibs.Add(jbn)
-          End If
-          jbn.AddOneSecond(tws.Valori(i), twa.Valori(i))
-        End If
-        Dim gn = Gennaker.Valori(i)
-        If Not gn = Nothing Then
-          Dim gnc = gn.ToString("F2")
-          Dim cgn = gennakers.Where(Function(x) x.SailCode = gnc).FirstOrDefault()
-          If cgn Is Nothing Then
-            cgn = New SailTable(gnc)
-            gennakers.Add(cgn)
-          End If
-          cgn.AddOneSecond(tws.Valori(i), twa.Valori(i))
-        End If
-      End If
-    Next
-
-    Dim righe As New List(Of String)
-
-    Dim rtmp As String = "Mainsails"
-    righe.Add(rtmp)
-    Dim twsstp As Integer = 2
-    For Each m In mains.OrderBy(Function(x) x.SailCode).ToList()
-      rtmp = m.SailCode
-      righe.Add(rtmp)
-      Dim Tot As Double = 0
-      For twsr As Integer = 0 To 30 Step twsstp
-        rtmp = vbTab & "Tws: " & twsr & "-" & twsr + twsstp & vbTab
-        Dim ss = m.GetSeconds(twsr, twsr + twsstp, 30, 160)
-        rtmp &= CDbl(ss / 3600).ToString("F1")
-        righe.Add(rtmp)
-        Tot += ss
-      Next
-      righe.Add(vbTab & "Tot: " & vbTab & (Tot / 3600).ToString("F1"))
-      righe.Add("")
-    Next
-
-    righe.Add("")
-    righe.Add("")
-    rtmp = "Jibs"
-    righe.Add(rtmp)
-    For Each j In jibs.OrderBy(Function(x) x.SailCode).ToList()
-      rtmp = j.SailCode
-      righe.Add(rtmp)
-      Dim Tot As Double = 0
-      For twsr As Integer = 0 To 30 Step twsstp
-        rtmp = vbTab & "Tws: " & twsr & "-" & twsr + twsstp & vbTab
-        Dim ss = j.GetSeconds(twsr, twsr + twsstp, 30, 70)
-        rtmp &= CDbl(ss / 3600).ToString("F1")
-        righe.Add(rtmp)
-        Tot += ss
-      Next
-      righe.Add(vbTab & "Tot: " & vbTab & (Tot / 3600).ToString("F1"))
-      righe.Add("")
-    Next
-
-
-    righe.Add("")
-    righe.Add("")
-    rtmp = "Gennakers"
-    righe.Add(rtmp)
-    For Each g In gennakers.OrderBy(Function(x) x.SailCode).ToList()
-      rtmp = g.SailCode
-      righe.Add(rtmp)
-      Dim Tot As Double = 0
-      For twsr As Integer = 0 To 30 Step twsstp
-        rtmp = vbTab & "Tws: " & twsr & "-" & twsr + twsstp & vbTab
-        Dim ss = g.GetSeconds(twsr, twsr + twsstp, 120, 160)
-        rtmp &= CDbl(ss / 3600).ToString("F1")
-        righe.Add(rtmp)
-        Tot += ss
-      Next
-      righe.Add(vbTab & "Tot: " & vbTab & (Tot / 3600).ToString("F1"))
-      righe.Add("")
-    Next
-    Clipboard.SetText(String.Join(vbCrLf, righe))
-
-  End Sub
 
   Public Sub TabellaVele()
     ' filtra per bsp > 80, bolina heel > 7 e 

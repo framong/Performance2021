@@ -72,12 +72,6 @@ Public Class clsTable1D
   <JsonIgnore>
   Dim _Interpolatore As MathNet.Numerics.Interpolation.IInterpolation
 
-  Public Sub SetValues(RefChannelValues As Double(), ValChannelValues As Double())
-    For i As Integer = 0 To RefChannelValues.Count - 1
-      Values.Add(RefChannelValues(i), ValChannelValues(i))
-    Next
-  End Sub
-
   Public Function GetValue(RefChannelValue As Double) As Double
     _Interpolatore = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(GetRefChannelArray(), GetValChannelArray())
     Return _Interpolatore.Interpolate(RefChannelValue)
@@ -111,20 +105,6 @@ Public Class clsTable2D
   Dim XHeaders() As Double = Nothing
   <JsonIgnore>
   Dim YHeaders() As Double = Nothing
-
-  Public Sub SetValues(Values As Double(,))
-    'exempio tabella x:tws , y:twa , values:heel
-    Me.Values = Values
-    SetHeaders(True)
-  End Sub
-
-  Public Function GetXChannelArray() As Double()
-    Return XHeaders
-  End Function
-
-  Public Function GetYChannelArray() As Double()
-    Return YHeaders
-  End Function
 
   Private Sub SetHeaders(Optional Force As Boolean = False)
     If XHeaders Is Nothing OrElse Force Then
@@ -190,52 +170,6 @@ Public Class clsGeoCalculations
   End Function
 
 
-  Public Shared Function BearingDegreesFast(Point1 As clsGeographicPosition, Point2 As clsGeographicPosition) As Double
-    'CalcolaRottaOLD()
-    'Exit Sub
-    'Dim DeltaPhi As Double = System.Math.Log(System.Math.Tan(pPuntoB.LatR / 2 + System.Math.PI / 4) / System.Math.Tan(pPuntoA.LatR / 2 + System.Math.PI / 4))
-    'Dim DeltaLon As Double = System.Math.Abs(pPuntoA.LngR - pPuntoB.LngR)
-    'Dim RottaRad As Double = System.Math.Atan2(DeltaLon, DeltaPhi)
-    'pRotta = pObjCalcoli.RadiantiToGradi(RottaRad)
-
-    Dim pDlatMediaD As Double = (Point1.LatDec + Point2.LatDec) / 2
-    Dim pDlatD As Double = Point2.LatDec - Point1.LatDec
-    Dim pDlongD As Double = Point2.LngDec - Point1.LngDec
-    If pDlatD = 0 Then
-      If pDlongD > 0 Then
-        Return 90
-      ElseIf pDlongD < 0 Then
-        Return 270
-      Else
-        Return 0
-      End If
-    ElseIf pDlongD = 0 Then
-      If pDlatD > 0 Then
-        Return 0
-      ElseIf pDlatD < 0 Then
-        Return 180
-      Else
-        Return 0
-      End If
-    Else
-
-    End If
-
-    Dim pDlatMedia As Double = Radians(pDlatMediaD)
-    Dim pDlat As Double = Radians(pDlatD)
-    Dim pDlong As Double = Radians(pDlongD)
-    Dim pRt As Double = System.Math.Atan(pDlong * System.Math.Cos(pDlatMedia) / pDlat)
-    ' Vale Nell'emisfero NORD va verificato con il sud
-    If Point2.LatDec > Point1.LatDec Then
-      If pRt < 0 Then pRt += System.Math.PI * 2
-    Else
-      pRt += System.Math.PI
-    End If
-
-    'If pRt < 0 Then pRt += System.Math.PI * 2
-    Return Degrees(pRt)
-  End Function
-
 
   Public Shared Function BearingDegrees(Point1 As clsGeographicPosition, Point2 As clsGeographicPosition) As Double
 
@@ -248,25 +182,6 @@ Public Class clsGeoCalculations
     Dim Theta As Double = System.Math.Atan2(y, x)
     If Theta < 0 Then Theta += 2 * System.Math.PI
     Return Degrees(Theta)
-  End Function
-
-  Public Shared Function IntestectionPoint(Point1 As clsGeographicPosition, Route1 As Double, Point2 As clsGeographicPosition, Route2 As Double) As clsGeographicPosition
-    Dim Dist As Double = 100
-    Dim Dest1 As clsGeographicPosition = PuntoDestinazione(Point1, Dist, Route1)
-    Dim Point1XY As New clsXYdouble(0, 0) ' = Ref Point
-    Dim Dest1XY As clsXYdouble = CalculatesRelativePositionXY(Dest1, Point1, 0)
-
-    Dim Dest2 As clsGeographicPosition = PuntoDestinazione(Point2, Dist, Route2)
-    Dim Point2XY As clsXYdouble = CalculatesRelativePositionXY(Point2, Point1, 0)
-    Dim Dest2XY As clsXYdouble = CalculatesRelativePositionXY(Dest2, Point1, 0)
-
-    Dim PuntoIntersezione As clsXYdouble = XYIntersectionPoint(Point1XY, Dest1XY, Point2XY, Dest2XY)
-    If Double.IsNaN(PuntoIntersezione.X) Then Return Nothing
-
-    Dist = Math.Sqrt(Math.Pow(PuntoIntersezione.X - Point1XY.X, 2) + Math.Pow(PuntoIntersezione.Y - Point1XY.Y, 2))
-    Dim angR As Double = Math.Atan2(PuntoIntersezione.Y - Point1XY.Y, PuntoIntersezione.X - Point1XY.X)
-    Dim Brg As Double = BearingToCartesianAndViceVersa(Degrees(angR))
-    Return PuntoDestinazione(Point1, Dist, Brg)
   End Function
 
 
@@ -297,64 +212,6 @@ Public Class clsGeoCalculations
     Return New clsXYdouble(X, Y)
   End Function
 
-
-  Public Shared Sub TestRnB()
-    'Dim Centro As New clsGeograficPosition(-10, 10)
-    'Dim Punto As clsGeograficPosition
-    'Dim R1, B1, R2, B2 As Double
-    'For i As Integer = 0 To 7
-    '  Select Case i
-    '    Case 0
-    '      Punto = New clsGeograficPosition(-11, 10)
-    '    Case 1
-    '      Punto = New clsGeograficPosition(-11, 11)
-    '    Case 2
-    '      Punto = New clsGeograficPosition(-10, 11)
-    '    Case 3
-    '      Punto = New clsGeograficPosition(-9, 11)
-    '    Case 4
-    '      Punto = New clsGeograficPosition(-9, 10)
-    '    Case 5
-    '      Punto = New clsGeograficPosition(-9, 9)
-    '    Case 6
-    '      Punto = New clsGeograficPosition(-10, 9)
-    '    Case 7
-    '      Punto = New clsGeograficPosition(-11, 9)
-    '  End Select
-    '  R1 = CalcolaDistanza(Centro, Punto)
-    '  B1 = BearingDegreesFast(Centro, Punto)
-
-    '  R2 = DistanceMeters(Centro, Punto)
-    '  B2 = BearingDegrees(Centro, Punto)
-
-    '  Console.WriteLine(R1.ToString("F0") & " " & R2.ToString("F0") & " " & B1.ToString("F1") & " " & B2.ToString("F1"))
-    '  'Stop
-    'Next
-    ''Stop
-    'Dim adesso As DateTime = Now
-    'For i As Integer = 0 To 4000000
-    '  R1 = CalcolaDistanza(Punto, Centro)
-    '  'B1 = BearingDegrees(Punto, Centro)
-    'Next
-    'Console.WriteLine("R1 " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    'adesso = Now
-    'For i As Integer = 0 To 4000000
-    '  R2 = DistanceMeters(Punto, Centro)
-    '  'B2 = Bearing(Punto, Centro)
-    'Next
-    'Console.WriteLine("R2 " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    'adesso = Now
-    'For i As Integer = 0 To 4000000
-    '  B1 = BearingDegrees(Punto, Centro)
-    'Next
-    'Console.WriteLine("B1 " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    'adesso = Now
-    'For i As Integer = 0 To 4000000
-    '  B2 = Bearing(Punto, Centro)
-    'Next
-    'Console.WriteLine("B2 " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    'Stop
-  End Sub
 
   'Public Shared Sub ProvaBearingToCartesianAndViceversa()
   '  For i As Integer = 0 To 360 Step 10
@@ -426,58 +283,7 @@ Public Class clsGeoCalculations
 
 
 
-  Public Shared Function PolygonAroundGeoPoint(point As clsGeographicPosition, polar As clsTgt, WindAxis As Double, Tws As Double, Seconds As Double)
 
-    Dim polygon As New List(Of clsGeographicPosition)
-    Dim StepDegrees As Integer = 5 ' Number of points to create a circle
-
-
-    For i As Integer = 0 To 360 Step StepDegrees
-      Dim Brg = SommaAngolo180adAngolo360(WindAxis, i)
-      Dim Twa As Double = i
-      If Twa > 180 Then
-        Twa -= 360
-      End If
-      Dim Rng = 0
-      Dim TwaTgtUp As Double = polar.ValoreTgtUp(Tws, "bs").Twa
-      Dim TwaTgtDn As Double = polar.ValoreTgtDn(Tws, "bs").Twa
-      If Math.Abs(Twa) <= TwaTgtUp Then
-        Stop 'la velocita'e'il vmg non la bs piu'il costo di una manovra
-      ElseIf Math.Abs(Twa) >= TwaTgtUp Then
-        Stop 'la velocita'e'il vmg non la bs piu'il costo di una manovra
-      Else
-        Rng = polar.Polare("bs").PolarValue(Tws, Math.Abs(Twa))
-      End If
-      Rng = KtsToMS(Rng) * Seconds ' Convert to meters
-
-      Dim PuntoTmp As clsGeographicPosition = clsGeoCalculations.PuntoDestinazione(point, Rng, Brg)
-      polygon.Add(New clsGeographicPosition(PuntoTmp.LatDec, PuntoTmp.LngDec, True))
-    Next
-    Return polygon
-  End Function
-
-
-
-  Public Function IsPointInPolygon(point As clsGeographicPosition, polygon As List(Of clsGeographicPosition)) As Boolean
-    Dim n As Integer = polygon.Count
-    Dim inside As Boolean = False
-
-    For i As Integer = 0 To n - 1
-      Dim j As Integer = (i + n - 1) Mod n
-
-      Dim xi As Double = polygon(i).LngDec
-      Dim yi As Double = polygon(i).LatDec
-      Dim xj As Double = polygon(j).LngDec
-      Dim yj As Double = polygon(j).LatDec
-
-      Dim intersect As Boolean = ((yi > point.LatDec) <> (yj > point.LngDec)) AndAlso
-                (point.LngDec < (xj - xi) * (point.LatDec - yi) / ((yj - yi) + 0.0000000001) + xi)
-
-      If intersect Then inside = Not inside
-    Next
-
-    Return inside
-  End Function
 
 
 End Class
@@ -786,35 +592,6 @@ Module mdlCommon
   End Sub
 
 
-  Private Function ParteComuneDelNome(PathFiles As List(Of String)) As String
-    Dim strTmp As String = ""
-    Dim Nomi As New List(Of String)
-    For Each fl In PathFiles
-      Dim FI As New System.IO.FileInfo(fl)
-      Nomi.Add(FI.Name)
-    Next
-    If Nomi.First.Length > 1 Then
-      Dim subStr As String ' = Nomi.First.Substring(0, 1)
-      For i As Integer = 1 To Nomi.First.Length - 1
-        subStr = Nomi.First.Substring(0, i)
-        Dim SubstringUguale As Boolean = True
-        For Each Nome In Nomi
-          If Not subStr = Nome.Substring(0, i) Then
-            SubstringUguale = False
-            Exit For
-          End If
-        Next
-        If SubstringUguale Then
-          strTmp = subStr
-        Else
-          Exit For
-        End If
-      Next
-    End If
-    If strTmp.Trim = "" Then Return TempoInStringaFormattata(Now, eFormatType.YYYYMMDDHHMMSS)
-    Return strTmp.TrimEnd("_")
-  End Function
-
 
 
 
@@ -909,39 +686,6 @@ Module mdlCommon
     Return SpeedMS / 1852 * 3600
   End Function
 
-  Public Function FaroDateAndSecFromMidnightToSystemDT(Day As DateTime, StringaSecFromMidNight As String) As DateTime
-    Dim secDbl As Double
-    If Double.TryParse(StringaSecFromMidNight, secDbl) Then
-      Return Day.AddSeconds(secDbl)
-    End If
-    Return Nothing
-    'If Not IsNumeric(StringaSecFromMidNight) Then Return Nothing
-    'Return Day.AddSeconds(CDbl(StringaSecFromMidNight))
-  End Function
-
-
-  Public Function FaroDateTimeToSystemDT(StringaData As String, StringaTime As String) As DateTime
-    If Not IsNumeric(StringaData) Then Return Nothing
-    If Not IsNumeric(StringaTime) Then Return Nothing
-    Return DateTime.ParseExact(StringaData & StringaTime, FormatiFaro, Nothing, Globalization.DateTimeStyles.None)
-
-    Dim hms As String = StringaTime.Split(".")(0)
-    hms = hms.PadLeft(6, "0")
-    If StringaTime.IndexOf(".") > -1 Then
-      'Dim fff As String = StringaTime.Split(".")(1)
-      'fff = fff.PadRight(3, "0")
-      StringaTime = hms & "." & StringaTime.Split(".")(1)
-    Else
-      StringaTime = hms & ".000"
-    End If
-    'Dim dt As DateTime
-    'DateTime.TryParseExact(StringaData & hms & "." & fff, "yyyyMMddHmmss.fff", meCultureInfo, Globalization.DateTimeStyles.None, dt)
-
-    Return DateTime.ParseExact(StringaData & StringaTime, FormatiFaro, Nothing, Globalization.DateTimeStyles.None)
-
-
-
-  End Function
 
   Public Function CalculatesRelativePositionXY(DestinationPosition As clsGeographicPosition, RefPosition As clsGeographicPosition, Axis As Double, Colore As Color) As clsXYpoint
     Dim BrgDeg As Double = clsGeoCalculations.BearingDegrees(RefPosition, DestinationPosition)
@@ -954,21 +698,6 @@ Module mdlCommon
     Return New clsXYpoint(X, Y, Colore)
   End Function
 
-  Public Function ConvertToLocalTime(lat As Double, lng As Double, UtcTime As DateTime) As DateTime
-    Dim tzIana As String = TimeZoneLookup.GetTimeZone(lat, lng).Result
-    Dim tzInfo As TimeZoneInfo = TZConvert.GetTimeZoneInfo(tzIana)
-    Dim convertedTime As DateTimeOffset = TimeZoneInfo.ConvertTimeFromUtc(UtcTime, tzInfo)
-    Return convertedTime.LocalDateTime
-  End Function
-
-
-  Public Function FaroTimeToSystemTime(Data As Date, StringaTime As String) As DateTime
-    Dim HMS As String = StringaTime.Split(".")(0)
-    Dim Mill As String = 0
-    If StringaTime.IndexOf(".") > -1 Then Mill = StringaTime.Split(".")(1)
-    Dim strTimef As String = StringaTime.Substring(0, HMS.Length - 4).PadLeft(2, "0") & ":" & StringaTime.Substring(HMS.Length - 4, 2) & ":" & StringaTime.Substring(HMS.Length - 2, 2) & "." & Mill.PadLeft(3, "0")
-    Return DateTime.Parse(Data.ToLongDateString & " " & strTimef)
-  End Function
 
   Public Function TempoInStringaFormattata(Momento As DateTime, FormatType As eFormatType) As String
     Dim strTMP As String
@@ -1117,54 +846,6 @@ Module mdlCommon
     End Try
 
   End Sub
-
-  Public Function ImpostaAggregazione(Aggregazione As Double, vMax As Double, vMin As Double, Intervalli As Integer) As Double
-    If Aggregazione <= 0 Then
-      Dim Valore As Double = (vMax - vMin) / Intervalli
-      Dim Segno As Integer = If(Valore = 0, 1, System.Math.Abs(Valore) / Valore)
-      Valore = System.Math.Abs(Valore)
-
-      'Dim Test As Double() = {0.001, 0.1, 3.6, 16, 21.5, 55, 122, 240, 450, 550, 700, 995, 1300, 4000, 9000, 12000, 55000, 99000, 150000}
-      'For Each Elemento As Double In Test
-      '  Valore = Elemento / Intervalli
-      Dim Esponente As Integer
-      If Valore >= 1 Then
-        For Esponente = 1 To 100
-          Dim vTMp As Double = Valore / 10 ^ Esponente
-          If vTMp <= 1 Then
-            Esponente -= 1
-            Exit For
-          End If
-        Next
-      Else
-        For Esponente = 0 To 100
-          Dim vTMp As Double = Valore * 10 ^ Esponente
-          If vTMp >= 1 Then
-            'Esponente += 1
-            Esponente *= -1
-            Exit For
-          End If
-        Next
-      End If
-
-      Dim lAggregazione As Double = CInt(Valore / (10 ^ (Esponente))) * (10 ^ (Esponente))
-      Dim lAggregazioneUp As Double = CInt(Valore / (10 ^ (Esponente + 1))) * (10 ^ (Esponente + 1))
-      Dim lAggregazioneDn As Double = CInt(Valore / (10 ^ (Esponente - 1))) * (10 ^ (Esponente - 1))
-      If System.Math.Abs(vMax - vMin) / lAggregazioneUp > 10 Then
-        lAggregazione = lAggregazioneUp
-      End If
-      'Dim Prova As Double = CInt(Elemento / pAggregazione) * pAggregazione
-      If lAggregazione = 0 Then lAggregazione = 1
-      Return lAggregazione
-      'Console.WriteLine(Elemento & " " & pAggregazione & " " & Elemento / pAggregazione)
-      'Next
-
-      Stop
-    Else
-      Return Aggregazione
-    End If
-
-  End Function
 
 
   Public Function TrovaIndice(Momento As DateTime, ValoriDT As Date()) As Integer
@@ -1423,17 +1104,6 @@ Module mdlCommon
     End Try
   End Function
 
-  Public Function ScalaColoriSDC(NumeroValori As Integer) As List(Of System.Drawing.Color)
-    If NumeroValori = 0 Then NumeroValori = 1
-    Dim Steppi As Double = Int(256 / NumeroValori)
-    Dim ListaColori As New List(Of System.Drawing.Color)
-    For i As Integer = 0 To 255 Step Steppi
-      Dim Ctmp As Color = ColoreInScala(i)
-      ListaColori.Add(System.Drawing.Color.FromArgb(255, Ctmp.R, Ctmp.G, Ctmp.B))
-    Next
-    Return ListaColori
-  End Function
-
   'Public Function ScalaColori(NumeroValori As Integer) As List(Of Color)
   '  If NumeroValori = 0 Then NumeroValori = 1
   '  Dim Steppi As Double = Int(256 / NumeroValori)
@@ -1454,10 +1124,6 @@ Module mdlCommon
   '  Return ListaColori
   'End Function
 
-  Public Function TonalitaRosso(Indice As Integer) As Color
-    Return TonalitaRosso(255, Indice)
-  End Function
-
   Public Function TonalitaRosso(Trasparenza As Byte, Indice As Integer) As Color
     Dim idx As Integer = ((Indice / 4) - Int(Indice / 4)) * 4
     Select Case idx
@@ -1471,10 +1137,6 @@ Module mdlCommon
         Return Color.FromArgb(Trasparenza, 255, 0, 128)
     End Select
 
-  End Function
-
-  Public Function TonalitaVerde(Indice As Integer) As Color
-    Return TonalitaVerde(255, Indice)
   End Function
 
   Public Function TonalitaVerde(Trasparenza As Byte, Indice As Integer) As Color
@@ -1608,29 +1270,6 @@ Module mdlCommon
     End Select
   End Function
 
-  Public Function AvgCanaleIntervallo(Canale As clsChannel2020, TR As clsTimeRange) As Double
-    Dim c = DataProvider2020.CanaleDbl(Canale.ChannelId)
-    Dim v = c.Valori.Skip(TR.IdRigaIniziale).Take(TR.IdRigaFinale - TR.IdRigaIniziale).Where(Function(x) Not Double.IsNaN(x))
-    If v Is Nothing Then Return 0
-    Return v.Average
-
-  End Function
-
-  Public Function ValoriCanaleIntervallo(Canale As clsChannel2020, TR As clsTimeRange) As Double()
-    Dim c = DataProvider2020.CanaleDbl(Canale.ChannelId)
-    Return c.Valori.Skip(TR.IdRigaIniziale).Take(TR.IdRigaFinale - TR.IdRigaIniziale).Where(Function(x) Not Double.IsNaN(x)).ToArray
-  End Function
-
-  Public Sub ImpostaListaChiavi(Lista As List(Of clsPeriod2021))
-    Dim i As Integer = 0
-    For Each p In Lista
-      If Not ListaChiavi.ContainsKey(p.Keys) Then
-        ListaChiavi.Add(p.Keys, ColoriChiave(i))
-        i += 1
-      End If
-    Next
-  End Sub
-
   Public Sub ImpostaListaChiaviSoloSelected(Lista As List(Of clsPeriod2021))
     Dim i As Integer = 0
     ListaChiavi.Clear()
@@ -1645,55 +1284,6 @@ Module mdlCommon
   End Sub
 
 
-  Public Function LongProiezione(RawLat As Double, RawLong As Double) As Double
-    If System.Math.Abs(RawLat) >= 90 Then Return 0
-    Return RawLong * System.Math.Cos(Radians(RawLat))
-  End Function
-
-  Public Function GetValoriAbs(Valori As List(Of Double)) As List(Of Double)
-    Dim lstTmp As New List(Of Double)
-    For i As Integer = 0 To Valori.Count - 1
-      lstTmp.Add(System.Math.Abs(Valori(i)))
-    Next
-    Return lstTmp
-  End Function
-
-  Public Function GetValoriAbs(Valori As List(Of Double?)) As List(Of Double?)
-    Dim lstTmp As New List(Of Double?)
-    For i As Integer = 0 To Valori.Count - 1
-      lstTmp.Add(System.Math.Abs(Valori(i).Value))
-    Next
-    Return lstTmp
-  End Function
-
-  Public Function GetValoriTack(CurrentChannelPositiveStbd As Boolean, Valori As List(Of Double), ValoriTackChannel As List(Of Double)) As List(Of Double)
-    If Not Valori.Count = ValoriTackChannel.Count Then Return Nothing
-    Dim lstTmp As New List(Of Double)
-    Dim Segno As Integer = If(CurrentChannelPositiveStbd, 1, -1)
-    Dim SegnoTack As Integer = 1
-    For i As Integer = 0 To Valori.Count - 1
-      SegnoTack = If(ValoriTackChannel(i) < 0, -1, 1)
-      lstTmp.Add(Segno * SegnoTack * Valori(i))
-    Next
-    Return lstTmp
-  End Function
-
-  Public Function GetValoriStbd(Valori As List(Of Double), ValoriTackChannel As List(Of Double)) As List(Of Double)
-    If Not Valori.Count = ValoriTackChannel.Count Then Return Nothing
-    Dim lstTmp As New List(Of Double)
-    For i As Integer = 0 To Valori.Count - 1
-      Dim vTack As Double = ValoriTackChannel(i)
-      If vTack >= 0 Then
-        lstTmp.Add(Valori(i))
-      End If
-    Next
-    Return lstTmp
-  End Function
-
-  Public Sub GetValoriPortStbd(CampoValori As clsChannel2020, IdIniziale As Integer, IdFinale As Integer, ByRef ValoriPort As List(Of Double), ByRef ValoriStbd As List(Of Double), ByRef ValoriAbs As List(Of Double?))
-    GetValoriPortStbd(CampoValori, IdIniziale, IdFinale, CanaleTackDefault, ValoriPort, ValoriStbd, ValoriAbs)
-  End Sub
-
   Private Sub GetValoriPortStbd(CampoValori As clsChannel2020, IdIniziale As Integer, IdFinale As Integer, CampoTack As clsChannel2020, ByRef ValoriPort As List(Of Double), ByRef ValoriStbd As List(Of Double), ByRef ValoriAbs As List(Of Double?))
     For i As Integer = IdIniziale To IdFinale
       Dim Vtmp As Double = CampoValori.Valori(i)
@@ -1707,18 +1297,6 @@ Module mdlCommon
       End If
     Next
   End Sub
-
-  Public Function GetValoriPort(Valori As List(Of Double), ValoriTackChannel As List(Of Double)) As List(Of Double)
-    If Not Valori.Count = ValoriTackChannel.Count Then Return Nothing
-    Dim lstTmp As New List(Of Double)
-    For i As Integer = 0 To Valori.Count - 1
-      Dim vTack As Double = ValoriTackChannel(i)
-      If vTack < 0 Then
-        lstTmp.Add(Valori(i))
-      End If
-    Next
-    Return lstTmp
-  End Function
 
   'Public Sub ImpostaCanaliAsIsSelected(CanaliOrdinata As IEnumerable(Of clsChannel2020))
   '  For Each Canale As clsChannel2020 In DataProvider2020.Channels.ListaCanali
@@ -1750,32 +1328,6 @@ Module mdlCommon
   '  Return -1
   'End Function
 
-  Public Function StringaDistanza(Metri As Double) As String
-    If Metri < pMetriPerBoatLenght Then
-      Return Format(Metri, "F1") & "m"
-    ElseIf Metri < pMetriPerBoatLenght * 20 Then
-      Return Format(Metri / pMetriPerBoatLenght, "F1") & "bl"
-    ElseIf Metri < pMetriMiglioNautico * 2 Then
-      Return Format(Metri / pMetriMiglioNautico, "F2") & "nm"
-    Else
-      Return Format(Metri / pMetriMiglioNautico, "F1") & "nm"
-    End If
-  End Function
-
-  Public Function Lunghezze(Distanza As Double, UnitaMisura As eUnitaMisura) As Double
-    Select Case UnitaMisura
-      Case eUnitaMisura.eGradiGeo
-        Return Distanza * 60 * pMetriMiglioNautico / pMetriPerBoatLenght
-      Case eUnitaMisura.eLunghezza
-        Return Distanza
-      Case eUnitaMisura.eMetri
-        Return Distanza / pMetriPerBoatLenght
-      Case eUnitaMisura.eMiglia
-        Return Distanza * pMetriMiglioNautico / pMetriPerBoatLenght
-    End Select
-    Return Distanza
-  End Function
-
   Public Function Metri(Distanza As Double, UnitaMisura As eUnitaMisura) As Double
     Select Case UnitaMisura
       Case eUnitaMisura.eGradiGeo
@@ -1788,14 +1340,6 @@ Module mdlCommon
         Return Distanza * pMetriMiglioNautico
     End Select
     Return Distanza
-  End Function
-
-  Public Function NodiToMetriSec(SpeedNodi As Double) As Double
-    Return SpeedNodi * 1852 / 3600
-  End Function
-
-  Public Function MetriSecToNodi(SpeedMetriSecondo As Double) As Double
-    Return SpeedMetriSecondo / 1852 * 3600
   End Function
 
   Public Function TwaPoppaPerFunzioneDelta(Twa As Double) As Double
@@ -1901,24 +1445,6 @@ Module mdlCommon
   'Private Sub pObjChartSyncManagerDetails_PropertyChanged(sender As Object, e As PropertyChangedEventArgs) Handles pObjChartSyncManagerDetails.PropertyChanged
 
   'End Sub
-
-  Public Sub AggiungiDoubleToMatrice(ByRef Matrice As Double(), Valore As Double)
-    If Matrice Is Nothing Then ' OrElse Matrice(0) = Nothing Then
-      ReDim Matrice(0)
-    Else
-      ReDim Preserve Matrice(Matrice.Length)
-    End If
-    Matrice(Matrice.Length - 1) = Valore
-  End Sub
-
-  Public Sub AggiungiTRtoMatrice(ByRef Matrice As clsTimeRange(), TR As clsTimeRange)
-    If IsNothing(Matrice) Then
-      ReDim Matrice(0)
-    Else
-      ReDim Preserve Matrice(Matrice.Length)
-    End If
-    Matrice(Matrice.Length - 1) = TR
-  End Sub
 
   'Public Function VisualizzazioneGroupByDefault(Canali As List(Of clsChannel2020)) As clsTimePlotViewModel.eVisualizzazioneGroupBy
   '  If Canali Is Nothing Then Return clsTimePlotViewModel.eVisualizzazioneGroupBy.eNormale
@@ -2263,14 +1789,6 @@ Module mdlCommon
   '   End If
   ' End Sub
 
-  Public Function Coseno(ByVal Raggio As Double, ByVal AngoloGradi As Double) As Double
-    If AngoloGradi = 0 Then
-      Coseno = Raggio
-    Else
-      Coseno = Raggio * System.Math.Cos(Radians(System.Math.Abs(AngoloGradi)))
-    End If
-  End Function
-
   Public Sub TrueFromApparent(ByRef TWA As Double, ByRef TWS As Double, AWA As Double, AWS As Double, BS As Double)
     TWS = (AWS ^ 2 + BS ^ 2 - 2 * AWS * BS * System.Math.Cos(Radians(AWA))) ^ (1 / 2)
     TWA = Degrees(System.Math.Acos((AWS * System.Math.Cos(Radians(AWA)) - BS) / TWS))
@@ -2335,48 +1853,6 @@ Module mdlCommon
         ' lascia invariato
     End Select
   End Sub
-
-  Public Function coloriHtml(Indice As Integer)
-    Dim ListaColori As New List(Of String)
-    ListaColori.Add("Red")
-    ListaColori.Add("Green")
-    ListaColori.Add("Blue")
-    ListaColori.Add("Dark Goldenrod2")
-    ListaColori.Add("DarkGreen")
-    ListaColori.Add("Orange")
-    ListaColori.Add("Gold")
-    ListaColori.Add("Marron")
-    ListaColori.Add("Violet")
-    ListaColori.Add("Cyan")
-    ListaColori.Add("DarkBlue")
-
-
-    '#a6cee3
-    '#1F78b4
-    '#b2df8a
-    '#33a02c
-    '#fb9a99
-    '#e31a1c
-    '#fdbf6f
-    '#ff7f00
-    '#cab2d6
-    '#6a3d9a
-    '#ffff99
-    '#b15928
-
-    If Indice >= ListaColori.Count Then
-
-      'For i As Integer = 0 To 25
-      '  Dim resto As Integer = i Mod ListaColori.Count
-      'Next
-
-
-      Indice = Indice Mod ListaColori.Count
-      'Indice = System.Math.IEEERemainder(Indice, ListaColori.Count)
-    End If
-
-    Return ListaColori(Indice)
-  End Function
 
 
   Private Sub ImpostaListaColori()
@@ -2611,20 +2087,6 @@ Module mdlCommon
   '  End Set
   'End Property
 
-  Public Function SelectFolder(PathIniziale As String) As String
-    Dim Fld As New System.Windows.Forms.FolderBrowserDialog
-    Fld.SelectedPath = PathIniziale
-    Dim Risultato As System.Windows.Forms.DialogResult = Fld.ShowDialog
-    Select Case Risultato
-      Case Forms.DialogResult.OK
-        Return Fld.SelectedPath
-      Case Forms.DialogResult.Yes
-        Return Fld.SelectedPath
-      Case Else
-        Return ""
-    End Select
-  End Function
-
   Public Function SepDaPath(Path As String) As String
     If Path.IndexOf("/") > 0 Then Return "/"
     If Path.IndexOf("\") > 0 Then Return "\"
@@ -2714,106 +2176,6 @@ Module mdlCommon
   Declare Function SetForegroundWindow Lib "user32.dll" (ByVal hwnd As Integer) As Integer
 
 
-  Public Function stringaGombocResults(Colonne As List(Of String), LatiPerGiro As Integer, sqlWhere As String) As String
-    ' "SELECT solution_id/50 as 'sex', [Block.Time], [Block.Boat.Speed_kts] FROM results WHERE solution_id % 50 == 0 and [Block.Boat.Overlays.LegTimes.Sum] >= 0 ORDER BY solution_id;"
-
-    Dim sqlSelect As String = "SELECT [Block.Clock.Epoch] as 'time',"  ' formato Epoch;"
-    sqlSelect &= "[Block.Clock.Epoch] as 'date',"
-    sqlSelect &= "[Block.Boat.Latitude] as 'latitude',"
-    sqlSelect &= "[Block.Boat.Longitude] as 'longitude',"
-    sqlSelect &= "[Block.Boat.TWS_kts] as 'tws'," ' Block.Boat.TWS_kts TWS @ 10m
-    sqlSelect &= "[Block.Boat.TWD] as 'twd',"
-    sqlSelect &= "[Block.Boat.CWA] as 'twa',"
-    sqlSelect &= "[Block.Boat.TWA] as 'hdgtwa',"
-    sqlSelect &= "[Block.Boat.Speed_kts] as 'bs',"
-    sqlSelect &= "[Block.Boat.Aero.ApparentWind.AWA] as 'awa'," ' Wind Sensor for sails
-    sqlSelect &= "([Block.Boat.Aero.ApparentWind.AWS]*1.94384) as 'aws',"
-    sqlSelect &= "[Block.Boat.Heel_n] as 'heel',"
-    sqlSelect &= "[Block.Boat.Trim] as 'trim',"
-    sqlSelect &= "([Block.Boat.q] * 57.2958) as 'ptchrt'," ' 
-    sqlSelect &= "[Block.Boat.Sink_min] as 'rideheight',"
-    sqlSelect &= "[Block.Boat.PortFoil.Cant] as 'cantport',"
-    sqlSelect &= "[Block.Boat.StbdFoil.Cant] as 'cantstbd',"
-    If VerificaCampo("Block.Boat.Aero.Traveler", Colonne) Then
-      sqlSelect &= "[Block.Boat.Aero.Traveler] as 'maintrav',"
-    End If
-    If VerificaCampo("Block.Boat.Aero.Twist", Colonne) Then
-      sqlSelect &= "[Block.Boat.Aero.Twist] as 'maintwist',"
-    End If
-    If VerificaCampo("Block.Boat.AP.TgtRide", Colonne) Then
-      sqlSelect &= "[Block.Boat.AP.TgtRide] as 'rdetgt',"
-    End If
-    sqlSelect &= "[Block.Boat.Rudder.Yaw] as 'rdr',"
-    sqlSelect &= "[Block.Boat.Rudder.Rake] as 'rdrrk',"
-    sqlSelect &= "[Block.Boat.Leeway_n] as 'lwy',"
-    sqlSelect &= "[Block.Boat.Heading] as 'hdg',"
-    sqlSelect &= "[Block.Boat.COG] as 'cse',"
-    sqlSelect &= "[Block.Boat.COG] as 'cog',"
-    sqlSelect &= "[Block.Boat.Speed_kts] as 'sog',"  ' ?????
-    sqlSelect &= "([Block.Boat.r] * 57.2958) as 'yawrt',"
-    sqlSelect &= "([Block.Boat.p] * 57.2958) as 'rollrt',"
-    sqlSelect &= "[Block.Boat.PortFoil.InboardFlap1] as 'PortFoilInFlap1Angle',"
-    sqlSelect &= "[Block.Boat.PortFoil.InboardFlap2] as 'PortFoilInFlap2Angle',"
-    sqlSelect &= "[Block.Boat.PortFoil.OutboardFlap1] as 'PortFoilOutFlap1Angle',"
-    sqlSelect &= "[Block.Boat.PortFoil.OutboardFlap2] as 'PortFoilOutFlap2Angle',"
-    sqlSelect &= "[Block.Boat.StbdFoil.InboardFlap1] as 'StbdFoilInFlap1Angle',"
-    sqlSelect &= "[Block.Boat.StbdFoil.InboardFlap2] as 'StbdFoilInFlap2Angle',"
-    sqlSelect &= "[Block.Boat.StbdFoil.OutboardFlap1] as 'StbdFoilOutFlap1Angle',"
-    sqlSelect &= "[Block.Boat.StbdFoil.OutboardFlap2] as 'StbdFoilOutFlap2Angle',"
-    sqlSelect &= "[Block.Boat.PortFoil.Cant] + [Block.Boat.PortFoil.Effective.Cant] - [Block.Boat.Heel] as 'PortCantAngleEffective',"
-    sqlSelect &= "[Block.Boat.StbdFoil.Cant] + [Block.Boat.StbdFoil.Effective.Cant] + [Block.Boat.Heel] as 'StbdCantAngleEffective',"
-    sqlSelect &= "([Block.Boat.Rudder.Rake]+[Block.Boat.Trim]) as 'RuddeRakeEffective',"
-    sqlSelect &= "[Block.Boat.HullLiftFraction] as 'HullLift',"
-    sqlSelect &= "[Block.Boat.RefBoatID] as 'BoatConfigId',"
-    sqlSelect &= "[Block.Boat.ExternalAPs.DLL.waveCrest] as 'WaveCrest'"
-    If LatiPerGiro > 0 Then
-      For i As Integer = 1 To LatiPerGiro
-        sqlSelect &= ", [Block.Boat.LegTimes.Leg" & i & "] as 'Leg" & i & "'"
-      Next
-      sqlSelect &= ", [Block.Boat.LegTimes.Sum] as 'LapTime'"
-    End If
-
-    sqlSelect &= " FROM results "
-    'If pDownSampling Then
-    '  sqlSelect &= sqlWere10Hz() '"WHERE solution_id % 5 == 0 and [Block.Boat.Overlays.LegTimes.Sum] >= 0 "
-    'Else
-    '  sqlSelect &= sqlWere() '"WHERE solution_id % 5 == 0 and [Block.Boat.Overlays.LegTimes.Sum] >= 0 "
-    'End If
-    sqlSelect &= sqlWhere
-    'sqlSelect &= "WHERE solution_id % 50 == 0 and [Block.Boat.Overlays.LegTimes.Sum] >= 0 "
-    sqlSelect &= "ORDER BY solution_id;"
-
-    Return sqlSelect
-  End Function
-
-  Public Function stringaGombocResults(PathFileMapping As String, Colonne As List(Of String), LatiPerGiro As Integer, sqlWhere As String) As String
-    Dim Righe As List(Of String) = System.IO.File.ReadAllLines(PathFileMapping).ToList
-    Dim sqlSelect As String = "SELECT"
-    For Each Riga As String In Righe
-      Dim CanaliEsistenti As Boolean = VerificaCanali(Riga.Split(vbTab)(0), Colonne)
-      If CanaliEsistenti Then
-        sqlSelect &= " " & Riga.Split(vbTab)(0) & " as '" & Riga.Split(vbTab)(1) & "',"
-      End If
-    Next
-    If LatiPerGiro > 0 Then
-      For i As Integer = 1 To LatiPerGiro
-        sqlSelect &= " [Block.Boat.LegTimes.Leg" & i & "] as 'Leg" & i & "',"
-      Next
-      sqlSelect &= " [Block.Boat.LegTimes.Sum] as 'LapTime'"
-    Else
-      sqlSelect = sqlSelect.TrimEnd(",")
-    End If
-    sqlSelect &= " FROM results "
-    'If pDownSampling Then
-    '  sqlSelect &= sqlWere10Hz(pLatiPerGiro)
-    'Else
-    '  sqlSelect &= sqlWhere(pLatiPerGiro)
-    'End If
-    sqlSelect &= sqlWhere
-    sqlSelect &= "ORDER BY solution_id;"
-    Return sqlSelect
-  End Function
-
   Private Function VerificaCanali(sql As String, ListaCampi As List(Of String)) As Boolean
     Dim r As New Text.RegularExpressions.Regex("\[([^\]]*)\]")
     Dim Risultati As Text.RegularExpressions.MatchCollection = r.Matches(sql)
@@ -2831,25 +2193,12 @@ Module mdlCommon
     Return Not ListaCampi.Find(Function(x) x = Nome) Is Nothing
   End Function
 
-  Public Function sqlWere10Hz(LatiPerGiro As Integer) As String
-    Dim strTmp As String = "WHERE solution_id % 5 == 0 "
-    If LatiPerGiro > 0 Then
-      Return strTmp & " and [Block.Boat.LegTimes.Sum] >= 0 "
-    Else
-      Return strTmp
-    End If
-  End Function
-
   Public Function sqlWhere(LatiPerGiro As Integer) As String
     If LatiPerGiro > 0 Then
       Return "WHERE [Block.Boat.LegTimes.Sum] >= 0 "
     Else
       Return ""
     End If
-  End Function
-
-  Public Function JouleToKcal(Joules As Double) As Double
-    Return Joules * 0.000239006
   End Function
 
   Public Function CartellaParent(FilePath As String, SeparatoreFinale As Boolean) As String
@@ -2866,10 +2215,6 @@ Module mdlCommon
     Else
       Return FI.DirectoryName
     End If
-  End Function
-
-  Public Function PathSepChar(FilePath As String) As String
-    Return PathSepChar(New System.IO.FileInfo(FilePath))
   End Function
 
   Public Function PathSepChar(FI As System.IO.FileInfo) As String
@@ -2975,25 +2320,6 @@ Public Class cls360vector
       Return pRNG
     End Get
   End Property
-
-  Public Sub AggiornaRangeAndBearing(newRange As Double, newBearing As Double)
-    ' brg deve entrare normalizzato
-    pRNG = newRange
-    pBRGdeg = newBearing
-  End Sub
-
-  Public Sub AggiornaRange(newRange As Double)
-    pRNG = newRange
-  End Sub
-
-  Public Sub AggiornaBearing(newBearing As Double)
-    pBRGdeg = newBearing
-  End Sub
-
-  Public Sub ReverseBearing()
-    pBRGdeg += 180
-    If pBRGdeg > 360 Then pBRGdeg -= 360
-  End Sub
 
   Public Sub New(Range As Double, Bearing As Double, DistUM As eDistUM)
     ' BRG deve entrare normalizzato
@@ -3185,52 +2511,6 @@ Public Class clsMatriceControlliSinglePeriod
       pMatriceControlli = value
     End Set
   End Property
-
-  Private Function HeaderAscissa(CanaleAscissa As clsChannel2020) As String
-    If CanaleAscissa Is Nothing Then Return ""
-    Return CanaleAscissa.ChannelId
-  End Function
-
-  Public Sub SalvaImpostazione()
-    Stop
-    AppConfig.Salva()
-    'Dim Suffisso As String = DataProvider2020.SuffissoFileType
-    'AppConfig.EliminaNodo(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, True)
-    'Dim ID As Integer = 0
-    'If pMatriceControlli.Count > 0 Then
-    '  For Each ctrl As UserControlTimePlotView In pMatriceControlli
-    '    Dim TimePlotViewModel As clsTimePlotViewModel = DirectCast(ctrl.DataContext, clsTimePlotViewModel)
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "Xaxis", HeaderAscissa(TimePlotViewModel.CanaleAscissa), True, False)
-    '    Dim LH As New List(Of String)
-    '    If Not TimePlotViewModel.CanaliOrdinata Is Nothing Then
-    '      For Each canale As clsChannel2020 In TimePlotViewModel.CanaliOrdinata
-    '        If Not canale Is Nothing Then
-    '          LH.Add(canale.ChannelId)
-    '        End If
-    '      Next
-    '    End If
-    '    Dim strTMP As String = ""
-    '    For Each Elemento As String In LH
-    '      strTMP &= Elemento & ","
-    '    Next
-    '    strTMP = strTMP.TrimEnd(",")
-    '    'Stop
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "Yaxis", strTMP, True, False)
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "LineType", TimePlotViewModel.SelectedLineType.LineType, True, False)
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "ShowPortStbdBackground", TimePlotViewModel.ShowPortStbdBackGround, True, False)
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "ShowTargetIfAvailable", TimePlotViewModel.ShowTargetIfAvailable, True, False)
-    '    AppConfig.SalvaValoreInnerText(Suffisso, clsSettings.eNodoSTD.eStartUp, pNomeMatrice, "Chart_" & ID, "CommonYAxis", TimePlotViewModel.CommonYaxis, True, False)
-    '    'Dim LineType As clsGroupLines.eLineType = TrovaValore(Nodo, "LineType", clsGroupLines.eLineType.eDataTypeSigned)
-    '    'Dim StampaSfondo As Boolean = TrovaValore(Nodo, "ShowPortStbdBackground", CInt(False))
-    '    'Dim StampaTarget As Boolean = TrovaValore(Nodo, "ShowTargetIfAvailable", CInt(True))
-    '    'Dim AsseYUnico As Boolean = TrovaValore(Nodo, "CommonYAxis", CInt(False))
-
-    '    ID += 1
-    '  Next
-    'End If
-    'AppConfig.SalvaFileXML()
-
-  End Sub
 
 End Class
 
@@ -3508,40 +2788,6 @@ Public Class clsFiles
     Return System.IO.File.ReadAllLines(pathFile).ToList
   End Function
 
-  Public Function TestoInRighe(stringa As String, cSep As String) As String()
-    If stringa.IndexOf(cSep) > -1 Then
-      Return stringa.Split(cSep)
-    End If
-    Return Nothing
-  End Function
-
-  Public Function TestoInRighe(stringa As String) As String()
-    ' verifica CrLf Cr Lf ed elimina quelli ripetuti
-    Dim strTest As String() = {"!", "|", "#", "@"}
-    ' se il testo ha uno di questi caratteri non si puo' fare la pulizia degli accapo ripetuti
-    Dim IDtestChar As Integer = -1
-    For i As Integer = 0 To strTest.Length - 1
-      If stringa.IndexOf(strTest(i)) = -1 Then
-        IDtestChar = i
-        Exit For
-      End If
-    Next
-    If IDtestChar > -1 Then
-      Dim Carattere As String = strTest(IDtestChar)
-      Dim strTMP As String = stringa.Replace(vbCrLf, Carattere)
-      strTMP = strTMP.Replace(vbCr, Carattere)
-      strTMP = strTMP.Replace(vbLf, Carattere)
-
-      strTMP = strTMP.Replace(Carattere & Carattere & Carattere, Carattere)
-      strTMP = strTMP.Replace(Carattere & Carattere, Carattere)
-      Return strTMP.Split(Carattere)
-    Else
-      Return stringa.Split(vbCrLf)
-    End If
-
-    Return Nothing
-  End Function
-
   Public Sub SalvaNuovoFileSostituendoContenuto(ByVal Contenuto As String, ByVal FileDaAggiornare As String)
     Try
       If Not System.IO.File.Exists(FileDaAggiornare) Then
@@ -3707,21 +2953,6 @@ Public Class clsFiles
       Return fldTMP.Split(cSep)
     End If
 
-  End Function
-
-  Public Function CartellaParentNome(PathFileOrCartella As String) As String
-    Dim Nomi As String() = CartelleParentMatriceNomi(PathFileOrCartella)
-    Return Nomi(Nomi.Length - 1)
-  End Function
-
-  Public Function PulisciCaratteriBastardi(stringa As String) As String
-    Dim charBastards() As Char = {":", ".", " ", "/", "\", "*", "?", "$", "!", "'", ",", ";", "+", "-", "=", "#", "@", "(", ")"}
-    Dim strTMP As String = stringa
-    For Each Cr As Char In charBastards
-      strTMP = strTMP.Replace(Cr, "_")
-    Next
-    If IsNumeric(strTMP.Substring(0, 1)) Then strTMP = "_" & strTMP
-    Return strTMP
   End Function
 
 
@@ -3922,11 +3153,6 @@ Public Class clsTimeRange
   End Property
 
 
-  Public Sub VerificaEdEstendiEstremi(TR As clsTimeRange)
-    If TR.Start < _Start Then _Start = TR.Start
-    If TR.Finish > _Finish Then _Finish = TR.Finish
-  End Sub
-
   <JsonIgnore>
   Public ReadOnly Property IsInRange(MomentoToCheck As DateTime, InclusoInizio As Boolean, InclusaFine As Boolean) As Boolean
     Get
@@ -4092,22 +3318,6 @@ Public Class clsTimeRange
   'End Property
 
 
-  Public Function DatatimePrecedente(data1 As DateTime, data2 As DateTime) As DateTime
-    If data1.ToOADate <= data2.ToOADate Then
-      Return data1
-    Else
-      Return data2
-    End If
-  End Function
-
-  Public Function DatatimeSuccessivo(data1 As DateTime, data2 As DateTime) As DateTime
-    If data1.ToOADate >= data2.ToOADate Then
-      Return data1
-    Else
-      Return data2
-    End If
-  End Function
-
   Public Function HasSameRange(TR As clsTimeRange) As Boolean
     If TR Is Nothing Then Return False
     Return TR.Start = _Start And TR.Finish = _Finish
@@ -4242,11 +3452,6 @@ Public Class clsDoubleRange
     End Set
   End Property
 
-  Public Sub SetRange(Max As Double, Min As Double)
-    pMax = Max
-    pMin = Min
-  End Sub
-
 End Class
 
 Public Class clsIndexIndex
@@ -4294,16 +3499,6 @@ Public Class clsSailingState
     eStbd = 2
     eNone = 3
   End Enum
-
-  Public Function AndaturaDaTwa(TWA As Double) As eAndatura
-    If System.Math.Abs(TWA) > DnL Then
-      Return eAndatura.eDownWind
-    ElseIf System.Math.Abs(TWA) > UpL Then
-      Return eAndatura.eReaching
-    Else
-      Return eAndatura.eUpwind
-    End If
-  End Function
 
   Public Function Tack(TWA As Double) As eTack
     If TWA >= 0 Then
@@ -4412,11 +3607,6 @@ Public Class clsMediaMobile
       End If
     End Function
 
-    Public Function UpdateAnDGetMovingAverage(NewValue As Double) As Double
-      AggiornaMedia(NewValue)
-      Return Valore()
-    End Function
-
     Public Sub Azzera()
       ReDim pMatrice(pSamples - 1)
       'pMatrice(0) = Double.NaN
@@ -4515,22 +3705,6 @@ Public Class clsContaTempo
     End Set
   End Property
 
-  Public Sub AvviaContaTempo()
-    pInizio = Now
-    pIntermedio = pInizio
-    'Console.WriteLine("Start @" & pInizio.ToLongTimeString & " ")
-    pTesto = "Descr" & vbTab & "Total" & vbTab & "Partial" & vbCrLf
-    pTesto = "Start @" & vbTab & pInizio.ToLongTimeString & vbTab & "" & vbCrLf
-
-  End Sub
-
-  Public Sub StampaMillisecondiTrascorsi(Intestazione As String)
-    Dim Adesso As DateTime = Now
-    Console.WriteLine(Intestazione & ": " & (Adesso.Subtract(pInizio).TotalMilliseconds / 1000).ToString("F3") & " (" & (Adesso.Subtract(pIntermedio).TotalMilliseconds / 1000).ToString("F3") & ")")
-    pTesto &= Intestazione & vbTab & (Adesso.Subtract(pInizio).TotalMilliseconds / 1000).ToString("F3") & vbTab & (Adesso.Subtract(pIntermedio).TotalMilliseconds / 1000).ToString("F3") & vbCrLf
-    pIntermedio = Adesso
-  End Sub
-
 End Class
 
 
@@ -4546,19 +3720,6 @@ Public Class clsInternetTime
       _LocalTime = value
     End Set
   End Property
-
-  Public Sub VerificaTime()
-    _LocalTime = Now
-    Exit Sub
-    Try
-      Dim _SR As New IO.StreamReader(_Client.GetStream())
-      Dim _Response = _SR.ReadToEnd
-      Dim utcDateTimeString As String = _Response.Substring(7, 17)
-      _LocalTime = DateTime.ParseExact(utcDateTimeString, "yy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
-    Catch ex As Exception
-      _LocalTime = Now
-    End Try
-  End Sub
 
   '  var client = New TcpClient("time.nist.gov", 13);
   'Using (var streamReader = New StreamReader(client.GetStream()))
@@ -5148,18 +4309,6 @@ End Class
 
 Public Class clsVettori
 
-  Public Shared Function ProdottoVettoriale(PrimoVettore As System.Numerics.Vector2, SecondoVettore As System.Numerics.Vector2) As Single
-    Return System.Numerics.Vector2.Dot(PrimoVettore, SecondoVettore)
-  End Function
-
-  Public Shared Function DistanzaEuclidea(PrimoVettore As System.Numerics.Vector2, SecondoVettore As System.Numerics.Vector2) As Single
-    Return System.Numerics.Vector2.Distance(PrimoVettore, SecondoVettore)
-  End Function
-
-  Public Shared Function VettoreUnitario(Vettore As System.Numerics.Vector2) As System.Numerics.Vector2
-    Return System.Numerics.Vector2.Normalize(Vettore)
-  End Function
-
   Public Shared Function VettoreSomma(PrimoVettore As System.Numerics.Vector2, SecondoVettore As System.Numerics.Vector2) As System.Numerics.Vector2
     Return System.Numerics.Vector2.Add(PrimoVettore, SecondoVettore)
   End Function
@@ -5176,32 +4325,10 @@ Public Class clsVettori
     Return System.Numerics.Vector3.Subtract(VettoreBase, VettoreDaSottrarre)
   End Function
 
-  Public Shared Function DistanzaEuclidea(PrimoVettore As System.Numerics.Vector3, SecondoVettore As System.Numerics.Vector3) As Single
-    Return System.Numerics.Vector3.Distance(PrimoVettore, SecondoVettore)
-  End Function
-
-  Public Shared Function RangeAndBearingToVector(Range As Double, Bearing As Double) As System.Numerics.Vector2
-    Dim CartBrg As Double = BrgToAlfa(Bearing)
-    Dim X As Double = Math.Cos(Radians(CartBrg))
-    Dim Y As Double = Math.Sin(Radians(CartBrg))
-    Return New System.Numerics.Vector2(X, Y)
-  End Function
-
   Public Shared Function BrgToAlfa(Bearing As Double) As Double
     Dim sBrg As Double = Math.Sin(Radians(Bearing))
     Dim cBrg As Double = Math.Cos(Radians(Bearing))
     Dim tmp As Double = Degrees(Math.Atan2(sBrg, cBrg)) Mod 360
-    If tmp < 0 Then
-      Return 360 + tmp
-    Else
-      Return tmp
-    End If
-  End Function
-
-  Public Shared Function AlfaToBrg(Alfa As Double) As Double
-    Dim sAlfa As Double = Math.Sin(Radians(Alfa))
-    Dim cAlfa As Double = Math.Cos(Radians(Alfa))
-    Dim tmp As Double = Degrees(Math.Atan2(sAlfa, cAlfa)) Mod 360
     If tmp < 0 Then
       Return 360 + tmp
     Else
@@ -5224,14 +4351,6 @@ Public Class clsPuntoXYZ
     Me.Z = z
     Vettore3D = New System.Numerics.Vector3(x, y, z)
   End Sub
-
-  Public Shared Function SommaVettore(VettoreDaAggiungere As System.Numerics.Vector3) As System.Numerics.Vector3
-    Return clsVettori.VettoreSomma(Vettore3D, VettoreDaAggiungere)
-  End Function
-
-  Public Shared Function SottraiVettore(VettoreDaAggiungere As System.Numerics.Vector3) As System.Numerics.Vector3
-    Return clsVettori.VettoreDifferenza(Vettore3D, VettoreDaAggiungere)
-  End Function
 
 End Class
 
