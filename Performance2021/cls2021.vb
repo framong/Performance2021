@@ -186,13 +186,6 @@ Public Class clsEzriz
   End Function
 
 
-  Public Shared Function fn_GETIP() As String
-    Dim MY_IP As String
-    Dim client As New System.Net.WebClient
-    MY_IP = client.DownloadString("https://api.ipify.org")
-    Return MY_IP
-  End Function
-
 End Class
 
 

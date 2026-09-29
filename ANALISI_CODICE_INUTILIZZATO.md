@@ -5,7 +5,7 @@ Generato il 29/09/2026. Analisi statica **euristica**, nessun file è stato modi
 ## Metodo
 
 - Considerati solo i file compilati del `.vbproj`: 66 file `.vb` e 40 file `.xaml`. I file non inclusi (`ClassiDesuete.vb`, `ctrl_*.xaml`, …) non contano né come dichiarazioni né come riferimenti.
-- Dichiarazioni esaminate: 4314 tra Sub, Function e Property.
+- Dichiarazioni esaminate: 4312 tra Sub, Function e Property.
 - Commenti e stringhe esclusi dalla ricerca dei riferimenti. Il confronto è per **nome**, senza distinzione di maiuscole (come VB): se un altro membro con lo stesso nome è usato, il candidato viene considerato usato. L'analisi quindi tende a *non* segnalare, mai a segnalare troppo.
 - Le chiamate ricorsive (riferimenti dentro il corpo del membro stesso) non contano come uso.
 - **Secondo livello**: membri referenziati solo da altri membri inutilizzati (calcolo iterativo fino a punto fisso).
@@ -23,19 +23,17 @@ Generato il 29/09/2026. Analisi statica **euristica**, nessun file è stato modi
 
 | Confidenza | Membri | Righe (circa) |
 |---|---:|---:|
-| alta | 2 | 15 |
+| alta | 0 | 0 |
 | media | 184 | 753 |
 | bassa | 45 | 360 |
-| **totale** | **231** | **1128** |
+| **totale** | **229** | **1113** |
 
-File con più candidati: `Classi2020.vb` (48), `ClassiGestionePavarot.vb` (41), `UserControl/UserControlTimeRangeSummary.xaml.vb` (41), `cls2021.vb` (19), `mdlCommon.vb` (13), `ClassiGestionePeriodi.vb` (9), `UserControl/UserControlStraightLine.xaml.vb` (9), `clsChartsSyncManager.vb` (7).
+File con più candidati: `Classi2020.vb` (48), `ClassiGestionePavarot.vb` (41), `UserControl/UserControlTimeRangeSummary.xaml.vb` (41), `cls2021.vb` (18), `mdlCommon.vb` (13), `ClassiGestionePeriodi.vb` (9), `UserControl/UserControlStraightLine.xaml.vb` (9), `clsChartsSyncManager.vb` (7).
 
 ## Candidati
 
 | File | Nome | Tipo | Accesso | Righe | Confidenza | Motivo |
 |---|---|---|---|---|---|---|
-| `cls2021.vb` | `clsEzriz.fn_GETIP` | Function | public shared | 189–194 | alta | Nessun riferimento nel codice compilato né nei .xaml |
-| `GestioneFileSources.vb` | `clsExportToCsv.AggiungiIntestazioneSeEsiste` | Sub | private | 704–712 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `Classi2020.vb` | `clsValoriNotNanPortStbd.ValoriNotNanPort` | Property | public | 285–292 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsValoriNotNanPortStbd.ValoriNotNanStbd` | Property | public | 294–301 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsLeg.SecInvestimento` | Property | public | 460–460 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
@@ -127,12 +125,12 @@ File con più candidati: `Classi2020.vb` (48), `ClassiGestionePavarot.vb` (41), 
 | `ClassiGestionePolari.vb` | `clsTabellinaVpp.IDcanaleLwy` | Property | public | 1305–1312 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `ClassiGestioneStraightLine.vb` | `clsStraightLineTable.PeriodiAdvanced` | Property | public | 17–17 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `ClassiGestioneStraightLine.vb` | `clsStraightLineTable.PeriodiOrdinati` | Property | public | 18–18 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `SailingChannels.MathChannels` | Property | public shared | 5354–5358 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `clsPrestartBoatData.StbdDist` | Property | public | 5926–5926 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `clsPrestartBoatData.StbdTime` | Property | public | 5927–5927 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `clsExpeditionStartFinalLaunch.AccMaxKtsPerMinute` | Property | public | 6108–6112 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `clsExpeditionStart.TTKportAtTgt` | Property | public | 6287–6292 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `cls2021.vb` | `clsStartRotation.FinalPosition` | Property | public | 7329–7329 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `SailingChannels.MathChannels` | Property | public shared | 5347–5351 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `clsPrestartBoatData.StbdDist` | Property | public | 5919–5919 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `clsPrestartBoatData.StbdTime` | Property | public | 5920–5920 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `clsExpeditionStartFinalLaunch.AccMaxKtsPerMinute` | Property | public | 6101–6105 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `clsExpeditionStart.TTKportAtTgt` | Property | public | 6280–6285 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `cls2021.vb` | `clsStartRotation.FinalPosition` | Property | public | 7322–7322 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `clsChartEventiViewModel.vb` | `clsChartEventiViewModel.CampoValori` | Property | public | 22–22 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `clsChartsSyncManager.vb` | `clsChartSyncManager.PanEnabled` | Property | public | 19–19 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `clsChartsSyncManager.vb` | `clsChartSyncManager.RolloverEnabled` | Property | public | 21–21 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
@@ -235,18 +233,18 @@ File con più candidati: `Classi2020.vb` (48), `ClassiGestionePavarot.vb` (41), 
 | `Classi2020.vb` | `clsFileParquet2020.IdCampoLocalDateTime` | Property | public | 8082–8089 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsFileParquet2020, classe serializzata in JSON: può servire a salvare/caricare i file |
 | `Classi2020.vb` | `clsFileParquet2020.ApplicaHeelCheck` | Property | public | 8091–8098 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsFileParquet2020, classe serializzata in JSON: può servire a salvare/caricare i file |
 | `Classi2020.vb` | `clsFileParquet2020.ApplicaRdrCheck` | Property | public | 8100–8107 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsFileParquet2020, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsProfile2021.ProfileDescription` | Property | public | 1975–1975 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsProfile2021.RudderIsReversed` | Property | public | 1984–1984 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsProfile2021.MySongLeewaySettings` | Property | public | 2007–2007 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriodsManager2021.ListaStraightLineVmgUpwind` | Property | public | 2518–2522 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriodsManager2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriodsManager2021.ListaStraightLineVmgDownwind` | Property | public | 2524–2528 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriodsManager2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.TempVal` | Property | public | 3513–3513 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.IdRigaPavarotExit` | Property | public | 3706–3710 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.PavarotExit` | Property | public | 3719–3729 | bassa | Referenziata solo da codice a sua volta inutilizzato: IdRigaPavarotExit; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.IsVmgRange` | Property | public | 3732–3736 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.KeyMomentChecked` | Property | public | 3758–3758 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsPeriod2021.MureStraightLineVmg` | Property | public | 4020–4028 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
-| `cls2021.vb` | `clsExpeditionUtilities.ReadExpeditionLog` | Function | public shared | 11512–11612 | bassa | Nessun riferimento nel codice compilato né nei .xaml; il nome compare in una stringa letterale (possibile CallByName, Binding("…") o OnPropertyChanged("…")) |
+| `cls2021.vb` | `clsProfile2021.ProfileDescription` | Property | public | 1968–1968 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsProfile2021.RudderIsReversed` | Property | public | 1977–1977 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsProfile2021.MySongLeewaySettings` | Property | public | 2000–2000 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsProfile2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriodsManager2021.ListaStraightLineVmgUpwind` | Property | public | 2511–2515 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriodsManager2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriodsManager2021.ListaStraightLineVmgDownwind` | Property | public | 2517–2521 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriodsManager2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.TempVal` | Property | public | 3506–3506 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.IdRigaPavarotExit` | Property | public | 3699–3703 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.PavarotExit` | Property | public | 3712–3722 | bassa | Referenziata solo da codice a sua volta inutilizzato: IdRigaPavarotExit; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.IsVmgRange` | Property | public | 3725–3729 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.KeyMomentChecked` | Property | public | 3751–3751 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsPeriod2021.MureStraightLineVmg` | Property | public | 4013–4021 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsPeriod2021, classe serializzata in JSON: può servire a salvare/caricare i file |
+| `cls2021.vb` | `clsExpeditionUtilities.ReadExpeditionLog` | Function | public shared | 11505–11605 | bassa | Nessun riferimento nel codice compilato né nei .xaml; il nome compare in una stringa letterale (possibile CallByName, Binding("…") o OnPropertyChanged("…")) |
 | `GestioneFileSources.vb` | `clsCanaleParquet.Selezionato` | Property | public | 473–480 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsCanaleParquet, classe serializzata in JSON: può servire a salvare/caricare i file |
 | `mdlCommon.vb` | `clsTimeRange.RigheIntervallo` | Property | public | 2719–2723 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsTimeRange, classe serializzata in JSON: può servire a salvare/caricare i file |
 | `mdlCommon.vb` | `clsTimeRange.MomentoFormattato` | Property | public | 2756–2773 | bassa | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica di clsTimeRange, classe serializzata in JSON: può servire a salvare/caricare i file |

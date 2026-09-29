@@ -701,16 +701,6 @@ Public Class clsExportToCsv
   'End Function
 
 
-  Private Sub AggiungiIntestazioneSeEsiste(ByRef lista As List(Of String), CanaleChiave As clsChannels2020.eCanaliChiave)
-    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then
-      lista.Add("_" & System.Enum.GetName(GetType(clsChannels2020.eCanaliChiave), CanaleChiave).TrimStart("e"))
-    Else
-      If DataProvider2020.Channels.ListaCanali.Where(Function(x) x.CanaleChiave = CanaleChiave).Count = 0 Then
-        lista.Add(DataProvider2020.CanaleDbl(CanaleChiave).ChannelId)
-      End If
-    End If
-  End Sub
-
   'Private Sub SalvaListaIntestazioniDaXml(Canali As List(Of clsChannel2020))
   '  AppConfig.EliminaNodo(DataProvider2020.SuffissoFileType, clsSettings.eNodoSTD.eReports, "ExportToCsv", True)
   '  For Each Canale In Canali
