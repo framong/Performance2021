@@ -127,10 +127,6 @@ Public Class UserControlSciChartPlotViewModel
     Return PointsXYZ(XMin, XMax, YMin, YMax).Select(Function(x) x.K).ToArray
   End Function
 
-  Public Function PointsXYZ_Color(XMin As Double, XMax As Double, YMin As Double, YMax As Double) As Color()
-    Return PointsXYZ(XMin, XMax, YMin, YMax).Select(Function(x) x.Color).ToArray
-  End Function
-
   Public Function PointsXYZ(XMin As Double, XMax As Double, YMin As Double, YMax As Double) As clsXYZKpoint()
     Return PuntiColored.Where(Function(x) x.X >= XMin And x.X < XMax And x.Y >= YMin And x.Y < YMax).ToArray
   End Function

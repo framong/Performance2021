@@ -666,10 +666,6 @@ Public Class clsTargetWithCurrent
 
 
 
-  Public Function WindOverWater(vTWS As clsVettore2D, vCorrente As clsVettore2D) As clsVettore2D
-    Return vTWS.SommaVettoriale(vCorrente)
-  End Function
-
   Public Function DeltaVmg(Tws As Double, cRate As Double, Upwind As Boolean, Tgt As clsTgt) As List(Of clsEffettoCorrente) ' AngoloRelativo , Valore delta Vmg
     Dim lTmp As New List(Of clsEffettoCorrente)
     Dim vOverGround As clsValoriPuntoPolare = Tgt.ValoreTgt(Upwind, Tws, "bs")

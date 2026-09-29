@@ -119,25 +119,4 @@ Public Class clsImportaPeriodiViewModel
   End Sub
 
 
-  Public Sub AccodaPeriodiCheckati()
-    Stop
-    'Dim msg As String = ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Count & " new periods selected (out of the " & ListaNuoviPeriodi.Count & " found)" & vbCrLf
-    'msg &= ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eAcceleration).Count & " Accelerations" & vbCrLf
-    'msg &= ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eGybe).Count & " Gybes" & vbCrLf
-    'msg &= ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eTack).Count & " Tacks" & vbCrLf
-    'msg &= ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eStraightLine).Count & " Straight Lines" & vbCrLf & vbCrLf
-    'msg &= "Do you want to add all these selected to the " & PeriodsManager.ListaPeriodi.Count & " already existings?"
-    'If MsgBox(msg, MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
-    '  For Each p In ListaNuoviPeriodi
-    '    If p.IsChecked Then
-    '      PeriodsManager.ListaPeriodi.Add(p)
-    '    End If
-    '  Next
-    '  PeriodsManager.SalvaPeriodiJsonFile()
-    '  Return True
-    'Else
-    '  Return False
-    'End If
-  End Sub
-
 End Class

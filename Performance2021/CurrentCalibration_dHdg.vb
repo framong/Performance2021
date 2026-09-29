@@ -223,21 +223,4 @@ End Class
 
 
 Module Demo
-  Sub CurrentDemoMain()
-    Dim tratti As New List(Of Object) From {
-        New NavLeg(19.1, 18.7, 200.5, 202.8),
-        New NavLeg(17.7, 17.4, 135.0, 136.8)
-    }
-
-    Dim r As CurrentCalibrationResult = CurrentSolver.SolveCurrentCalibration(tratti)
-
-    Console.WriteLine($"Coeff. log (k)   = {r.LogCoefficient:F4}   -> Corrected Bs = bs * k")
-    Console.WriteLine($"Compass Offset = {r.CompassOffset:+0.00;-0.00} deg  -> Corrected CSE = cse + offset")
-    Console.WriteLine($"Calibrated Current  = dir/set {r.CurrentSet:F1} deg, rate/drift {r.CurrentDrift:F2} kn")
-    Console.WriteLine($"RMS discards       = {r.Rms:F3} kn")
-    For i As Integer = 0 To r.Residuals.Length - 1
-      Console.WriteLine($"  segment {i + 1}: discard {r.Residuals(i):F3} kn")
-    Next
-    ' Atteso: k=0.9874, offset=+2.26, set 18.2, drift 0.16, RMS ~0
-  End Sub
 End Module

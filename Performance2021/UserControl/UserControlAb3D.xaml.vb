@@ -105,23 +105,6 @@ Public Class UserControlAb3D
   End Sub
 
 
-  Private Function ResetBox() As Rect3D
-
-
-    'Setup axis limits And shown values
-    AxesBox.SetAxisDataRange(AxesBoxVisual3D.AxisTypes.XAxis, 0, _sampleData.Select(Function(X) X.Time).Max, 10, 5, True)
-    AxesBox.SetAxisDataRange(AxesBoxVisual3D.AxisTypes.YAxis, _xyDataRange.Y, _xyDataRange.Y + _xyDataRange.Height, 10, 5, True)
-    AxesBox.SetAxisDataRange(AxesBoxVisual3D.AxisTypes.ZAxis, _xyDataRange.X, _xyDataRange.X + _xyDataRange.Width, 10, 5, True)
-
-    Dim displayedDataBounds As New Rect3D(AxesBox.CenterPosition.X - AxesBox.Size.X * 0.5,
-                                                 AxesBox.CenterPosition.Y - AxesBox.Size.Y * 0.5,
-                                                 AxesBox.CenterPosition.Z - AxesBox.Size.Z * 0.5,
-                                                 AxesBox.Size.X,
-                                                 AxesBox.Size.Y,
-                                                 AxesBox.Size.Z)
-    Return displayedDataBounds
-  End Function
-
   Public Function ResetBoxGraficoXYZ(DataRange As Rect3D, Xsep As Integer, Ysep As Integer, Zsep As Integer) As Rect3D
 
 

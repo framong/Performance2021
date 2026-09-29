@@ -461,65 +461,6 @@ Public Class clsStripePanel
   Public Property HeelingForce As Double
 
 
-  Public Sub GetLift(UpPanel As SailShapeValue, LwPanel As SailShapeValue, Aws As Double, Awa As Double, TwistOffset As Double)
-    UpperPanel = UpPanel
-    LowerPanel = LwPanel
-    Dim PanelHeight As Double
-    Dim ro As Double = 1.255 '(Kg/m3)
-    Dim e As Double = 0.9 '(Kg/m3)
-    Dim AlfaZero As Double = 2 * Math.PI
-    Dim UpChord As Double
-    Dim UpArea As Double = UpChord * PanelHeight
-    Dim UpAoARad As Double = Radians(Math.Abs(Awa) - (UpPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eTwist) + TwistOffset))
-    Dim UpAR As Double = PanelHeight / UpArea
-    Dim UpAlfaElleZero As Double = 2 * (UpPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eCamber) / 100)
-    Dim UpCL2D As Double = AlfaZero * (UpAoARad - UpAlfaElleZero)
-
-    Dim UpAlfa As Double = AlfaZero / (1 + AlfaZero / Math.PI * e * UpAR)
-    Dim UpCL3D As Double = AlfaZero * (UpAoARad - UpAlfaElleZero)
-
-    Dim LwChord As Double
-    Dim LwArea As Double = LwChord * PanelHeight
-    Dim LwAoARad As Double = Radians(Math.Abs(Awa) - (LwPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eTwist) + TwistOffset))
-    Dim LwAR As Double = PanelHeight / LwArea
-    Dim LwAlfaElleZero As Double = 2 * (UpPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eCamber) / 100)
-    Dim LwCL2D As Double = 2 * Math.PI * (LwAoARad - LwAlfaElleZero)
-
-    Dim LwAlfa As Double = AlfaZero / (1 + AlfaZero / Math.PI * e * LwAR)
-    Dim LwCL3D As Double = AlfaZero * (LwAoARad - LwAlfaElleZero)
-
-    Dim UpCl = UpCL2D
-    Dim LwCl = LwCL2D
-
-    If True Then
-      UpCl = UpCL3D
-      LwCl = LwCL3D
-    End If
-
-    Dim UpLift As Double = 0.5 * ro * Math.Pow(Aws, 2) * UpArea * UpCl
-    Dim UpChordLiftX = UpLift * Math.Sin(Radians(UpAoARad))
-    Dim UpChordLiftY = UpLift * Math.Cos(Radians(UpAoARad))
-
-
-    Dim LwLift As Double = 0.5 * ro * Math.Pow(Aws, 2) * LwArea * LwCl
-    Dim LwChordLiftX = LwLift * Math.Sin(Radians(LwAoARad))
-    Dim LwChordLiftY = LwLift * Math.Cos(Radians(LwAoARad))
-
-    Dim UpCD2D = Math.Pow(UpCl, 2) / (Math.PI * e * UpAR)
-    Dim LwCD2D = Math.Pow(LwCl, 2) / (Math.PI * e * LwAR)
-
-    Dim kH As Double = LwLift / (UpLift + LwLift)
-
-    Dim dH = UpPanel.Parent.StripePercentageHeight - LwPanel.Parent.StripePercentageHeight
-    Dim upC = UpPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eChord)
-    Dim lwC = LwPanel.ParameterValue(SailShapeValue.eSailShapeParameter.eChord)
-    Dim hs = dH / 3 * ((lwC + 2 * upC) / (lwC + upC))
-    ArmPercentageHeight = LwPanel.Parent.StripePercentageHeight + hs
-
-
-
-  End Sub
-
 
 End Class
 

@@ -35,11 +35,6 @@ Public Class UserControlNumericUpDown
     End Set
   End Property
 
-  Public Sub SetValore(Valore As Double)
-    ' passando da qui non viene scatenato l 'evento property changed
-    txtValore.Text = Valore
-  End Sub
-
   Private Sub ButtonUp_Click(sender As Object, e As RoutedEventArgs)
     Value = CDbl(txtValore.Text) + (10 ^ -(pDecimals - 1)) / 2
   End Sub

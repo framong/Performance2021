@@ -329,19 +329,6 @@ Public Class clsParquetFinder
 
   End Sub
 
-  Public Sub LanciaRiercaManuale()
-    ImpostaManualmenteTipoPeriodi()
-    ImpostaCanaliOutput("SystemTime_DaySeconds,Bs,Tws,Twa,Awa")
-    Dim Inizio As New DateTime(2020, 4, 16, 0, 0, 0)
-    Dim Fine As New DateTime(2020, 5, 29, 0, 0, 0)
-    _TR = New clsTimeRange(Inizio, Fine)
-    'Dim Inizio As New DateTime(2020, 6, 2, 0, 0, 0)
-    'Dim Fine As New DateTime(2020, 6, 17, 0, 0, 0)
-    '_Tr = New clsTimeRange(Now.AddDays(-20), Now.AddDays(-10))
-    _CercaPeriodi = False
-    LanciaRicerca()
-  End Sub
-
   Public Sub LanciaRicercaDaInterfaccia()
     LanciaRicerca()
   End Sub
@@ -1355,14 +1342,6 @@ Public Class clsParquetFinder
       Case eOutput.eData
         SalvaData(StandardFolderPath, ListaCanaliOutput) '(_PathParquetFolder & "\SearchResults\" & Now.ToString("yyyyMMdd") & "\", ListaCanaliOutput)
     End Select
-  End Sub
-
-  Public Sub EsportaRighePeriodo()
-    _BasicChannelsOutput.Lista.Clear()
-    For Each fp In _ListaFilePeriodi
-      RiempiBasicChannelsCreaPeriodiDaMomenti(fp, 30)
-      SalvaParquet(StandardFolderPath) 'SalvaParquet(_PathParquetFolder & "\SearchResults\" & Now.ToString("yyyyMMdd") & "\")
-    Next
   End Sub
 
 

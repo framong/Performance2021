@@ -625,18 +625,6 @@ Public Class clsBenchmark
     End Get
   End Property
 
-  Public Function GetChannelValues(GetX As Boolean) As Double()
-    Dim v As New List(Of Double)
-    For Each vv In Values
-      If GetX Then
-        v.Add(vv.X)
-      Else
-        v.Add(vv.Y)
-      End If
-    Next
-    Return v.ToArray
-  End Function
-
 
 
   Public Sub ImpostaValori(Type As eBenchmarkType, Name As String, RefChannel As String, ValChannel As String, Valori As List(Of clsDoubleXY))

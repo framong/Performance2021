@@ -146,31 +146,6 @@ Public Class clsLiftAndDragDiff
   Public Property LiftVectorBoatAxis As Vector2
   Public Property TotalDragVectorBoatAxis As Vector2
 
-  Public Sub ImpostaDelta(LD1 As clsLiftAndDrag, LD2 As clsLiftAndDrag)
-    Lift = LD1.Lift / LD2.Lift * 100
-    Rho = LD1.Rho / LD2.Rho * 100
-    DewPoint = LD1.DewPoint - LD2.DewPoint
-    WingArea = LD1.WingArea / LD2.WingArea * 100
-    TotalDrag = LD1.TotalDrag / LD2.TotalDrag * 100
-    DragAtZeroLift = LD1.DragAtZeroLift / LD2.DragAtZeroLift * 100
-    InducedDrag = LD1.InducedDrag / LD2.InducedDrag * 100
-    AspectRatio = LD1.AspectRatio / LD2.AspectRatio * 100
-    DrivingForce = LD1.DrivingForce / LD2.DrivingForce * 100
-
-    Settings.AirT = LD1.Settings.AirT - LD2.Settings.AirT
-    Settings.AirP = LD1.Settings.AirP - LD2.Settings.AirP
-    Settings.RelHumidity = LD1.Settings.RelHumidity - LD2.Settings.RelHumidity
-    Settings.AirFlowSpeed = LD1.Settings.AirFlowSpeed / LD2.Settings.AirFlowSpeed * 100
-    Settings.WingSpan = LD1.Settings.WingSpan / LD2.Settings.WingSpan * 100
-    Settings.WingCamber = LD1.Settings.WingCamber / LD2.Settings.WingCamber * 100
-    Settings.WingChord = LD1.Settings.WingChord / LD2.Settings.WingChord * 100
-    Settings.K = LD1.Settings.K / LD2.Settings.K * 100
-    Settings.AirFlowAngleOfAttack = LD1.Settings.AirFlowAngleOfAttack - LD2.Settings.AirFlowAngleOfAttack
-    Settings.DragK = LD1.Settings.DragK / LD2.Settings.DragK * 100
-    Settings.WingEfficencyFactor = LD1.Settings.WingEfficencyFactor / LD2.Settings.WingEfficencyFactor * 100
-    Settings.WingSettingAngle = LD1.Settings.WingSettingAngle / LD2.Settings.WingSettingAngle * 100
-  End Sub
-
 
 End Class
 

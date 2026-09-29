@@ -47,46 +47,6 @@ Public Class clsStraightLineTable
   '  End Get
   'End Property
 
-  Public Sub ImpostaCanaliTest(Canali As List(Of clsChannel2020), Periodi As List(Of clsPeriod2021), NumeroColori As Integer)
-    'il primo canale é quello di riferimento
-    PeriodiAdvanced.Clear()
-    For Each periodo In Periodi
-      Dim CT As New clsPeriodoAdvanced(Canali, periodo, NumeroColori)
-      PeriodiAdvanced.Add(CT)
-    Next
-    PeriodiOrdinati = PeriodiAdvanced.OrderByDescending(Function(x) x.Canali.First.Valori.Avg).ToList
-
-    Dim AvgMax(Canali.Count - 1) As Double
-    Dim AvgMin(Canali.Count - 1) As Double
-
-    If PeriodiAdvanced.Count > 0 Then
-      For i As Integer = 0 To PeriodiAdvanced.First.Canali.Count - 1
-        If PeriodiAdvanced.Count > 1 Then
-          Dim ValoriMedi(PeriodiAdvanced.Count - 1) As Double
-          For ii As Integer = 0 To PeriodiAdvanced.Count - 1
-            ValoriMedi(ii) = PeriodiAdvanced(ii).Canali(i).Valori.Avg
-          Next
-          Dim Max As Double = ValoriMedi.Max
-          Dim Min As Double = ValoriMedi.Min
-
-          For ii As Integer = 0 To PeriodiAdvanced.Count - 1
-            Dim Valore As Double = PeriodiAdvanced(ii).Canali(i).Valori.Avg
-            Dim IndiceColore As Double = 0.5
-            If Not Max = Min Then IndiceColore = (Valore - Min) / (Max - Min)
-            If IndiceColore = Double.NaN Then
-              PeriodiAdvanced(ii).Canali(i).Colore = ColoreBeneMale(255, 0.5)
-            Else
-              PeriodiAdvanced(ii).Canali(i).Colore = ColoreBeneMale(255, IndiceColore)
-            End If
-          Next
-        Else
-          PeriodiAdvanced.First.Canali(i).Colore = ColoreBeneMale(255, 0.5)
-        End If
-      Next
-    End If
-
-  End Sub
-
 End Class
 
 

@@ -6,22 +6,6 @@ Imports SPwpf
 
 Public Class clsXls
 
-  Public Sub CreaPedestalReportExcelFileSinglePeriod(NewFileFullPath As String, TimeRangeSpecifico As clsTimeRange)
-    Stop
-    'Dim EP As New ExcelPackage()
-    'EP.Workbook.Worksheets.Add("Period")
-    'Dim statistiche As New clsPedestalsAnalysis(PedestalControl.Pedestals.ToList, TimeRangeSpecifico, Nothing)
-    'Dim strTmp = PeriodsManager.ReportStatistichePedestals(TimeRangeSpecifico.StringaPeriodo, statistiche)
-    'Clipboard.SetText(strTmp)
-    'Dim StringaReport As String = strTmp
-    'Dim FoglioExcel As ExcelWorksheet = EP.Workbook.Worksheets("Period")
-    'RiempiXlsWorksheet(StringaReport, FoglioExcel)
-
-    'Dim fi As New FileInfo(NewFileFullPath)
-    'EP.SaveAs(fi)
-
-  End Sub
-
   'Public Sub CreaMultiperiodReportExcelFile(NewFileFullPath As String, TimeRange As clsTimeRange)
   '  Dim EP As New ExcelPackage()
   '  EP.Workbook.Worksheets.Add("Summary")
@@ -89,77 +73,6 @@ Public Class clsXls
 
 
 
-  Private Sub RiempiXlsWorkSheetSL(Contentuto As String, WS As ExcelWorksheet)
-    Dim idRiga As Integer = 1
-
-    Dim BRTop As Integer = -1
-    Dim BRbottom As Integer = -1
-    Dim BRRight As Integer = -1
-
-    For Each Riga In Contentuto.Split(vbCrLf)
-      Dim Celle As New List(Of String())
-      Celle.Add(Riga.Split(vbTab))
-      Dim RangeCelle As String = "A" & idRiga & ":" & ColonnaExcelMultiperiod(Celle.First.Count) & idRiga
-      WS.Cells("A" & idRiga & ":A" & idRiga).LoadFromArrays(Celle)
-
-      BRRight = System.Math.Max(BRRight, Celle.First.Count)
-      BRbottom = System.Math.Max(BRbottom, idRiga)
-      If Celle.First.Count > 3 Then
-        If BRTop = -1 Then BRTop = idRiga
-        BRRight = System.Math.Max(BRRight, Celle.First.Count)
-
-        If Not IsNumeric(DirectCast(Celle.First, String()).First) AndAlso Not IsNumeric(DirectCast(Celle.First, String()).Last) Then
-          WS.Cells(RangeCelle).Style.HorizontalAlignment = Style.ExcelHorizontalAlignment.Center
-          WS.Cells(RangeCelle).Style.Font.Bold = True
-          WS.Cells(RangeCelle).Style.Fill.PatternType = Style.ExcelFillStyle.Solid
-          WS.Cells(RangeCelle).Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray)
-        Else
-          For i As Integer = 0 To Celle.First.Count - 1
-            If IsNumeric(DirectCast(Celle.First, String())(i)) Then
-              RangeCelle = ColonnaExcelMultiperiod(i + 1) & idRiga & ":" & ColonnaExcelMultiperiod(Celle.First.Count) & idRiga
-              Exit For
-            End If
-          Next
-          For Each Cl In WS.Cells(RangeCelle)
-            If IsNumeric(Cl.Value) Then
-              Cl.Value = CDbl(Cl.Value)
-            End If
-          Next
-          Dim Range As String = "A" & idRiga & ":" & ColonnaExcelMultiperiod(Celle.First.Count) & idRiga
-          WS.Cells(Range).Style.Fill.PatternType = Style.ExcelFillStyle.Solid
-          If Celle.First.GetValue(2).ToString.IndexOf("Stbd") > -1 Then
-            WS.Cells(Range).Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen)
-          ElseIf Celle.First.GetValue(2).ToString.IndexOf("Port") > -1 Then
-            WS.Cells(Range).Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 255, 200, 180))
-          Else
-            WS.Cells(Range).Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow)
-          End If
-
-        End If
-
-      End If
-      idRiga += 1
-    Next
-
-    Dim BrL As String = ColonnaExcelMultiperiod(1) & BRTop & ":" & ColonnaExcelMultiperiod(BRRight) & BRbottom - 1
-    WS.Cells(BrL).Style.Border.Left.Style = Style.ExcelBorderStyle.Thin
-    WS.Cells(BrL).Style.Border.Right.Style = Style.ExcelBorderStyle.Thin
-
-    For i As Integer = 1 To BRRight
-      WS.Cells(ColonnaExcelMultiperiod(i) & BRTop).Style.HorizontalAlignment = Style.ExcelHorizontalAlignment.Center
-      WS.Cells(ColonnaExcelMultiperiod(i) & BRTop).Style.Border.Top.Style = Style.ExcelBorderStyle.Thin
-      WS.Cells(ColonnaExcelMultiperiod(i) & BRTop).Style.Border.Bottom.Style = Style.ExcelBorderStyle.Thin
-      WS.Cells(ColonnaExcelMultiperiod(i) & BRbottom - 1).Style.Border.Bottom.Style = Style.ExcelBorderStyle.Thin
-    Next
-
-    WS.Column(3).Width = 25
-    'For i As Integer = 4 To BRRight
-    '  WS.Column(i).Width = 15
-    'Next
-
-
-  End Sub
-
 
   Private Function ColonnaExcelMultiperiod(Indice As Integer) As String
     'If Indice = 26 Then Stop
@@ -176,79 +89,6 @@ Public Class clsXls
     Return s
   End Function
 
-
-  Public Sub CreaPedestalReportExcelFile(NewFileFullPath As String, TimeRangeSpecifico As clsTimeRange)
-    Stop
-    'Dim EP As New ExcelPackage()
-    'EP.Workbook.Worksheets.Add("WholeDay")
-    'EP.Workbook.Worksheets.Add("StraightLineTests")
-    'EP.Workbook.Worksheets.Add("Manoeuvers")
-    'EP.Workbook.Worksheets.Add("Accelerations")
-
-    'Dim statistiche As New clsPedestalsAnalysis(PedestalControl.Pedestals.ToList, TimeRangeSpecifico, Nothing)
-    'Dim strTmp = PeriodsManager.ReportStatistichePedestals(TimeRangeSpecifico.StringaPeriodo, statistiche)
-    'Dim StringaReport As String = strTmp
-    'If Not StringaReport = "" Then
-    '  Dim FoglioExcel As ExcelWorksheet = EP.Workbook.Worksheets("WholeDay")
-    '  RiempiXlsWorksheet(StringaReport, FoglioExcel)
-    'End If
-
-    'StringaReport = PeriodsManager.CreaStatistichePedestals_StraightLines
-    'If Not StringaReport = "" Then
-    '  Dim FoglioExcelSL As ExcelWorksheet = EP.Workbook.Worksheets("StraightLineTests")
-    '  RiempiXlsWorksheet(StringaReport, FoglioExcelSL)
-    'End If
-
-    'StringaReport = PeriodsManager.CreaStatistichePedestals_Pavarots
-    'If Not StringaReport = "" Then
-    '  Dim FoglioExcelPav As ExcelWorksheet = EP.Workbook.Worksheets("Manoeuvers")
-    '  RiempiXlsWorksheet(StringaReport, FoglioExcelPav)
-    'End If
-
-    'StringaReport = PeriodsManager.CreaStatistichePedestals_Accelerations
-    'If Not StringaReport = "" Then
-    '  Dim FoglioExcelAcc As ExcelWorksheet = EP.Workbook.Worksheets("Accelerations")
-    '  RiempiXlsWorksheet(StringaReport, FoglioExcelAcc)
-    'End If
-
-    'Dim fi As New FileInfo(NewFileFullPath)
-    'EP.SaveAs(fi)
-  End Sub
-
-  Private Sub RiempiXlsWorksheet(Contentuto As String, WS As ExcelWorksheet)
-    'For i As Integer = 0 To 200
-    '  Console.WriteLine(i & ": " & ColonnaExcel(i))
-    'Next
-
-    Dim idRiga As Integer = 1
-    For Each Riga In Contentuto.Split(vbCrLf)
-      Dim Celle As New List(Of String())
-      Celle.Add(Riga.Split(vbTab))
-      'Dim RangeCelle As String = "A" & idRiga & ":" & Char.ConvertFromUtf32(Celle.First.Count + 64) & idRiga
-      Dim RangeCelle As String = "A" & idRiga & ":" & ColonnaExcel(Celle.First.Count) & idRiga
-      WS.Cells("A" & idRiga & ":A" & idRiga).LoadFromArrays(Celle)
-      If Celle.First.Count > 3 Then
-        If Not IsNumeric(DirectCast(Celle.First, String()).First) AndAlso Not IsNumeric(DirectCast(Celle.First, String()).Last) Then
-          WS.Cells(RangeCelle).Style.Font.Bold = True
-        Else
-          For i As Integer = 0 To Celle.First.Count - 1
-            If IsNumeric(DirectCast(Celle.First, String())(i)) Then
-              RangeCelle = ColonnaExcel(i + 1) & idRiga & ":" & ColonnaExcel(Celle.First.Count) & idRiga
-              Exit For
-            End If
-          Next
-          'WS.Cells(RangeCelle).Style.Numberformat.Format = "0.0"
-          'WS.Cells(RangeCelle).Style.Font.Italic = True
-          For Each Cl In WS.Cells(RangeCelle)
-            If IsNumeric(Cl.Value) Then Cl.Value = CDbl(Cl.Value)
-          Next
-        End If
-      End If
-      idRiga += 1
-    Next
-
-
-  End Sub
 
   Private Function ColonnaExcel(Indice As Integer) As String
     'If Indice = 26 Then Stop
@@ -1368,14 +1208,6 @@ Public Class clsExcelVpp
 
   'End Sub
 
-  Private Function PrimaTWAvalida(Tabella As clsTabellinaVpp) As Double
-    For i As Integer = 0 To Tabella.RigheValori.Count - 1
-      Dim TWA As Double = Tabella.Twa(i)
-      If TWA > 0 Then Return TWA
-    Next
-    Return 0
-  End Function
-
 End Class
 
 Public Class clsTabellinaVpp
@@ -1549,11 +1381,6 @@ Public Class clsTabellinaVpp
     pRigheValori.Add(Valori)
     If Valori(pIDcanaleTWA) > 0 Then pLastTWA = Valori(pIDcanaleTWA)
     'calcolaTWA(Valori(pIDcanaleTWA), Valori(pIDcanaleLwy))
-  End Sub
-
-  Private Sub calcolaTWA(FakeTWA As Double, Leeway As Double)
-    Dim vTmp As Double = FakeTWA + Leeway
-    If vTmp > 0 Then pLastTWA = vTmp
   End Sub
 
 End Class

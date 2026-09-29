@@ -170,108 +170,6 @@ Public Class clsSailUsage
     If msg Then MsgBox("Sails Imported")
   End Sub
 
-  Public Sub CreaFileSailsTxtDaGz(FolderPath As String)
-
-    Dim CurrentFolder As New System.IO.DirectoryInfo(FolderPath)
-    For Each pf In CurrentFolder.GetFiles
-      Select Case pf.Extension
-        Case ".gz"
-          UpdateSailUsageFromFaroGzLogFile(pf.FullName)
-        Case Else
-
-      End Select
-    Next
-
-  End Sub
-
-  Public Sub CreaTabellaOreDaSailsLog(FolderPath As String)
-
-    Dim CurrentFolder As New System.IO.DirectoryInfo(FolderPath)
-    SSList.Clear()
-    For Each pf In CurrentFolder.GetFiles
-      Select Case pf.Extension
-        Case ".txt"
-          UpdateSailUsageFromSailLogFile(pf.FullName)
-        Case Else
-
-      End Select
-    Next
-
-    'Dim UsoVele As New Dictionary(Of String, TimeSpan)
-
-    Dim UsoVele As New List(Of clsSailUse)
-
-
-
-    For Each s In SSList
-      If Not s.MainSail Is Nothing Then
-        Dim M = UsoVele.Where(Function(x) x.SailName = s.MainSail.SailName).FirstOrDefault
-        If M Is Nothing Then
-          UsoVele.Add(New clsSailUse(s.MainSail.SailName, s.UsedFrom, s.UsedTo))
-        Else
-          M.TR.Add(New clsTimeRange(s.UsedFrom, s.UsedTo))
-        End If
-      End If
-
-      If Not s.HeadSail Is Nothing Then
-        Dim M = UsoVele.Where(Function(x) x.SailName = s.HeadSail.SailName).FirstOrDefault
-        If M Is Nothing Then
-          UsoVele.Add(New clsSailUse(s.HeadSail.SailName, s.UsedFrom, s.UsedTo))
-        Else
-          M.TR.Add(New clsTimeRange(s.UsedFrom, s.UsedTo))
-        End If
-        'If Not UsoVele.ContainsKey(s.HeadSail.SailName) Then
-        '    UsoVele.Add(s.HeadSail.SailName, s.TimeOfUse)
-        'Else
-        '    UsoVele(s.HeadSail.SailName) = UsoVele(s.HeadSail.SailName) + s.TimeOfUse
-        'End If
-      End If
-      If Not s.StaySail Is Nothing Then
-        Dim M = UsoVele.Where(Function(x) x.SailName = s.StaySail.SailName).FirstOrDefault
-        If M Is Nothing Then
-          UsoVele.Add(New clsSailUse(s.StaySail.SailName, s.UsedFrom, s.UsedTo))
-        Else
-          M.TR.Add(New clsTimeRange(s.UsedFrom, s.UsedTo))
-        End If
-        'If Not UsoVele.ContainsKey(s.StaySail.SailName) Then
-        '    UsoVele.Add(s.StaySail.SailName, s.TimeOfUse)
-        'Else
-        '    UsoVele(s.StaySail.SailName) = UsoVele(s.StaySail.SailName) + s.TimeOfUse
-        'End If
-      End If
-      If Not s.ProdSail Is Nothing Then
-        Dim M = UsoVele.Where(Function(x) x.SailName = s.ProdSail.SailName).FirstOrDefault
-        If M Is Nothing Then
-          UsoVele.Add(New clsSailUse(s.ProdSail.SailName, s.UsedFrom, s.UsedTo))
-        Else
-          M.TR.Add(New clsTimeRange(s.UsedFrom, s.UsedTo))
-        End If
-        'If Not UsoVele.ContainsKey(s.ProdSail.SailName) Then
-        '    UsoVele.Add(s.ProdSail.SailName, s.TimeOfUse)
-        'Else
-        '    UsoVele(s.ProdSail.SailName) = UsoVele(s.ProdSail.SailName) + s.TimeOfUse
-        'End If
-      End If
-    Next
-
-    Dim Testo As String = "MySong80 Sails Hours" & vbCrLf
-    Testo &= "From: " & Days.Min(Function(x) x).ToString("dd MMM yyyy") & ", To: " & Days.Max(Function(x) x).ToString("dd MMM yyyy") & vbCrLf
-    Testo &= Days.Count & " Sailing Days " & vbCrLf & vbCrLf
-    For Each vela In UsoVele.OrderBy(Function(x) x.SailName).ToList
-      Testo &= vela.SailName & ": " & vela.TotalUse.TotalHours.ToString("F1") & vbCrLf '  &  vela.Value.ToString("dd:HH:mm") & vbCrLf
-      For Each t In vela.TR
-        Testo &= vbTab & t.Start.ToString("dd MMM yyyy") & ", Hours: " & t.Durata.TotalHours.ToString("F1") & vbCrLf
-      Next
-      Testo &= vbCrLf
-
-    Next
-
-    Clipboard.SetText(Testo)
-
-
-
-  End Sub
-
   Private Function SailsLogFileNotExisting(GzFileName As String, CurrentFolderFiles As System.IO.FileInfo()) As Boolean
     Dim data As String = GzFileName.Split("_")(1)
     Return CurrentFolderFiles.Where(Function(x) x.Name = "" & data & ".txt") Is Nothing
@@ -335,11 +233,6 @@ Public Class clsSailUsage
   End Function
 
 
-
-  Private Sub AlegreSailCode(SailString As String)
-
-
-  End Sub
 
 
   Private Sub UpdateSailUsageFromXmlEventFile(FilePath As String, ByRef SailList As clsSailList)
@@ -805,10 +698,6 @@ Public Class clsSailSet
 
   Public Vele As New Dictionary(Of String, Double)
 
-  Public Function TimeOfUse() As TimeSpan
-    Return UsedTo.Subtract(UsedFrom)
-  End Function
-
   Public Function MainSailCode() As Double
     If MainSail Is Nothing Then Return Double.NaN
     Return MainSail.SailCode
@@ -989,64 +878,6 @@ Public Class clsSailSet
 
 
     Next
-
-
-  End Sub
-
-  Private Sub SalvaVele(Vele As List(Of String))
-
-    For Each vela In Vele
-      Select Case vela.ToLower
-        Case "mnb"
-          MainSail = New clsSailsMap(vela, 10.02)
-        Case "mnb1reef"
-          MainSail = New clsSailsMap(vela, 10.02)
-        Case "mnb2reef"
-          MainSail = New clsSailsMap(vela, 10.02)
-        Case "mnc"
-          MainSail = New clsSailsMap(vela, 10.02)
-        Case "mnc1reef"
-          MainSail = New clsSailsMap(vela, 10.02)
-        Case "J1B"
-          HeadSail = New clsSailsMap(vela, 10.02)
-        Case "J2B"
-          HeadSail = New clsSailsMap(vela, 20.02)
-        Case "J3B"
-          HeadSail = New clsSailsMap(vela, 30.02)
-        Case "J4B"
-          StaySail = New clsSailsMap(vela, 40.02)
-        Case "A2B"
-          ProdSail = New clsSailsMap(vela, 20.02)
-        Case "A3B"
-          ProdSail = New clsSailsMap(vela, 30.02)
-        Case "FRO", "FROB"
-          ProdSail = New clsSailsMap("FROB", 5.02)
-        Case "A6B"
-          ProdSail = New clsSailsMap(vela, 60.02)
-        Case Else
-          Stop
-      End Select
-
-    Next
-
-
-    'MN-B 10.02
-
-    'J1-B    10.02
-
-    'J2-B    20.02
-
-    'J3-B    30.02
-
-    'J4-B    40.02
-
-    'A3-B   30.02
-
-    'FR0-B 05.02
-
-    'A2-B  20.02
-
-    'A6-B  60.02
 
 
   End Sub

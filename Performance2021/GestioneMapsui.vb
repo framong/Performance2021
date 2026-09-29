@@ -540,18 +540,6 @@ Public Class clsGestioneMapsui
   'y = hybrid
 
 
-  Public Shared Function CreateMbTilesLayer(ByVal path As String) As TileLayer
-    If Not System.IO.File.Exists(path) Then Return New TileLayer
-    Try
-      Dim mbTilesTileSource = New MbTilesTileSource(New SQLiteConnectionString(path, True))
-      Dim mbTilesLayer = New TileLayer(mbTilesTileSource)
-      Return mbTilesLayer
-    Catch ex As Exception
-      Return New TileLayer
-    End Try
-
-  End Function
-
   Private Function TrovaLayer(Nome As String) As ILayer
     For Each Ly In MyMapControl.Map.Layers
       If Ly.Name = Nome Then Return Ly
@@ -685,16 +673,6 @@ Public Class clsGestioneMapsui
   'End Function
 
 
-  Private Shared Function GetBitmapIdForEmbeddedResource(ByVal imagePath As String) As Integer
-    Dim assembly = GetType(Point).GetTypeInfo().Assembly
-    If System.IO.File.Exists(imagePath) Then
-      'Dim image = assembly.GetManifestResourceStream(imagePath)
-      Dim svg As String = System.IO.File.ReadAllText(imagePath)
-      Return BitmapRegistry.Instance.Register(svg)
-    End If
-    Return 0
-  End Function
-
 
   Shared _boatImageId As Integer = -1
 
@@ -723,20 +701,6 @@ Public Class clsGestioneMapsui
       Return _boatImageId
     End Get
   End Property
-
-  Public Shared Function CreateBoatLayer() As WritableLayer
-    Dim layer = New WritableLayer With {
-            .Style = New SymbolStyle With {
-                .BitmapId = BoatImageId,
-                .SymbolScale = 1,
-                .SymbolOffset = New Offset(0.0, 0.0, True)
-            },
-            .IsMapInfoLayer = False
-        }
-    Return layer
-    '.SymbolType = SymbolType.Svg,
-
-  End Function
 
 
   Private Function CreaLayerTraccia(MinHz As Integer) As ILayer

@@ -2206,17 +2206,6 @@ Public Class clsSummary2025
   End Enum
 
 
-  Sub AssignRowStatus()
-
-    For i As Integer = TR.IdRigaIniziale To TR.IdRigaFinale
-      Dim r = New clsRowsAdv2025(i)
-
-
-    Next
-
-
-  End Sub
-
 
 End Class
 

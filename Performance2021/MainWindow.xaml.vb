@@ -173,35 +173,6 @@ Class MainWindow
     Return ClnTmp
   End Function
 
-  Private Sub CanaleDettaglioDaConfigurazione(NrGrafico As Integer, ByRef CanaleAscissa As clsChannels2020.eCanaliChiave, ByRef CanaliOrdinata As List(Of clsChannels2020.eCanaliChiave))
-    Select Case NrGrafico
-      Case 0
-        Select Case DataProvider2020.FileType
-          Case clsDataProvider2020.eFileType.eExpLog
-            CanaleAscissa = clsChannels2020.eCanaliChiave.eSOW
-            CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eAWA)
-            CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eTWA)
-          Case Else
-            CanaleAscissa = clsChannels2020.eCanaliChiave.eSOG
-            CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eAWA)
-            CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eTWA)
-        End Select
-      Case 1
-        CanaleAscissa = clsChannels2020.eCanaliChiave.eCanaleDT
-        CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eHEEL)
-      Case 2
-        CanaleAscissa = clsChannels2020.eCanaliChiave.eCanaleDT
-        Select Case DataProvider2020.FileType
-          Case clsDataProvider2020.eFileType.eExpLog
-            CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eHDG)
-          Case Else
-        End Select
-      Case Else
-        CanaleAscissa = clsChannels2020.eCanaliChiave.eCanaleDT
-        CanaliOrdinata.Add(clsChannels2020.eCanaliChiave.eSOG)
-    End Select
-  End Sub
-
 
 
   'Private Sub RiempiGraficiBase()
@@ -406,11 +377,6 @@ Class MainWindow
   Private Sub dg_LoadedFileChannels_KeyUp(sender As Object, e As KeyEventArgs)
     Stop
   End Sub
-
-  Private Function HeaderAscissa(CanaleAscissa As clsChannel2020) As String
-    If CanaleAscissa Is Nothing Then Return ""
-    Return CanaleAscissa.ChannelId
-  End Function
 
 
   Private Sub FillGraphEventi()
@@ -971,30 +937,6 @@ Class MainWindow
 
   End Sub
 
-
-  Private Function ParteComuneDelNome(Nomi As List(Of String)) As String
-    Dim strTmp As String = ""
-    If Nomi.First.Length > 1 Then
-      Dim subStr As String ' = Nomi.First.Substring(0, 1)
-      For i As Integer = 1 To Nomi.First.Length - 1
-        subStr = Nomi.First.Substring(0, i)
-        Dim SubstringUguale As Boolean = True
-        For Each Nome In Nomi
-          If Not subStr = Nome.Substring(0, i) Then
-            SubstringUguale = False
-            Exit For
-          End If
-        Next
-        If SubstringUguale Then
-          strTmp = subStr
-        Else
-          Exit For
-        End If
-      Next
-    End If
-    If strTmp.Trim = "" Then Return TempoInStringaFormattata(Now, eFormatType.YYYYMMDDHHMMSS)
-    Return strTmp.TrimEnd("_")
-  End Function
 
 
 
