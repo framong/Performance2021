@@ -4386,6 +4386,7 @@ Public Class clsPeriod2021
           'Else
           '  Return StringaDataTime(_TimeRange.Start) & ", (TkOf: " & Format(pDettagliAcceleration.TimeToTakeOffSpeed.TotalSeconds, "F0") & "ss) " & ", Tws: " & pValoriCanaleTWS.AvgString & IIf(pShortDescription.Trim = "", "", ", " & pShortDescription)
           'End If
+          Return Nothing
         Case ePeriodType.eGybe
           If PavarotDetails Is Nothing Then Return "Gybe external to actual loaded files"
           Return "G " & StringaDataTime(KeyMoment) & ", Tws: " & TwsDetails.AvgVal.ToString("F1") & ", Loss: " & PavarotDetails.VmgTgtLossMt.ToString("F0") & If(ShortDescription.Trim = "", "", ", " & ShortDescription) & If(Keys.Trim = "", "", ", " & Keys)

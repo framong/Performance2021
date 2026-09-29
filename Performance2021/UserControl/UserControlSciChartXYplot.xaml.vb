@@ -9849,6 +9849,7 @@ Public Class clsSciChartXyPlotViewModel
     ElseIf CurrentPlotSettings.ShowDownwindVmg Then
       Return "Downwind " & PortStbdInStringa()
     End If
+    Return Nothing
   End Function
 
   Private Function PortStbdInStringa() As String

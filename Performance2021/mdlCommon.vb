@@ -4187,8 +4187,8 @@ Public Class clsColorConverter
   End Function
 
   Public Function ConvertBack(value As Object, targetType As Type, parameter As Object, culture As CultureInfo) As Object Implements IValueConverter.ConvertBack
-
-    'Throw New NotImplementedException()
+    ' converter usato solo in binding OneWay (Background/BorderBrush): la conversione inversa non e' prevista
+    Throw New NotSupportedException()
   End Function
 End Class
 
@@ -4210,7 +4210,8 @@ Public Class clsColorConverterLineUp
   End Function
 
   Public Function ConvertBack(value As Object, targetType As Type, parameter As Object, culture As CultureInfo) As Object Implements IValueConverter.ConvertBack
-
+    ' converter solo in lettura: la conversione inversa non e' prevista
+    Throw New NotSupportedException()
   End Function
 End Class
 

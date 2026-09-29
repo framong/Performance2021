@@ -1264,7 +1264,7 @@ Public Class clsParquetFinder
     End Try
   End Function
 
-  Private Function ImpostaManualmenteTipoPeriodi()
+  Private Sub ImpostaManualmenteTipoPeriodi()
 
     '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eAcceleration)
     '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eGybe)
@@ -1277,7 +1277,7 @@ Public Class clsParquetFinder
     '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eRoundUp)
     '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eStart)
 
-  End Function
+  End Sub
 
   Private Sub ImpostaDescrizionePeriodiAndTimeRange()
     _StringaDescrizioneFiltro = ""

@@ -4070,13 +4070,13 @@ Public Class clsDataProvider2020
   End Function
 
 
-  Public Function VerificaCanaleMathsParquet(Canale As clsChannel2020) As Boolean
+  Public Sub VerificaCanaleMathsParquet(Canale As clsChannel2020)
     Dim adesso As DateTime = Now
     'Console.WriteLine("VerificaCanaleMathsParquet - Loading Math Channel: " & Canale.ChannelId)
     If Canale.Valori Is Nothing Then
       ReDim Canale.Valori(TimeStamps.Count - 1)
     Else
-      If Canale.Valori.Count > 1 Then Return True
+      If Canale.Valori.Count > 1 Then Exit Sub
     End If
     Select Case Canale.CanaleChiave
       Case clsChannels2020.eCanaliChiave.eVMG 'ricalcola sempre il vmg
@@ -4096,7 +4096,7 @@ Public Class clsDataProvider2020
         If Not TgtManager.Tgt Is Nothing Then
           Dim chVmg As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eVMG)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chVmg)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chVmg.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim Vmg As Double = chVmg.Valori(i)
@@ -4112,7 +4112,7 @@ Public Class clsDataProvider2020
           Dim chSow As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
           Dim chTwa As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chSow)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chSow.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim Sow As Double = chSow.Valori(i)
@@ -4137,7 +4137,7 @@ Public Class clsDataProvider2020
         If Not TgtManager.Tgt Is Nothing Then
           Dim chSow As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanalePolar(chSow)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chSow.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim Sow As Double = chSow.Valori(i)
@@ -4199,7 +4199,7 @@ Public Class clsDataProvider2020
         If Not TgtManager.Tgt Is Nothing Then
           Dim chTwa As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chTwa)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chTwa.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim Twa As Double = chTwa.Valori(i)
@@ -4356,7 +4356,7 @@ Public Class clsDataProvider2020
           Dim chVmg As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eVMG)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chVmg)
           Dim chVmgRL As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eVmgRecLwy)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chVmgRL.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim VmgRL As Double = chVmgRL.Valori(i)
@@ -4452,7 +4452,7 @@ Public Class clsDataProvider2020
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chVmgInr)
           Dim chVmgPercInr As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgPercInertial)
           Dim chVmgPercInrRL As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgPercInertialRecLeeway)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim chVmgPercInr.Valori(chVmgInr.Valori.Count - 1)
           ReDim chVmgPercInrRL.Valori(chVmgInr.Valori.Count - 1)
           For i As Long = 0 To chVmgInr.Valori.Count - 1
@@ -4608,7 +4608,7 @@ Public Class clsDataProvider2020
           Dim chVmg As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eVMG)
           Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chVmg)
           Dim chVmgRL As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eMsVmg)
-          If CanaleTgt Is Nothing Then Return False
+          If CanaleTgt Is Nothing Then Exit Sub
           ReDim Canale.Valori(chVmgRL.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim VmgRL As Double = chVmgRL.Valori(i)
@@ -4622,8 +4622,8 @@ Public Class clsDataProvider2020
       Case clsChannels2020.eCanaliChiave.eDaggerAoA
         Dim chDaggerAngle As clsChannel2020 = CanaleDbl("RudderFwd")
         Dim chLwy As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eLwyNorm)
-        If chDaggerAngle Is Nothing Then Return False
-        If chLwy Is Nothing Then Return False
+        If chDaggerAngle Is Nothing Then Exit Sub
+        If chLwy Is Nothing Then Exit Sub
         ReDim Canale.Valori(chLwy.Valori.Count - 1)
         For i As Long = 0 To Canale.Valori.Count - 1
           Dim DA As Double = chDaggerAngle.Valori(i)
@@ -4637,8 +4637,8 @@ Public Class clsDataProvider2020
       Case clsChannels2020.eCanaliChiave.eDaggerAoARL
         Dim chDaggerAngle As clsChannel2020 = CanaleDbl("RudderFwd")
         Dim chLwy As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eLeewayRecalc)
-        If chDaggerAngle Is Nothing Then Return False
-        If chLwy Is Nothing Then Return False
+        If chDaggerAngle Is Nothing Then Exit Sub
+        If chLwy Is Nothing Then Exit Sub
         ReDim Canale.Valori(chLwy.Valori.Count - 1)
         For i As Long = 0 To Canale.Valori.Count - 1
           Dim DA As Double = chDaggerAngle.Valori(i)
@@ -4758,7 +4758,7 @@ Public Class clsDataProvider2020
           End Select
           If Not chVal Is Nothing Then
             Dim CanaleTgt As clsChannel2020 = DataProvider2020.VerificaCanaleTarget(chVal)
-            If CanaleTgt Is Nothing Then Return False
+            If CanaleTgt Is Nothing Then Exit Sub
             ReDim Canale.Valori(chVal.Valori.Count - 1)
             For i As Long = 0 To Canale.Valori.Count - 1
               Dim Valore As Double = chVal.Valori(i)
@@ -6040,7 +6040,7 @@ Public Class clsDataProvider2020
         Dim YR As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eYRT)
         If YR Is Nothing Then
           If YRFromHdg() Is Nothing Then
-            Exit Function
+            Exit Sub
           End If
           'Dim chHdg As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eHDG)
           'If chHdg Is Nothing Then Exit Function
@@ -6191,9 +6191,8 @@ Public Class clsDataProvider2020
         'Stop
     End Select
     'Console.WriteLine("VerificaCanaleMathsParquet - Channels created " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    Return Canale.Valori.Count > 0
 
-  End Function
+  End Sub
 
 
   Private Function YRFromHdg() As clsChannel2020
@@ -6252,7 +6251,7 @@ Public Class clsDataProvider2020
     Return PinOffset + BulbOffset
   End Function
 
-  Public Function TestProjectedArea()
+  Public Sub TestProjectedArea()
     Dim txt As String = "PortCant" & vbTab & "PortInLift" & vbTab & "PortInLwy" & vbTab & "PortOutLift" & vbTab & "PortOutLwy" & vbTab
     txt &= "StbdCant" & vbTab & "StbdInLift" & vbTab & "StbdInLwy" & vbTab & "StbdOutLift" & vbTab & "StbdOutLwy" & vbTab
     txt &= "GlobalLift" & vbTab & "GlobalLwy" & vbCrLf
@@ -6308,7 +6307,7 @@ Public Class clsDataProvider2020
     Next
     Clipboard.SetText(txt)
     Stop
-  End Function
+  End Sub
 
   Private Function UnderwaterProjectedArea(IsInner As Boolean, IsLift As Boolean, EffCant As Double, BulbRh As Double) As Double
     If Double.IsNaN(EffCant) Then Return Double.NaN
@@ -7145,6 +7144,8 @@ Public Class clsChannels2020
         Stop
         Return New List(Of String)(New String() {DefaultValue})
     End Select
+    ' formati non gestiti (Gomboc, FaRoBin, Dfw, Exp, FaRoCsv): nessuna intestazione nota
+    Return Nothing
 
   End Function
 

@@ -108,7 +108,7 @@ Public Class clsImportaPeriodiViewModel
   'End Sub
 
 
-  Private Function NuovoPeriodo(prd As clsPeriod2021) As Boolean
+  Private Sub NuovoPeriodo(prd As clsPeriod2021)
     Stop
     'For Each p In PeriodsManager.ListaPeriodi
     '  If p.TimeRange.HasSameRange(prd.TimeRange) Then
@@ -116,10 +116,10 @@ Public Class clsImportaPeriodiViewModel
     '  End If
     'Next
     'Return True
-  End Function
+  End Sub
 
 
-  Public Function AccodaPeriodiCheckati() As Boolean
+  Public Sub AccodaPeriodiCheckati()
     Stop
     'Dim msg As String = ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Count & " new periods selected (out of the " & ListaNuoviPeriodi.Count & " found)" & vbCrLf
     'msg &= ListaNuoviPeriodi.Where(Function(x) x.IsChecked).Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eAcceleration).Count & " Accelerations" & vbCrLf
@@ -138,6 +138,6 @@ Public Class clsImportaPeriodiViewModel
     'Else
     '  Return False
     'End If
-  End Function
+  End Sub
 
 End Class

@@ -336,10 +336,10 @@ Public Class clsSailUsage
 
 
 
-  Private Function AlegreSailCode(SailString As String) As String
+  Private Sub AlegreSailCode(SailString As String)
 
 
-  End Function
+  End Sub
 
 
   Private Sub UpdateSailUsageFromXmlEventFile(FilePath As String, ByRef SailList As clsSailList)

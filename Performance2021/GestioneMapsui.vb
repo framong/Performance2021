@@ -841,6 +841,7 @@ Public Class clsGestioneMapsui
       Case eSailingMode.eBothArmsInTheWater
         Return Color.Violet
     End Select
+    Return Nothing
   End Function
 
   Private Function Gold() As Color
@@ -945,7 +946,7 @@ Public Class clsGestioneMapsui
     MyMapControl.Navigator.ZoomOut()
   End Sub
 
-  Public Function AggiornaSelezione(TimeRange As clsTimeRange)
+  Public Sub AggiornaSelezione(TimeRange As clsTimeRange)
     TRselezione = TimeRange
     If TimeRange.HasSameRange(DataProvider2020.TimeRange) Then
       pLayerSelezione.Enabled = False
@@ -953,7 +954,7 @@ Public Class clsGestioneMapsui
       pLayerSelezione.Enabled = True
       pLayerSelezione.DataSource = New MemoryProvider(Selezione(TimeRange.IdRigaIniziale, TimeRange.IdRigaFinale))
     End If
-  End Function
+  End Sub
 
   Private Function Selezione(IdIniziale As Integer, IdFinale As Integer) As Feature
     Dim FcTmp As New Feature
