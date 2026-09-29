@@ -52,11 +52,6 @@ Public Class UserControlPavarot
   End Sub
 
 
-  Private Sub ItemCheckedStatusChanged(sender As Object, e As PropertyChangedEventArgs)
-    'Stop
-    PavarotVM2020.PavarotTabGotFocus()
-  End Sub
-
   Private Sub TextBlock_PreviewMouseUp(sender As Object, e As MouseButtonEventArgs)
     If e.RightButton = MouseButtonState.Pressed Then Exit Sub
     Try
@@ -157,10 +152,6 @@ Public Class UserControlPavarot
   Private Sub btn_Pdf_Click(sender As Object, e As RoutedEventArgs)
     PavarotVM2020.CreaReportPdf(GainLossVsTws)
 
-  End Sub
-
-  Private Sub TextBlock_MouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
-    Stop
   End Sub
 
   Private Sub TextBlock_PreviewMouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)

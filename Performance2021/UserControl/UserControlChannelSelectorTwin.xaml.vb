@@ -305,15 +305,6 @@ Public Class ChannelSelectorTwoFramesViewModel
   End Sub
 
 
-  Private Sub ChannelPropertyChanged(sender As Object, e As PropertyChangedEventArgs)
-    Select Case e.PropertyName
-      Case "Selected"
-        Stop
-        'AggiornaListe()
-      Case Else
-    End Select
-  End Sub
-
 
   Public Sub MuoviCanale_ToSelezionati()
     'Public Sub AggiungiCanale_ToSelezionati(CanaleDaAggiungere As clsChannelAdv, CanaleSelezionato As clsChannelAdv)

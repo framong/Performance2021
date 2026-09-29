@@ -176,10 +176,6 @@ Public Class UserControlSciChartXYplot
   End Sub
 
 
-  Private Sub Plot_MouseUp(sender As Object, e As MouseButtonEventArgs)
-
-  End Sub
-
   Private Sub Plot_PreviewMouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
     VM.AggiornaValoriCursore(DirectCast(Plot.XAxes.First.VisibleRange.Min, Double), DirectCast(Plot.XAxes.First.VisibleRange.Max, Double), DirectCast(Plot.YAxes.First.VisibleRange.Min, Double), DirectCast(Plot.YAxes.First.VisibleRange.Max, Double))
   End Sub
@@ -622,20 +618,12 @@ Public Class UserControlSciChartXYplot
 
   End Sub
 
-  Private Sub Button_Click_18(sender As Object, e As RoutedEventArgs)
-
-  End Sub
-
   Private Sub Button_Click_SwapAxes(sender As Object, e As RoutedEventArgs)
     Dim X = VM.CurrentPlotSettings.XAxisChannel
     Dim Y = VM.CurrentPlotSettings.YAxisChannel
 
     VM.CurrentPlotSettings.XAxisChannel = Y
     VM.CurrentPlotSettings.YAxisChannel = X
-
-  End Sub
-
-  Private Sub btn_Macro_Click_1(sender As Object, e As RoutedEventArgs)
 
   End Sub
 

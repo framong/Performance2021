@@ -374,10 +374,6 @@ Class MainWindow
     SelezionaFiles()
   End Sub
 
-  Private Sub dg_LoadedFileChannels_KeyUp(sender As Object, e As KeyEventArgs)
-    Stop
-  End Sub
-
 
   Private Sub FillGraphEventi()
     Dim Lista As New List(Of clsChannel2020)
@@ -630,14 +626,6 @@ Class MainWindow
     Dim strTmp As String = DataPlotSync.TogglePanSelect()
     btn_BasicPanSelection.Content = "rb" & strTmp
     btn_BasicPanSelection.ToolTip = "Mouse Right Button " & strTmp
-  End Sub
-
-  Private Sub AnnotationCreationModifier_MouseUp(sender As Object, e As MouseButtonEventArgs)
-    Stop
-  End Sub
-
-  Private Sub AnnotationCreationModifierMVVM_MouseUp(sender As Object, e As MouseButtonEventArgs)
-    Stop
   End Sub
 
   Private Sub SciChartEventi_MouseMove(sender As Object, e As MouseEventArgs)
@@ -896,10 +884,6 @@ Class MainWindow
     GraficoEventiViewModel.SetCurrentMousePosition(e.OriginalSource.GetType Is GetType(System.Windows.Shapes.Line))
   End Sub
 
-  Private Sub ItemsControlItem_RequestBringIntoView(sender As Object, e As RequestBringIntoViewEventArgs)
-    e.Handled = True
-  End Sub
-
 
   Private Sub MarkRows(Intervallo As clsTimeRange, SetAsValidRows As Boolean)
     Stop
@@ -940,29 +924,11 @@ Class MainWindow
 
 
 
-  Private Sub Label_PreviewMouseDoubleClick(sender As Object, e As MouseButtonEventArgs)
-    Clipboard.SetText(sender.content.trim)
-  End Sub
-
-  Private Sub CompressGomboc(sender As Object, e As RoutedEventArgs)
-    Stop
-
-  End Sub
-
-  Private Sub MergeParquet(sender As Object, e As RoutedEventArgs)
-    Stop
-    'ObjFiles.MergeParquetMultifiles()
-  End Sub
-
 
   Private Sub ExportToCsv(sender As Object, e As RoutedEventArgs)
     Dim tmp As New clsExportToCsv
     'tmp.ExportNotEmpty(5, True)
     tmp.ExportSelected()
-  End Sub
-
-  Private Sub FaRoToParquet(sender As Object, e As RoutedEventArgs)
-    Dim tmp As New clsFaRoLogToParquet
   End Sub
 
   Private Sub ApriDataFolder(sender As Object, e As RoutedEventArgs)
@@ -975,14 +941,6 @@ Class MainWindow
 
 
   Private Sub CompactCurrentFile(sender As Object, e As RoutedEventArgs)
-    '' compatta file
-    'Dim tmp As New clsCompaqParquet
-
-    clsParquetUtilities.MakeOneSingleParquetFromFilesAndPeriods(False)
-
-  End Sub
-
-  Private Sub ExportCompactParquet(sender As Object, e As RoutedEventArgs)
     '' compatta file
     'Dim tmp As New clsCompaqParquet
 
@@ -1086,12 +1044,6 @@ Class MainWindow
 
   End Sub
 
-  Private Sub ListaPeriodi_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
-    Dim ic As ItemsControl = DirectCast(sender, ItemsControl)
-    Dim p As clsPeriod2021 = DirectCast(DirectCast(ic, System.Windows.Controls.Primitives.Selector).SelectedItem, clsPeriod2021)
-    CurrentPeriod(p)
-  End Sub
-
 
   Private Sub FiltraGrigliaCanali()
     If DataProvider2020 Is Nothing Then Exit Sub
@@ -1127,33 +1079,11 @@ Class MainWindow
     'Clipboard.SetText(strTmp)
   End Sub
 
-  Private Sub ImportPeriods(sender As Object, e As RoutedEventArgs)
-    Dim frm As New UserControl_ImportaPeriodi()
-    frm.ShowDialog()
-    GraficoEventiViewModel.AggiornaPeriodi()
-
-  End Sub
-
   Private Sub btn_ExportPrd_Click(sender As Object, e As RoutedEventArgs)
     If DataProvider2020 Is Nothing Then Exit Sub
     If Not DataProvider2020.ValoriCaricati Then Exit Sub
     clsSailShapeUtilities.ExportStraightLinesPeriods(PeriodsManager.Periods.ListaOrdinata.ToList, DataProvider2020)
     'PeriodsManager.EsportaPrd()
-  End Sub
-
-  Private Sub btn_CheckAndLoadFromCurrentFile_Click(sender As Object, e As RoutedEventArgs)
-    If DataProvider2020 Is Nothing Then Exit Sub
-    If Not DataProvider2020.ValoriCaricati Then Exit Sub
-    DataProvider2020.CaricaValoriCanaliSelezionati()
-  End Sub
-
-  Private Sub btn_LoadFromExternalFile_Click(sender As Object, e As RoutedEventArgs)
-    'If DataProvider2020 Is Nothing Then Exit Sub
-    'If Not DataProvider2020.ValoriCaricati Then Exit Sub
-    'DataProvider2020.CaricaNuoviCanaliDaFileEsterni()
-    'Dim frm As New UserControlImportChannelsData
-    'frm.ShowDialog()
-
   End Sub
 
   Private Sub Button_Click(sender As Object, e As RoutedEventArgs)
@@ -1162,52 +1092,8 @@ Class MainWindow
     'FiltraGrigliaCanali()
   End Sub
 
-  Private Sub btn_MultiperiodTest_Click(sender As Object, e As RoutedEventArgs)
-    'Dim path As String = DataProvider2020.Files.First.Directory.FullName
-    'Dim pstringadata As String = ObjChartSyncManagerBasic.VisibleRange.Start.ToString("yyyyMMdd_HHmmss") & "_" & ObjChartSyncManagerBasic.VisibleRange.Finish.ToString("HHmmss")
-    'Dim Nome As String = ""
-
-    'Dim xls As New clsXls
-    'xls.CreaMultiperiodReportExcelFile(path & "\" & pstringadata & "_" & Nome & ".xlsx", ObjChartSyncManagerBasic.VisibleRange)
-
-    'ApriExplorer(path, path & "\" & pstringadata & "_" & Nome & ".xlsx")
-
-    'Dim t As New clsDettagliMultiManoeuver(ObjChartSyncManagerBasic.VisibleRange)
-    't.TestoResume()
-  End Sub
-
-  Private Sub ImportXlsPeriods(sender As Object, e As RoutedEventArgs)
-    Stop
-    'Dim objXls As New clsXlsPeriodsML
-    'If objXls.ListaPeriodi.Count > 0 Then
-    '  For Each XlsPeriod In objXls.ListaPeriodi
-    '    Dim p As New clsPeriod2020(XlsPeriod.TR, clsPeriod2020.ePeriodType.eUndefined)
-    '    p.AggiornaValoriCanali()
-    '    p.ShortDescription = XlsPeriod.Descrizione
-    '    p.Keys = XlsPeriod.Chiave
-    '    PeriodsManager.AggiungiNuovoPeriodo(p)
-    '  Next
-    '  GraficoEventiViewModel.AggiornaPeriodi()
-    'End If
-  End Sub
-
   Private Sub Button_Click_1(sender As Object, e As RoutedEventArgs)
 
-  End Sub
-
-  Private Sub ParquetFinder_Click(sender As Object, e As RoutedEventArgs)
-    Dim pFinder As New UserControlParquetFinder
-    pFinder.ShowDialog()
-
-    Exit Sub
-
-    'Dim pF As New clsParquetFinder()
-    'pF.LanciaRiercaManuale()
-  End Sub
-
-  Private Sub BazzosTest_Click(sender As Object, e As RoutedEventArgs)
-    Stop
-    'Dim Jms As New clsJsonManoeuversSelector
   End Sub
 
   Private Sub btn_UpdateKeys_Click(sender As Object, e As RoutedEventArgs)
@@ -1371,11 +1257,6 @@ Class MainWindow
 
 #End Region
 
-  Private Sub btn_Test_Click(sender As Object, e As RoutedEventArgs)
-    Stop
-    clsSpeedTest.Testa(DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eSOW), DataProvider2020.TimeRange)
-  End Sub
-
   Private Sub LineUpsAnalysis_GotFocus(sender As Object, e As RoutedEventArgs) Handles LineUpsAnalysis.GotFocus
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " tabSL.0 - inizio")
     AssicuraCtrlLineUp()
@@ -1466,20 +1347,6 @@ Class MainWindow
         ApriFileSelezionati(Lista)
       End If
     End If
-  End Sub
-
-  Private Sub btn_RaceReport_Click(sender As Object, e As RoutedEventArgs)
-    Dim RR As New clsRaceReport(DataPlotSync.VisibleRange)
-    Dim sl = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eStraightLineVmg).ToList
-    Dim Rc = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eStraightLineReaching).ToList
-    Dim Ba = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eBearAway).ToList
-    Dim Ru = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eRoundUp).ToList
-    Dim Tk = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eTack).ToList
-    Dim Gy = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eGybe).ToList
-    Dim Un = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eUndefined).ToList
-    Dim TS = RR.Periods.Sum(Function(x) x.TR.Durata.TotalSeconds)
-    Dim UnTs = RR.Periods.Where(Function(x) x.PeriodType = clsPeriod2021.ePeriodType.eUndefined).Sum(Function(x) x.TR.Durata.TotalSeconds)
-    Stop
   End Sub
 
   Private Sub btn_PowerZoneReport_Click(sender As Object, e As RoutedEventArgs)
@@ -1613,10 +1480,6 @@ Class MainWindow
     o.UpdateSailUsageFromTextFile(True, msg)
   End Sub
 
-
-  Private Sub btn_FileSailEventsSelect_Click(sender As Object, e As RoutedEventArgs)
-
-  End Sub
 
   Private Sub btn_CustomFunction_Click(sender As Object, e As RoutedEventArgs)
     If DataProvider2020 Is Nothing Then Exit Sub

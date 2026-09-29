@@ -5,7 +5,7 @@ Generato il 29/09/2026. Analisi statica **euristica**, nessun file è stato modi
 ## Metodo
 
 - Considerati solo i file compilati del `.vbproj`: 66 file `.vb` e 40 file `.xaml`. I file non inclusi (`ClassiDesuete.vb`, `ctrl_*.xaml`, …) non contano né come dichiarazioni né come riferimenti.
-- Dichiarazioni esaminate: 4357 tra Sub, Function e Property.
+- Dichiarazioni esaminate: 4329 tra Sub, Function e Property.
 - Commenti e stringhe esclusi dalla ricerca dei riferimenti. Il confronto è per **nome**, senza distinzione di maiuscole (come VB): se un altro membro con lo stesso nome è usato, il candidato viene considerato usato. L'analisi quindi tende a *non* segnalare, mai a segnalare troppo.
 - Le chiamate ricorsive (riferimenti dentro il corpo del membro stesso) non contano come uso.
 - **Secondo livello**: membri referenziati solo da altri membri inutilizzati (calcolo iterativo fino a punto fisso).
@@ -23,42 +23,23 @@ Generato il 29/09/2026. Analisi statica **euristica**, nessun file è stato modi
 
 | Confidenza | Membri | Righe (circa) |
 |---|---:|---:|
-| alta | 42 | 393 |
-| media | 187 | 812 |
+| alta | 15 | 289 |
+| media | 186 | 768 |
 | bassa | 45 | 360 |
-| **totale** | **274** | **1565** |
+| **totale** | **246** | **1417** |
 
-File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), `UserControl/UserControlTimeRangeSummary.xaml.vb` (41), `cls2021.vb` (21), `MainWindow.xaml.vb` (20), `mdlCommon.vb` (19), `ClassiGestionePeriodi.vb` (11), `UserControl/UserControlStraightLine.xaml.vb` (10).
+File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), `UserControl/UserControlTimeRangeSummary.xaml.vb` (41), `cls2021.vb` (21), `mdlCommon.vb` (19), `ClassiGestionePeriodi.vb` (11), `UserControl/UserControlStraightLine.xaml.vb` (10), `clsChartsSyncManager.vb` (7).
 
 ## Candidati
 
 | File | Nome | Tipo | Accesso | Righe | Confidenza | Motivo |
 |---|---|---|---|---|---|---|
+| `Classi2020.vb` | `clsSpeedTest.Testa` | Sub | public shared | 1818–1861 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `ClassiGestionePeriodi.vb` | `clsTabellaPeriodiCanali.StringaMedieHtml` | Function | private | 167–181 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `ClassiGestionePeriodi.vb` | `clsTests.ImpostaTestSelezionato` | Sub | private | 215–221 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `cls2021.vb` | `clsEzriz.fn_NTPTIME` | Function | public shared | 189–199 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `cls2021.vb` | `clsPeriodsManager2021.NormaStat` | Function | private | 3376–3422 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `GestioneFileSources.vb` | `clsExportToCsv.IntestazioniDefault` | Function | private | 704–716 | alta | Nessun riferimento nel codice compilato né nei .xaml |
-| `MainWindow.xaml.vb` | `MainWindow.dg_LoadedFileChannels_KeyUp` | Sub | private | 377–379 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.AnnotationCreationModifier_MouseUp` | Sub | private | 635–637 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.AnnotationCreationModifierMVVM_MouseUp` | Sub | private | 639–641 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ItemsControlItem_RequestBringIntoView` | Sub | private | 899–901 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.Label_PreviewMouseDoubleClick` | Sub | private | 943–945 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.CompressGomboc` | Sub | private | 947–950 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.MergeParquet` | Sub | private | 952–955 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.FaRoToParquet` | Sub | private | 964–966 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ExportCompactParquet` | Sub | private | 985–991 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ListaPeriodi_SelectionChanged` | Sub | private | 1089–1093 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ImportPeriods` | Sub | private | 1130–1135 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_CheckAndLoadFromCurrentFile_Click` | Sub | private | 1144–1148 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_LoadFromExternalFile_Click` | Sub | private | 1150–1157 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_MultiperiodTest_Click` | Sub | private | 1165–1177 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ImportXlsPeriods` | Sub | private | 1179–1192 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.ParquetFinder_Click` | Sub | private | 1198–1206 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.BazzosTest_Click` | Sub | private | 1208–1211 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_Test_Click` | Sub | private | 1374–1377 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_RaceReport_Click` | Sub | private | 1471–1483 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `MainWindow.xaml.vb` | `MainWindow.btn_FileSailEventsSelect_Click` | Sub | private | 1617–1619 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
 | `mdlCommon.vb` | `mdlCommon.Media180` | Function | public | 1455–1478 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `mdlCommon.vb` | `mdlCommon.Media180` | Function | public | 1480–1503 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `mdlCommon.vb` | `cls360vector.GradiToRadianti` | Function | public | 2155–2157 | alta | Nessun riferimento nel codice compilato né nei .xaml |
@@ -66,15 +47,7 @@ File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), 
 | `mdlCommon.vb` | `cls360vector.DistanzaCorretta` | Function | public | 2163–2171 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `mdlCommon.vb` | `clsFiles.CartellaParentFullPath` | Function | public | 2699–2711 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `UserControl/UserControl_Highlight.xaml.vb` | `Statistica.GetPercentile` | Function | public | 2186–2202 | alta | Nessun riferimento nel codice compilato né nei .xaml |
-| `UserControl/UserControlBenchmarks.xaml.vb` | `UserControlBenchmarks.TextBox_TargetUpdated` | Sub | private | 89–92 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlBenchmarks.xaml.vb` | `UserControlBenchmarks.TextBox_PreviewKeyUp` | Sub | private | 136–138 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlChannelSelectorTwin.xaml.vb` | `ChannelSelectorTwoFramesViewModel.ChannelPropertyChanged` | Sub | private | 308–315 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlPavarot.xaml.vb` | `UserControlPavarot.ItemCheckedStatusChanged` | Sub | private | 55–58 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlPavarot.xaml.vb` | `UserControlPavarot.TextBlock_MouseRightButtonUp` | Sub | private | 162–164 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `UserControlSciChartXYplot.Plot_MouseUp` | Sub | private | 179–181 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `UserControlSciChartXYplot.Button_Click_18` | Sub | private | 625–627 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `UserControlSciChartXYplot.btn_Macro_Click_1` | Sub | private | 638–640 | alta | Nessun riferimento nel codice compilato né nei .xaml; firma da gestore di evento ma senza Handles, AddHandler o collegamento XAML |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.PeriodoTwaMedioValido` | Function | private | 1849–1866 | alta | Nessun riferimento nel codice compilato né nei .xaml |
+| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.PeriodoTwaMedioValido` | Function | private | 1837–1854 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `UserControl/UserControlStraightLine.xaml.vb` | `clsTrendLines.StampaTrendLinePortStbd` | Sub | public | 393–433 | alta | Nessun riferimento nel codice compilato né nei .xaml |
 | `Classi2020.vb` | `clsValoriNotNanPortStbd.ValoriNotNanPort` | Property | public | 285–292 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsValoriNotNanPortStbd.ValoriNotNanStbd` | Property | public | 294–301 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
@@ -103,7 +76,6 @@ File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), 
 | `Classi2020.vb` | `clsStatVals.Valori2` | Property | public | 1436–1443 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsSailingFunctionDetails.EnergyJoules` | Property | public | 1497–1504 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsSailingFunctionDetails.PowerWatt` | Property | public | 1506–1510 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `Classi2020.vb` | `clsSpeedTest.Testa` | Sub | public shared | 1818–1861 | media | Referenziata solo da codice a sua volta inutilizzato: btn_Test_Click |
 | `Classi2020.vb` | `clsValoriPeriodoCanale2020.AvgOrg` | Property | public | 1944–1948 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsValoriPeriodoCanale2020.AvgOrgString` | Property | public | 1980–1984 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `Classi2020.vb` | `clsValoriPeriodoCanale2020.DsString` | Property | public | 2010–2014 | media | Referenziata solo da codice a sua volta inutilizzato: Testa; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
@@ -211,11 +183,11 @@ File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), 
 | `MilfDataProvider.vb` | `LoadChannelsListDTO.EndSeconds` | Property | public | 15–15 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `SailList.xaml.vb` | `SailListVM.SailNumber` | Property | public | 8–8 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/ChannelSelectorAndOrderer.xaml.vb` | `clsAvailableChannels.GetListaCanaliSelezionati` | Property | public | 191–199 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `UserControl/UserControlBenchmarks.xaml.vb` | `clsBenchmarksManager.GetBenchmark` | Property | public | 202–206 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `UserControl/UserControlBenchmarks.xaml.vb` | `clsBenchmarksManager.GetBenchmark` | Property | public | 193–197 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/UserControlCrossoverTwsTwa.xaml.vb` | `clsXYZColore.ValoreHeatMap` | Property | public | 1086–1086 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/UserControlPolarManager.xaml.vb` | `clsUserControlPolarManagerViwModel.CanalAttuale` | Property | public | 193–193 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.ImageDataCollection` | Property | public | 761–761 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
-| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.FirstDataLoad` | Property | public | 762–762 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.ImageDataCollection` | Property | public | 749–749 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
+| `UserControl/UserControlSciChartXYplot.xaml.vb` | `clsSciChartXyPlotViewModel.FirstDataLoad` | Property | public | 750–750 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/UserControlStraightLine.xaml.vb` | `clsStraightLineVM2020.HorizontalOffset` | Property | public | 1031–1031 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/UserControlStraightLine.xaml.vb` | `clsStraightLineVM2020.PlotConsistency` | Property | public | 1032–1032 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
 | `UserControl/UserControlStraightLine.xaml.vb` | `clsStraightLineControlliPeriodChannelsDistributions.ContenitoriPeriodiChannelsDistributions` | Property | public | 1982–1982 | media | Nessun riferimento nel codice compilato né nei .xaml; proprietà pubblica: potrebbe essere letta via reflection (binding impostato a runtime, DataGrid AutoGenerateColumns) |
@@ -314,39 +286,6 @@ File con più candidati: `Classi2020.vb` (49), `ClassiGestionePavarot.vb` (41), 
 - Gestori con `Handles` senza chiamate dirette: 71 (normali: li invoca WPF).
 - `Overrides`: 8; `Implements`: 3 (tra cui `Convert`/`ConvertBack` dei converter).
 - Membri senza riferimenti nel codice ma con il nome presente in un `.xaml`: 430, di cui 353 come valore di attributo semplice (tipicamente event handler `Click="…"`) e 77 in binding o altri contesti. Il confronto sui `.xaml` è per nome: nomi generici (es. `Name`, `Width`) possono coincidere con proprietà dei controlli e nascondere membri realmente inutilizzati.
-
-### Gestori di evento orfani (28)
-
-Hanno la firma `(sender As Object, e As …EventArgs)` ma non sono collegati né con `Handles`, né con `AddHandler`, né in XAML: probabilmente sono rimasti dopo la rimozione di un controllo. Sono già nella tabella principale.
-
-- `MainWindow.xaml.vb` `MainWindow.dg_LoadedFileChannels_KeyUp` (righe 377–379)
-- `MainWindow.xaml.vb` `MainWindow.AnnotationCreationModifier_MouseUp` (righe 635–637)
-- `MainWindow.xaml.vb` `MainWindow.AnnotationCreationModifierMVVM_MouseUp` (righe 639–641)
-- `MainWindow.xaml.vb` `MainWindow.ItemsControlItem_RequestBringIntoView` (righe 899–901)
-- `MainWindow.xaml.vb` `MainWindow.Label_PreviewMouseDoubleClick` (righe 943–945)
-- `MainWindow.xaml.vb` `MainWindow.CompressGomboc` (righe 947–950)
-- `MainWindow.xaml.vb` `MainWindow.MergeParquet` (righe 952–955)
-- `MainWindow.xaml.vb` `MainWindow.FaRoToParquet` (righe 964–966)
-- `MainWindow.xaml.vb` `MainWindow.ExportCompactParquet` (righe 985–991)
-- `MainWindow.xaml.vb` `MainWindow.ListaPeriodi_SelectionChanged` (righe 1089–1093)
-- `MainWindow.xaml.vb` `MainWindow.ImportPeriods` (righe 1130–1135)
-- `MainWindow.xaml.vb` `MainWindow.btn_CheckAndLoadFromCurrentFile_Click` (righe 1144–1148)
-- `MainWindow.xaml.vb` `MainWindow.btn_LoadFromExternalFile_Click` (righe 1150–1157)
-- `MainWindow.xaml.vb` `MainWindow.btn_MultiperiodTest_Click` (righe 1165–1177)
-- `MainWindow.xaml.vb` `MainWindow.ImportXlsPeriods` (righe 1179–1192)
-- `MainWindow.xaml.vb` `MainWindow.ParquetFinder_Click` (righe 1198–1206)
-- `MainWindow.xaml.vb` `MainWindow.BazzosTest_Click` (righe 1208–1211)
-- `MainWindow.xaml.vb` `MainWindow.btn_Test_Click` (righe 1374–1377)
-- `MainWindow.xaml.vb` `MainWindow.btn_RaceReport_Click` (righe 1471–1483)
-- `MainWindow.xaml.vb` `MainWindow.btn_FileSailEventsSelect_Click` (righe 1617–1619)
-- `UserControl/UserControlBenchmarks.xaml.vb` `UserControlBenchmarks.TextBox_TargetUpdated` (righe 89–92)
-- `UserControl/UserControlBenchmarks.xaml.vb` `UserControlBenchmarks.TextBox_PreviewKeyUp` (righe 136–138)
-- `UserControl/UserControlChannelSelectorTwin.xaml.vb` `ChannelSelectorTwoFramesViewModel.ChannelPropertyChanged` (righe 308–315)
-- `UserControl/UserControlPavarot.xaml.vb` `UserControlPavarot.ItemCheckedStatusChanged` (righe 55–58)
-- `UserControl/UserControlPavarot.xaml.vb` `UserControlPavarot.TextBlock_MouseRightButtonUp` (righe 162–164)
-- `UserControl/UserControlSciChartXYplot.xaml.vb` `UserControlSciChartXYplot.Plot_MouseUp` (righe 179–181)
-- `UserControl/UserControlSciChartXYplot.xaml.vb` `UserControlSciChartXYplot.Button_Click_18` (righe 625–627)
-- `UserControl/UserControlSciChartXYplot.xaml.vb` `UserControlSciChartXYplot.btn_Macro_Click_1` (righe 638–640)
 
 ## Limiti
 

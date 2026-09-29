@@ -86,11 +86,6 @@ Public Class UserControlBenchmarks
     Plot.ZoomExtents()
   End Sub
 
-  Private Sub TextBox_TargetUpdated(sender As Object, e As DataTransferEventArgs)
-    VM.BM.AggiornaPuntiGrafico()
-    Plot.ZoomExtents()
-  End Sub
-
   Private Sub BenchDG_CellEditEnding(sender As Object, e As DataGridCellEditEndingEventArgs)
     cambiato = False
     If e.EditAction = DataGridEditAction.Commit Then
@@ -131,10 +126,6 @@ Public Class UserControlBenchmarks
         cambiato = False
       End If
     End If
-  End Sub
-
-  Private Sub TextBox_PreviewKeyUp(sender As Object, e As KeyEventArgs)
-    Stop
   End Sub
 
   Private Sub TextBox_PreviewKeyDown(sender As Object, e As KeyEventArgs)
