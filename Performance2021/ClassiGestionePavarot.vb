@@ -6400,18 +6400,6 @@ Public Class clsCalcoliDuePuntiGeo
     Return 1 / System.Math.Cos(X)
   End Function
 
-  Private Function Cosecante(X As Double) As Double
-    Return 1 / System.Math.Sin(X)
-  End Function
-
-  Private Function Cotangente(X As Double) As Double
-    Return 1 / System.Math.Tan(X)
-  End Function
-
-  Private Function CotangenteInv(X As Double) As Double
-    Return 2 * System.Math.Atan(1) - System.Math.Atan(1)
-  End Function
-
   Public Function PuntoDestinazione(PuntoOrig As clsGeographicPosition, DistanzaMetri As Double, Rotta As Double) As clsGeographicPosition
     _DistanzaMetri = DistanzaMetri
     pRotta = Rotta

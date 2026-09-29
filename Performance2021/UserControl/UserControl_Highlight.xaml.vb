@@ -1596,47 +1596,6 @@ Public Class HighlightViewModel
 
 
 
-  Private Sub DisegnaGraficiAvg(VersusTarget As Boolean, Lista As List(Of clsChannelAdvanced))
-    Dim plt = PlotAvg.Plot
-
-    For Each c In Lista
-      Dim x, y As Double
-      If VersusTarget Then
-        Dim BestTgtAvg As Double = c.GetValore(True, clsChannelAdvanced.eStatistiche.Media, clsChannelAdvanced.eValori.eBoth, True)
-        If Not Double.IsNaN(BestTgtAvg) Then
-          'quando VersusTarget = true, va avanti solo se esiste il target
-          'la x ha best avg vs tgt vg
-          'la y la devizaione standard best vs target
-          'x = differenza percentuale tra besttgtavg e bestavg rispetto allo stesso besttgtavg value
-          Dim dBestToTgtAvg As Double = c.GetDeltaValue(clsChannelAdvanced.eStatistiche.Media, clsChannelAdvanced.eValori.eBoth, clsChannelAdvanced.eDeltaType.eBestToTarget)
-          x = dBestToTgtAvg / BestTgtAvg * 100
-          'y se esiste il target e' la differenza percentuale tra delta bestavgtotarget e delta worstavgtotarget rispetto al besttgt value
-          Dim BestTgtSD As Double = c.GetValore(True, clsChannelAdvanced.eStatistiche.DeviazioneStandard, clsChannelAdvanced.eValori.eBoth, True)
-          Dim dBestToTgtSD As Double = c.GetDeltaValue(clsChannelAdvanced.eStatistiche.DeviazioneStandard, clsChannelAdvanced.eValori.eBoth, clsChannelAdvanced.eDeltaType.eBestToTarget)
-          y = dBestToTgtSD / BestTgtSD * 100
-        End If
-      Else
-        'non e' VersusTarget quindi la differenza e'relativa tra soprasoglia(best) e sottosoglia(worst)
-        'x = differenza percentuale tra bestavg e worstavg rispetto al bestavg value
-        Dim BestAvg As Double = c.GetValore(True, clsChannelAdvanced.eStatistiche.Media, clsChannelAdvanced.eValori.eBoth, False)
-        Dim dBestToWorstAvg As Double = c.GetDeltaValue(clsChannelAdvanced.eStatistiche.Media, clsChannelAdvanced.eValori.eBoth, clsChannelAdvanced.eDeltaType.eBestToWorst)
-        x = dBestToWorstAvg / BestAvg * 100
-        'y se esiste il target e' la differenza percentuale tra delta bestavgtotarget e delta worstavgtotarget rispetto al besttgt value
-        'y e' la differenza percentuale tra bestsd e worstsd rispetto al bestsd value
-        Dim BestSd As Double = c.GetValore(True, clsChannelAdvanced.eStatistiche.DeviazioneStandard, clsChannelAdvanced.eValori.eBoth, False)
-        Dim dBestToWorstSd As Double = c.GetDeltaValue(clsChannelAdvanced.eStatistiche.DeviazioneStandard, clsChannelAdvanced.eValori.eBoth, clsChannelAdvanced.eDeltaType.eBestToWorst)
-        x = dBestToWorstSd / BestSd * 100
-
-      End If
-      If Not Double.IsNaN(x) AndAlso Not Double.IsNaN(y) Then
-        Dim pts = plt.Add.Scatter(x, y, ScottPlot.Colors.SteelBlue)
-      End If
-    Next
-
-
-
-  End Sub
-
 End Class
 
 <AddINotifyPropertyChangedInterface>
@@ -1670,16 +1629,6 @@ Public Class clsBestWorstDetails
     Return ValoriSottoSoglia.Select(Function(x) CInt(x.Id)).ToList()
   End Function
 
-  Public Function BestSdBestFit() As Double
-    If Double.IsNaN(BestTgtSd) Then Return BestSd
-    Return BestTgtSd - BestSd
-  End Function
-
-  Public Function WorstSdBestFit() As Double
-    If Double.IsNaN(WorstTgtSd) Then Return WorstSd
-    Return WorstTgtSd - WorstSd
-  End Function
-
 End Class
 
 
@@ -1705,25 +1654,6 @@ Public Class clsChannelAdvanced
   End Enum
 
 
-  Public Function GetValorePercentile(SopraSoglia As Boolean, Soglia As Double, Valori As eValori) As Double
-    Dim ListaValori As clsBestWorstDetails = Nothing
-    Select Case Valori
-      Case eValori.eBoth
-        ListaValori = ValoriBoth
-      Case eValori.ePort
-        ListaValori = ValoriPort
-      Case eValori.eStbd
-        ListaValori = ValoriStbd
-    End Select
-    If SopraSoglia Then
-      If ListaValori.ValoriSopraSoglia.Count = 0 Then Return Double.NaN
-      Return GetPercentile(ListaValori.ValoriSopraSoglia, Soglia)
-    Else
-      If ListaValori.ValoriSottoSoglia.Count = 0 Then Return Double.NaN
-      Return GetPercentile(ListaValori.ValoriSottoSoglia, Soglia)
-    End If
-  End Function
-
   Public Function GetValore(SopraSoglia As Boolean, Statistica As eStatistiche, Valori As eValori, GetTarget As Boolean) As Double
     Dim lista As List(Of Double)
     lista = GetListaValori(SopraSoglia, Valori, GetTarget)
@@ -1746,32 +1676,6 @@ Public Class clsChannelAdvanced
     End Select
 
     Return Valore
-  End Function
-
-  Public Function GetValoreFormattato(SopraSoglia As Boolean, Statistica As eStatistiche, Valori As eValori, GetTarget As Boolean) As String
-    Dim lista As List(Of Double)
-    lista = GetListaValori(SopraSoglia, Valori, GetTarget)
-    If lista Is Nothing Then Return Double.NaN
-    If lista.Count = 0 Then Return Double.NaN
-    Dim Valore As Double = Double.NaN
-    Select Case Statistica
-      Case eStatistiche.Media
-        Valore = GetMedia(lista)
-      Case eStatistiche.Mediana
-        Valore = GetMediana(lista)
-      Case eStatistiche.Moda
-        Valore = GetModa(lista)
-      Case eStatistiche.DeviazioneStandard
-        Valore = GetDeviazioneStandard(lista)
-      Case eStatistiche.Varianza
-        Valore = GetVarianza(lista)
-      Case Else
-        Return Double.NaN
-    End Select
-    If Double.IsNaN(Valore) Then
-      Return ""
-    End If
-    Return Valore.ToString("F" & Canale.Decimals.ToString)
   End Function
 
   Public Enum eDeltaType
@@ -2297,13 +2201,6 @@ Public Module Statistica
     End If
   End Function
 
-  ''' <summary>
-  ''' Valore normale nel senso gaussiano (valore più probabile in una distribuzione normale) = Media.
-  ''' </summary>
-  <Extension>
-  Public Function ValoreNormaleGaussiano(source As IEnumerable(Of Double)) As Double
-    Return GetMedia(source)
-  End Function
 
 #End Region
 
@@ -2361,90 +2258,6 @@ Public Module Statistica
     Return arr
   End Function
 
-  ''' <summary>
-  ''' Moda robusta per dati continui tramite istogramma con binning.
-  ''' - Larghezza bin automatica: Freedman–Diaconis (usa IQR). Fallback a Scott se IQR=0.
-  ''' - Se tutto è costante, restituisce quel valore.
-  ''' - Rifinitura parabolica usando i 3 bin attorno al picco per una stima sub-bin.
-  ''' </summary>
-  <Extension>
-  Public Function ModaBinned(source As IEnumerable(Of Double), Optional binWidth As Double? = Nothing) As Double
-    Dim arr = EnsureArray(source)
-    Dim n = arr.Length
-    If n = 1 Then Return arr(0)
-
-    Dim minV = arr.Min()
-    Dim maxV = arr.Max()
-    If minV = maxV Then Return minV
-
-    ' Scegli larghezza bin
-    Dim bw As Double
-    If binWidth.HasValue AndAlso binWidth.Value > 0 Then
-      bw = binWidth.Value
-    Else
-      ' Freedman–Diaconis: h = 2 * IQR / n^(1/3)
-      Dim q75 = GetPercentile(arr, 75)
-      Dim q25 = GetPercentile(arr, 25)
-      Dim iqr = q75 - q25
-      If iqr > 0 Then
-        bw = 2.0 * iqr / Math.Pow(n, 1.0 / 3.0)
-      Else
-        ' Fallback Scott: h = 3.5 * sigma / n^(1/3)
-        Dim sigma = GetDeviazioneStandard(arr, campionaria:=False)
-        If sigma > 0 Then
-          bw = 3.5 * sigma / Math.Pow(n, 1.0 / 3.0)
-        Else
-          ' Fallback finale: 10 bin
-          bw = (maxV - minV) / 10.0
-        End If
-      End If
-    End If
-
-    If bw <= 0 Then bw = (maxV - minV) / 10.0
-    If bw <= 0 Then Return minV ' estrema difesa
-
-    Dim nb = CInt(Math.Ceiling((maxV - minV) / bw))
-    If nb < 1 Then nb = 1
-
-    Dim counts = New Integer(nb - 1) {}
-    ' Popola istogramma
-    For Each x In arr
-      Dim idx = CInt(Math.Floor((x - minV) / bw))
-      If idx < 0 Then idx = 0
-      If idx >= nb Then idx = nb - 1 ' include il max nell’ultimo bin
-      counts(idx) += 1
-    Next
-
-    ' Trova bin di picco
-    Dim k = 0
-    Dim cmax = counts(0)
-    For i = 1 To nb - 1
-      If counts(i) > cmax Then
-        cmax = counts(i)
-        k = i
-      End If
-    Next
-
-    ' Centro del bin di picco
-    Dim centerK = minV + (k + 0.5) * bw
-
-    ' Rifinitura parabolica: usa i 3 bin (k-1, k, k+1) se disponibili
-    If k > 0 AndAlso k < nb - 1 Then
-      Dim c0 = counts(k - 1)
-      Dim c1 = counts(k)
-      Dim c2 = counts(k + 1)
-      Dim denom = (c0 - 2.0 * c1 + c2)
-      If denom <> 0 Then
-        ' Spostamento in unità di bin dal centro di k, clamp in [-0.5, 0.5]
-        Dim delta = 0.5 * (c0 - c2) / denom
-        If delta > 0.5 Then delta = 0.5
-        If delta < -0.5 Then delta = -0.5
-        Return centerK + delta * bw
-      End If
-    End If
-
-    Return centerK
-  End Function
 
 
 End Module

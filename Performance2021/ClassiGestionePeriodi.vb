@@ -155,61 +155,6 @@ Public Class clsTabellaPeriodiCanali
     pListaCanali = ListaCanali
   End Sub
 
-  Public Function TabellaPeriodi() As List(Of String)
-    Dim Righe As New List(Of String)
-    Dim RigaIntestazioni As String = "Period" & vbTab & "Tack" & vbTab
-    For Each Periodo In pListaPeriodi
-      Dim Riga As String = Periodo.TR.InizioFormattato(clsTimeRange.eTipoFormatoData.eDateTimeBreve) & " (" & Periodo.TR.DurataInStringaConSeparatore & ") " & Periodo.ShortDescription & " { " & Periodo.ExtendedDescription.Replace(vbCrLf, " ") & "}" & vbTab
-      Riga &= IIf(Not Periodo.IsStbd, "Port", "Stbd") & vbTab
-      For Each Canale In pListaCanali
-        If Canale.HasValues > 0 Then
-          Dim SubChannel As New clsValoriPeriodoCanale2020(Canale, Periodo.TR, False)
-          'SubChannel.AggiornaSubSet(Periodo.TimeRange.IdRigaIniziale, Periodo.TimeRange.IdRigaFinale, False)
-          If Periodo Is pListaPeriodi.First Then
-            RigaIntestazioni &= Canale.ChannelId & vbTab
-          End If
-          Riga &= SubChannel.Avg & vbTab
-        End If
-      Next
-      Righe.Add(Riga.TrimEnd(vbTab))
-    Next
-    Righe.Insert(0, RigaIntestazioni)
-    Righe.Insert(0, pIntestazione & " periods averages")
-    Return Righe
-
-  End Function
-
-  Public Function TabellaPeriodiHtml() As List(Of String)
-    Dim Righe As New List(Of String)
-    'Dim RigaIntestazioni As String = "<th class='Headers'>Period</th><th class='Headers'>Tack</th>"
-    Dim RigaIntestazioni As String = "<th class='Headers'>Period</th>"
-    Dim Contatore As Integer = 0
-    For Each Periodo In pListaPeriodi
-      Dim Riga As String = "<td class='Description'><a id=""" & Contatore & """></a><b>" & Periodo.TR.InizioFormattato(clsTimeRange.eTipoFormatoData.eDateTimeBreve) & " (" & Periodo.TR.DurataInStringaConSeparatore & ")</b><br>" & Periodo.ShortDescription & If(Periodo.ExtendedDescription.Trim.Length = 0, "</td>", "<br> " & Periodo.ExtendedDescription.Replace(vbCrLf, " ") & "</td>")
-      'Riga &= "<td class='" & IIf(Periodo.TWA < 0, "Port", "Stbd") & "'>" & IIf(Periodo.TWA < 0, "Port", "Stbd") & "</td>"
-
-      For Each Canale In pListaCanali
-        If Canale.HasValues > 0 Then
-          Dim SubChannel As New clsValoriPeriodoCanale2020(Canale, Periodo.TR, False)
-          If Periodo Is pListaPeriodi.First Then
-            RigaIntestazioni &= "<th class='Headers'>" & Canale.ShortName & "</th>"
-          End If
-          Riga &= "<td class='" & IIf(Periodo.IsStbd, "Stbd", "Port") & "'>" & SubChannel.Avg & "</td>"
-          Riga &= SubChannel.Avg & vbTab
-        End If
-
-      Next
-      Righe.Add("<tr>" & Riga & "</tr>")
-      Contatore += 1
-    Next
-    Righe.Add("</Table>")
-    Righe.Insert(0, "<tr>" & RigaIntestazioni & "</tr>")
-    Righe.Insert(0, "<Table>")
-    'Righe.Insert(0, pIntestazione & " periods averages")
-    Return Righe
-
-  End Function
-
   Private Class TabellaPivottata
     'Public acceleration As clsAcceleration
     Public canali As New List(Of String)
@@ -217,79 +162,6 @@ Public Class clsTabellaPeriodiCanali
     Public id As Integer
   End Class
 
-  Public Function TabellaPeriodiCompleta() As List(Of String)
-    Dim Righe As New List(Of String)
-    Dim RigaIntestazioni As String = "Period" & vbTab & "Start" & vbTab & "Finish" & vbTab & "Tack" & vbTab
-    For Each Periodo In pListaPeriodi
-      Dim Riga As String = Periodo.ShortDescription & " { " & Periodo.ExtendedDescription.Replace(vbCrLf, " ") & "}" & vbTab
-      Riga &= Periodo.TR.Start.ToShortDateString & " " & Periodo.TR.Start.ToShortTimeString & vbTab
-      Riga &= Periodo.TR.Finish.ToShortDateString & " " & Periodo.TR.Finish.ToShortTimeString & vbTab
-      Riga &= IIf(Periodo.IsStbd, "Stbd", "Port") & vbTab
-      'Riga &= Periodo.StringaMure & vbTab
-      For Each Canale In pListaCanali
-        If Canale.HasValues > 0 Then
-          Dim SubChannel As New clsValoriPeriodoCanale2020(Canale, Periodo.TR, False)
-          If Periodo Is pListaPeriodi.First Then
-            RigaIntestazioni &= Canale.ChannelId & "_Avg" & vbTab & Canale.ChannelId & "_Max" & vbTab & Canale.ChannelId & "_Min" & vbTab & Canale.ChannelId & "_Sd" & vbTab
-          End If
-          Riga &= SubChannel.Avg & vbTab & SubChannel.Max & vbTab & SubChannel.Min & vbTab & SubChannel.Ds & vbTab
-          Riga &= SubChannel.Avg & vbTab
-        End If
-      Next
-      Righe.Add(Riga.TrimEnd(vbTab))
-    Next
-    Righe.Insert(0, RigaIntestazioni)
-    Return Righe
-
-  End Function
-
-  Public Function TabellaCanali() As List(Of String)
-    Dim Righe As New List(Of String)
-    For Each Canale In pListaCanali
-      If Canale.HasValues > 0 Then
-        Righe.Add("")
-        Dim Riga As String = Canale.ChannelId & vbTab & "Tack" & vbTab & "Avg" & vbTab & "Max" & vbTab & "Min" & vbTab & "StDev"
-        Righe.Add(Riga)
-        For Each Periodo In pListaPeriodi
-          Riga = Periodo.TR.InizioFormattato(clsTimeRange.eTipoFormatoData.eDateTimeBreve) & " (" & Periodo.TR.DurataInStringaConSeparatore & ") " & Periodo.ShortDescription & " { " & Periodo.ExtendedDescription.Replace(vbCrLf, " ") & "}" & vbTab
-          Riga &= IIf(Periodo.IsStbd, "Stbd", "Port") & vbTab
-          Dim SubChannel As New clsValoriPeriodoCanale2020(Canale, Periodo.TR, False)
-          Riga &= SubChannel.Avg & vbTab
-          Riga &= SubChannel.Max & vbTab
-          Riga &= SubChannel.Min & vbTab
-          Riga &= SubChannel.Ds & vbTab
-          Righe.Add(Riga.TrimEnd(vbTab))
-        Next
-      End If
-    Next
-    Righe.Insert(0, pIntestazione & " Channels basic stats")
-    Return Righe
-
-  End Function
-
-
-  Public Function TabellaCanaleHtml(CanaleAscissa As clsChannel2020, CanaleOrdinata As clsChannel2020) As List(Of String)
-    Dim Righe As New List(Of String)
-    If CanaleOrdinata.HasValues Then
-      For Each Periodo In pListaPeriodi
-        'Periodo.TimeRange.VerificaRigheAssociate()
-        'Dim Vmg As Double = Periodo.Vmg
-        Dim SubChannel As New clsValoriPeriodoCanale2020(CanaleOrdinata, Periodo.TR, False)
-        Dim SubChannelAscissa As New clsValoriPeriodoCanale2020(CanaleAscissa, Periodo.TR, False)
-        Dim X As String = SubChannelAscissa.Avg
-        Dim Y As String = SubChannel.Avg
-        If CanaleOrdinata.DataType = clsChannel2020.eDataType.e180 Then
-          Y = System.Math.Abs(SubChannel.Avg)
-        End If
-        Dim Colore As String = IIf(Periodo.IsStbd, "green", "red")
-        Dim ValoriAltriCanali As String = StringaMedieHtml(Periodo) ' "Twd:345<br/>Tws:12.3<br/>Awa:23.6"
-        Dim strTmp As String = "{{x:{0},y:{1},color:'{2}',descr:'{3}'}}"
-        Dim a As String = String.Format(strTmp, X, Y, Colore, ValoriAltriCanali)
-        Righe.Add(a)
-      Next
-    End If
-    Return Righe
-  End Function
 
 
   Private Function StringaMedieHtml(Periodo As clsPeriod2021) As String
@@ -328,12 +200,6 @@ Public Class clsTests
 
   End Sub
 
-  Public Sub CreaDailyTest()
-    ListaTests.Add(New clsTest(Now, True))
-    'pListaTests.Last.IsSelected = True
-    ImpostaTestSelezionato(ListaTests.Last)
-  End Sub
-
   'Public Property ListaTests As ObservableCollection(Of clsTest)
   '  Get
   '    Return pListaTests
@@ -352,26 +218,6 @@ Public Class clsTests
     'Next
     TestAttivo = TestDaSelezionare
     'OnPropertyChanged("TestAttivoOrPrimo")
-  End Sub
-
-  Public Sub AvviaNuovoTest()
-    ListaTests.Add(New clsTest(Now, False))
-    ListaTests.Last.Descrizione = "Running Test"
-    ImpostaTestSelezionato(ListaTests.Last)
-  End Sub
-
-  Public Sub StoppaNuovoTest()
-    ListaTests.Last.Fine = Now
-    If ListaTests.Last.Descrizione = "Running Test" Then
-      ListaTests.Last.Descrizione = "Not Defined Test"
-    End If
-
-    ImpostaTestSelezionato(ListaTests.First)
-  End Sub
-
-  Public Sub AnnullaNuovoTest()
-    ListaTests.Remove(ListaTests.Last)
-    ImpostaTestSelezionato(ListaTests.First)
   End Sub
 
   '<JsonIgnore>
@@ -488,11 +334,6 @@ Public Class clsTest
   '    ImpostaCommentoCorrente(value)
   '  End Set
   'End Property
-
-  Private Sub ImpostaCommentoCorrente(commento As clsCommento)
-    CommentoCorrente = commento
-    'OnPropertyChanged("CommentoCorrente")
-  End Sub
 
   Private Function Durata() As String
     If Fine = Nothing Then

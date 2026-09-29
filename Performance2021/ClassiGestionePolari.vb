@@ -74,36 +74,6 @@ Public Class clsXls
 
 
 
-  Private Function ColonnaExcelMultiperiod(Indice As Integer) As String
-    'If Indice = 26 Then Stop
-    If Indice = 0 Then Return "A"
-    Dim Giri As Integer = System.Math.Floor(Indice / 26)
-    Dim Resto As Integer = Indice Mod 26
-    If Resto = 0 Then
-      Giri -= 1
-      Resto = 26
-    End If
-    Dim s As String = ""
-    If Giri > 0 Then s = Char.ConvertFromUtf32(Giri + 64)
-    s &= Char.ConvertFromUtf32(Resto + 64)
-    Return s
-  End Function
-
-
-  Private Function ColonnaExcel(Indice As Integer) As String
-    'If Indice = 26 Then Stop
-    If Indice = 0 Then Return "A"
-    Dim Giri As Integer = System.Math.Floor(Indice / 26)
-    Dim Resto As Integer = Indice Mod 26
-    If Resto = 0 Then
-      Giri -= 1
-      Resto = 26
-    End If
-    Dim s As String = ""
-    If Giri > 0 Then s = Char.ConvertFromUtf32(Giri + 64)
-    s &= Char.ConvertFromUtf32(Resto + 64)
-    Return s
-  End Function
 
 End Class
 

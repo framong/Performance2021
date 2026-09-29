@@ -670,11 +670,6 @@ Public Class clsSciChartXyReports
     Return False
   End Function
 
-  Public Sub AggiungiReport()
-    ActiveReport = New clsSciChartXyReport()
-    ActiveReport.Name = "Report_Created_" & Now.ToString("yyyyMMddHHmmss")
-  End Sub
-
   Public Function DuplicateReportSameChannelsAndCurrentSettings(CurrentSettings As clsXYPlotSettings) As Boolean
     If ActiveReport Is Nothing Then Return False
     Dim NomeTmp As String = InputBox("Name of the new report ", "Report Manager", "Copy of " & ActiveReport.Name)
@@ -728,21 +723,6 @@ Public Class clsSciChartXyReport
     ePlay = 2
   End Enum
 
-  Public Function NextPlot() As clsXYPlotSettings
-    If Plots.Count = 0 Then Return Nothing
-    If ActivePlot Is Nothing Then Return Plots.First
-    If Plots.Last Is ActivePlot Then
-      ActivePlot = Nothing
-      Return ActivePlot
-    End If
-    Dim idx = Plots.IndexOf(ActivePlot)
-    If idx > -1 Then
-      ActivePlot = Plots(idx + 1)
-      Return ActivePlot
-    End If
-    Return Nothing
-  End Function
-
   Public Function EliminaCurrentPlot() As Boolean
     If MessageBox.Show("Do you really want to delete Plot: '" & ActivePlot.DescriptionShort & "' ?", "", MessageBoxButton.YesNo) = MessageBoxResult.Yes Then
       Plots.Remove(ActivePlot)
@@ -751,14 +731,6 @@ Public Class clsSciChartXyReport
     End If
     Return False
   End Function
-
-  Public Sub AggiornaAggiungiPlot(Plot As clsXYPlotSettings)
-    If ActivePlot Is Nothing Then
-      Plots.Add(Plot.Clone)
-    Else
-      ActivePlot = Plot.Clone
-    End If
-  End Sub
 
 
 End Class
@@ -5564,12 +5536,6 @@ Public Class clsSciChartXyPlotViewModel
   End Function
 
 
-  Private Sub ExportDataToClipboard(SubSet As clsDataSubSet)
-
-
-
-  End Sub
-
 
   Private Enum eTackUpDn
     eUpPort = 0
@@ -5583,59 +5549,6 @@ Public Class clsSciChartXyPlotViewModel
   '  Dim names() As String = [Enum].GetNames(enumType)
   '  Return names(pTipo)
   'End Function
-
-  Private Function ColoreTackUpDn(Tipo As eTackUpDn) As Color
-    Dim Colore As Color
-    Select Case CurrentPlotSettings.GroupingType
-      Case clsXYPlotSettings.eGroupingType.eTackAndUpDown
-        Select Case Tipo
-          Case eTackUpDn.eUpPort
-            Colore = System.Windows.Media.Colors.DarkRed
-          Case eTackUpDn.eUpStbd
-            Colore = System.Windows.Media.Colors.DarkGreen
-          Case eTackUpDn.eDnPort
-            Colore = System.Windows.Media.Colors.Red
-          Case eTackUpDn.eDnStbd
-            Colore = System.Windows.Media.Color.FromArgb(255, 0, 255, 0)
-        End Select
-      Case clsXYPlotSettings.eGroupingType.eTackOnly
-        Select Case Tipo
-          Case eTackUpDn.eUpPort, eTackUpDn.eDnPort
-            Colore = System.Windows.Media.Colors.Red
-          Case eTackUpDn.eUpStbd, eTackUpDn.eDnStbd
-            Colore = System.Windows.Media.Colors.Green
-        End Select
-      Case clsXYPlotSettings.eGroupingType.eUpDnOnly
-        Select Case Tipo
-          Case eTackUpDn.eUpPort, eTackUpDn.eUpStbd
-            Colore = System.Windows.Media.Colors.Blue
-          Case eTackUpDn.eDnPort, eTackUpDn.eDnStbd
-            Colore = System.Windows.Media.Colors.Orange
-        End Select
-      Case Else
-        Colore = ColoriDifferenziati(Tipo)
-    End Select
-
-    Dim ColorePunto = Color.FromArgb(CurrentPlotSettings.DataPointOpacity, Colore.R, Colore.G, Colore.B)
-
-    Return ColorePunto
-  End Function
-
-  Private Function IndiceTackUpDn(Twa As Double) As eTackUpDn
-    If System.Math.Abs(Twa) > 90 Then
-      If Twa > 0 Then
-        Return eTackUpDn.eDnStbd
-      Else
-        Return eTackUpDn.eDnPort
-      End If
-    Else
-      If Twa > 0 Then
-        Return eTackUpDn.eUpStbd
-      Else
-        Return eTackUpDn.eUpPort
-      End If
-    End If
-  End Function
 
   'Private Sub DrawChartTimeRangeTackUpDnColored(TimeRange As clsTimeRange, Optional NotSelectedColor As System.Windows.Media.Color = Nothing, Optional HighlightFilter As Boolean = False)
   '  SeriesSource.Clear()
@@ -6011,43 +5924,6 @@ Public Class clsSciChartXyPlotViewModel
           ListaFiltrata.Add(periodo)
         End If
         'End If
-      End If
-    Next
-
-    Return ListaFiltrata
-  End Function
-
-  Private Function ListaPeriodiFiltratiSoloPerTwa() As List(Of clsPeriod2021)
-    Dim ListaFiltrata As New List(Of clsPeriod2021)
-    Dim ChTwa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
-    For Each periodo In Lista.ToList
-      Dim IdIniziale As Integer = TrovaId(periodo, True)
-      Dim Idfinale As Integer = TrovaId(periodo, False)
-      If Not IdIniziale = Idfinale Then
-        Dim Valido As Boolean = PeriodoTwaMedioValido(IdIniziale, Idfinale, periodo, ChTwa)
-        If Valido Then
-          ListaFiltrata.Add(periodo)
-        End If
-      End If
-    Next
-
-    Return ListaFiltrata
-  End Function
-
-  Private Function ListaPeriodiFiltratiSoloPerTwa(Selected As Boolean) As List(Of clsPeriod2021)
-    Dim ListaFiltrata As New List(Of clsPeriod2021)
-    Dim ChTwa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
-    For Each periodo In Lista.ToList
-      If (Selected AndAlso periodo.IsChecked) OrElse (Not Selected AndAlso Not periodo.IsChecked) Then
-        'nel primo caso solo i periodi selezionati nel secondo tutti meno i selezionati
-        Dim IdIniziale As Integer = TrovaId(periodo, True)
-        Dim Idfinale As Integer = TrovaId(periodo, False)
-        If Not IdIniziale = Idfinale Then
-          Dim Valido As Boolean = PeriodoTwaMedioValido(IdIniziale, Idfinale, periodo, ChTwa)
-          If Valido Then
-            ListaFiltrata.Add(periodo)
-          End If
-        End If
       End If
     Next
 
@@ -8621,39 +8497,6 @@ Public Class clsSciChartXyPlotViewModel
 
   'End Sub
 
-  Private Function StringaFiltroAndatura() As String
-    Dim txt As String = ""
-
-    If CurrentPlotSettings.ShowUpwindVmg And CurrentPlotSettings.ShowDownwindVmg And CurrentPlotSettings.ShowNotVmg Then
-      If Not (CurrentPlotSettings.ShowPort And CurrentPlotSettings.ShowStbd) Then
-        txt &= IIf(CurrentPlotSettings.ShowStbd, "Stbd", "") & "" & IIf(CurrentPlotSettings.ShowPort, "Port", "")
-      End If
-    ElseIf CurrentPlotSettings.ShowUpwindVmg And CurrentPlotSettings.ShowDownwindVmg Then
-      SottoTitolo &= "Vmg Only"
-      If Not (CurrentPlotSettings.ShowPort And CurrentPlotSettings.ShowStbd) Then
-        SottoTitolo &= IIf(CurrentPlotSettings.ShowStbd, " Stbd", "") & "" & IIf(CurrentPlotSettings.ShowPort, " Port", "")
-      End If
-    ElseIf CurrentPlotSettings.ShowUpwindVmg Then
-      SottoTitolo &= "Upwind"
-      If Not (CurrentPlotSettings.ShowPort And CurrentPlotSettings.ShowStbd) Then
-        SottoTitolo &= IIf(CurrentPlotSettings.ShowStbd, " Stbd", "") & "" & IIf(CurrentPlotSettings.ShowPort, " Port", "")
-      End If
-    ElseIf CurrentPlotSettings.ShowNotVmg Then
-      SottoTitolo &= "Not Vmg Angles"
-      If Not (CurrentPlotSettings.ShowPort And CurrentPlotSettings.ShowStbd) Then
-        SottoTitolo &= IIf(CurrentPlotSettings.ShowStbd, " Stbd", "") & "" & IIf(CurrentPlotSettings.ShowPort, " Port", "")
-      End If
-    ElseIf CurrentPlotSettings.ShowDownwindVmg Then
-      SottoTitolo &= "Downwind"
-      If Not (CurrentPlotSettings.ShowPort And CurrentPlotSettings.ShowStbd) Then
-        SottoTitolo &= IIf(CurrentPlotSettings.ShowStbd, " Stbd", "") & "" & IIf(CurrentPlotSettings.ShowPort, " Port", "")
-      End If
-    End If
-
-
-    Return txt
-  End Function
-
   'Private Sub DrawChartPeriodsChannelColoredByKey(PeriodiValidi As List(Of clsPeriod2021), Optional NotSelectedColor As System.Windows.Media.Color = Nothing, Optional HighlightFilter As Boolean = False)
   '  Dim _ListaCount As Integer = 0
   '  Dim _LastPeriod As String = ""
@@ -9862,171 +9705,6 @@ Public Class clsSciChartXyPlotViewModel
     End If
     Return ""
   End Function
-
-  Private Sub PlottaConsistencyKDE(ListaXYC As List(Of clsPrdXYZC))
-
-    If ListaXYC.Count = 0 Then Exit Sub
-    Dim xMax As Double = Nothing
-    Dim xMin As Double = Nothing
-    Dim yMax As Double = Nothing
-    Dim yMin As Double = Nothing
-    Dim primogiro As Boolean = True
-    For Each elemento In ListaXYC
-      For i As Integer = 0 To elemento.X.Count - 1
-        'If i = 2699 Then Stop
-        Dim Vx As Double = elemento.X(i)
-        Dim Vy As Double = elemento.Y(i)
-        If Not Double.IsNaN(Vx) AndAlso Not Double.IsNaN(Vy) Then
-          If Not Double.IsInfinity(Vx) AndAlso Not Double.IsInfinity(Vy) Then
-            If primogiro Then
-              xMax = Vx
-              xMin = Vx
-              yMax = Vy
-              yMin = Vy
-              primogiro = False
-            Else
-              xMax = System.Math.Max(xMax, Vx)
-              xMin = System.Math.Min(xMin, Vx)
-              yMax = System.Math.Max(yMax, Vy)
-              yMin = System.Math.Min(yMin, Vy)
-            End If
-          End If
-        End If
-      Next
-    Next
-    Dim IntervalloX As Double = System.Math.Abs(xMax - xMin) / CurrentPlotSettings.DistributionIntervals
-    Dim IntervalloY As Double = System.Math.Abs(yMax - yMin) / CurrentPlotSettings.DistributionIntervals
-    If IntervalloX = 0 Then IntervalloX = 1
-    If IntervalloY = 0 Then IntervalloY = 1
-    Dim Xtotali As Integer
-    Dim Ytotali As Integer
-    For Each elemento In ListaXYC
-      For i As Integer = 0 To elemento.X.Count - 1
-        Dim Vx As Double = elemento.X(i)
-        Dim Vy As Double = elemento.Y(i)
-        If Not Double.IsNaN(Vx) AndAlso Not Double.IsNaN(Vy) Then
-          Xtotali += 1
-          Ytotali += 1
-        End If
-      Next
-    Next
-
-
-    'If ValsNotNanPort.Count > 0 Then
-    '  Dim vP As New List(Of Double)
-    '  For Each v In ValsNotNanPort
-    '    vP.AddRange(v)
-    '  Next
-    '  Dim PortSamples As Integer = ValsNotNanPort.Select(Function(x) x.Count).Sum
-
-    '  For ii As Integer = 0 To Intervalli
-    '    Dim x As Double = MinVal + (H * ii)
-    '    Dim kde = MathNet.Numerics.Statistics.KernelDensity.EstimateGaussian(x, H, vP)
-    '    Dim y As Double = kde * PortSamples / GlobalSamples * 100
-    '    If ii = 0 Then
-    '      DataSeriesPort.Append(x - System.Math.Abs(x * 0.001), 0, New clsPuntoMetadata(False))
-    '    End If
-    '    DataSeriesPort.Append(x, y, New clsPuntoMetadata(False))
-    '    If ii = Intervalli Then
-    '      DataSeriesPort.Append(x + System.Math.Abs(x * 0.001), 0, New clsPuntoMetadata(False))
-    '    End If
-    '  Next
-    '  LineaPort.DataSeries = DataSeriesPort
-    '  Dim CSVMport As New ChartSeriesViewModel(DataSeriesPort, LineaPort)
-    '  SeriesSource.Add(CSVMport)
-    'End If
-
-    Dim Hx As Double = xMax - xMin / 10
-    Dim Hy As Double = yMax - yMin / 10
-    Dim Icsi As New List(Of Double)
-    Dim Iupsi As New List(Of Double)
-    For Each elemento In ListaXYC
-      'Dim DataSeriesBottom As New XyDataSeries(Of Double, Double)
-      'DataSeriesBottom.AcceptsUnsortedData = False
-      For Each x In elemento.X
-        Dim kde = MathNet.Numerics.Statistics.KernelDensity.EstimateGaussian(x, Hx, elemento.X)
-        Icsi.Add(x)
-        Iupsi.Add(yMax)
-        'DataSeriesBottom.Append(x, kde, New clsPuntoMetadata(False))
-      Next
-      'Stop
-      'Dim LineaBottom As New StackedColumnRenderableSeries
-      'LineaBottom.XAxisId = "BottomX" ' {Binding SecondaryAxisVisibilty}
-      'LineaBottom.YAxisId = "BottomY"
-      'LineaBottom.StackedGroupId = "Xdistribution"
-      'LineaBottom.DataPointWidth = DistributionBarWidth / 100
-      'LineaBottom.StrokeThickness = 0
-      'LineaBottom.Fill = New SolidColorBrush(Color.FromArgb(DistributionOpacity, elemento.Colore.R, elemento.Colore.G, elemento.Colore.B))
-      'LineaBottom.DataSeries = DataSeriesBottom
-      'SciChart.Charting.ChartModifiers.LegendModifier.SetIncludeSeries(LineaBottom, False)
-      'Dim CSVMtmp2 As New ChartSeriesViewModel(DataSeriesBottom, LineaBottom)
-      'If CurrentPlotSettings.PlotXDistribution Then
-      '  SeriesSource.Insert(0, CSVMtmp2)
-      'End If
-    Next
-
-
-    For Each elemento In ListaXYC
-      Dim DataSeriesLeft As New XyDataSeries(Of Double, Double)
-      Dim DataSeriesBottom As New XyDataSeries(Of Double, Double)
-
-      DataSeriesLeft.AcceptsUnsortedData = True
-      DataSeriesBottom.AcceptsUnsortedData = True
-
-      Dim ValoriX(CurrentPlotSettings.DistributionIntervals) As Double
-      Dim ValoriY(CurrentPlotSettings.DistributionIntervals) As Double
-      For i As Integer = 0 To elemento.X.Count - 1
-        Dim Vx As Double = elemento.X(i)
-        Dim Vy As Double = elemento.Y(i)
-        If Not Double.IsNaN(Vx) AndAlso Not Double.IsNaN(Vy) Then
-          If Not Double.IsInfinity(Vx) AndAlso Not Double.IsInfinity(Vy) Then
-            Dim IndiceX As Integer = System.Math.Round((Vx - xMin) / IntervalloX)
-            Dim IndiceY As Integer = System.Math.Round((Vy - yMin) / IntervalloY)
-            ValoriX(IndiceX) += 1
-            ValoriY(IndiceY) += 1
-          End If
-        End If
-      Next
-      For i As Integer = 0 To ValoriX.Count - 1
-        DataSeriesBottom.Append(i * IntervalloX + xMin, ValoriX(i) / Xtotali * 100, New clsPuntoMetadata(False))
-        DataSeriesLeft.Append(i * IntervalloY + yMin, ValoriY(i) / Ytotali * 100, New clsPuntoMetadata(False))
-      Next
-
-      Dim LineaBottom As New StackedColumnRenderableSeries
-      LineaBottom.XAxisId = "BottomX" ' {Binding SecondaryAxisVisibilty}
-      LineaBottom.YAxisId = "BottomY"
-      LineaBottom.StackedGroupId = "Xdistribution"
-      LineaBottom.DataPointWidth = CurrentPlotSettings.DistributionBarWidth / 100
-      LineaBottom.StrokeThickness = 0
-      LineaBottom.Fill = New SolidColorBrush(Color.FromArgb(CurrentPlotSettings.DistributionOpacity, elemento.Colore.R, elemento.Colore.G, elemento.Colore.B))
-      LineaBottom.DataSeries = DataSeriesBottom
-
-      SciChart.Charting.ChartModifiers.LegendModifier.SetIncludeSeries(LineaBottom, False)
-
-
-
-      Dim CSVMtmp2 As New ChartSeriesViewModel(DataSeriesBottom, LineaBottom)
-      If CurrentPlotSettings.PlotXDistribution Then
-        SeriesSource.Insert(0, CSVMtmp2)
-      End If
-
-      Dim LineaLeft As New StackedColumnRenderableSeries
-      LineaLeft.XAxisId = "LeftX"
-      LineaLeft.YAxisId = "LeftY"
-      LineaLeft.StackedGroupId = "Ydistribution"
-      LineaLeft.DataPointWidth = CurrentPlotSettings.DistributionBarWidth / 100
-      LineaLeft.StrokeThickness = 0
-      LineaLeft.Fill = New SolidColorBrush(Color.FromArgb(CurrentPlotSettings.DistributionOpacity, elemento.Colore.R, elemento.Colore.G, elemento.Colore.B))
-      LineaLeft.DataSeries = DataSeriesLeft
-      SciChart.Charting.ChartModifiers.LegendModifier.SetIncludeSeries(LineaLeft, False)
-
-      Dim CSVMtmp3 As New ChartSeriesViewModel(DataSeriesLeft, LineaLeft)
-      If CurrentPlotSettings.PlotYDistribution Then
-        SeriesSource.Insert(0, CSVMtmp3)
-      End If
-    Next
-
-  End Sub
 
   Private Sub PlottaConsistency(ListaXYC As List(Of clsPrdXYZC))
 
@@ -11658,31 +11336,6 @@ Public Class clsSciChartXyPlotViewModel
         Case Else
           Return -1
       End Select
-    End Function
-
-    Private Function GetIndexBasic(value As Double) As clsPeriod2021
-      Dim IdRiga As Integer = value
-      Dim p = PeriodiValidi.Where(Function(x) x.TR.IdRigaIniziale <= IdRiga AndAlso x.TR.IdRigaFinale >= IdRiga).FirstOrDefault
-      Return p
-    End Function
-
-    Private Function GetIndexFast(value As Double) As clsPeriod2021
-      ' p è Nothing se non trovato
-      Dim p = PeriodiValidi.FirstOrDefault(Function(x) x.TR.IdRigaIniziale <= value AndAlso value <= x.TR.IdRigaFinale)
-      If p Is Nothing Then Return Nothing
-      ' ... altrimenti usa p
-      Return p
-    End Function
-
-    Private Function GetIndexFast1(value As Double) As clsPeriod2021
-      ' Restituisce l'indice del periodo, oppure -1 se non trovato
-      For i As Integer = 0 To PeriodiValidi.Count - 1
-        Dim tr = PeriodiValidi(i).TR
-        If tr.IdRigaIniziale <= value AndAlso value <= tr.IdRigaFinale Then
-          Return PeriodiValidi(i)
-        End If
-      Next
-      Return Nothing
     End Function
 
     Private Function GetIndexFast2(value As Double) As clsPeriod2021

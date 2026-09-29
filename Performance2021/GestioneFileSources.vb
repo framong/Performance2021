@@ -677,35 +677,6 @@ Public Class clsExportToCsv
 
   End Sub
 
-  Private Function VerificaFiltroTimeRange(DT As DateTime) As Boolean
-    Dim FiltaPerTR As Boolean = True
-    If Not FiltaPerTR Then Return True
-    Dim MinDT As New DateTime(2022, 11, 9, 15, 0, 0)
-    Dim MaxDT As New DateTime(2022, 11, 9, 15, 26, 0)
-    Return DT >= MinDT AndAlso DT <= MaxDT
-  End Function
-
-
-  Public Function GestisciLista(Titolo As String) As ObservableCollection(Of clsChannel2020)
-    Dim strIntestazioni As List(Of String) = AppConfig.ActiveProfile.CanaliDaEsportareNelCsv
-    If strIntestazioni Is Nothing OrElse strIntestazioni.Count = 0 Then
-      strIntestazioni = IntestazioniDefault()
-    End If
-    Dim frmSelChannel As New ChannelSelectorAndOrderer(DataProvider2020.Channels.ListaCanali, AppConfig.ActiveProfile.CanaliDaEsportareNelCsv, Titolo)
-    frmSelChannel.ShowDialog()
-    Dim CanaliDaStampare As ObservableCollection(Of clsChannel2020) = Nothing
-    If frmSelChannel.Status = ChannelSelectorAndOrderer.eStatus.eSave Then
-      CanaliDaStampare = frmSelChannel.AvailableChannels.GetListaCanaliSelezionati
-      If CanaliDaStampare Is Nothing Then Return Nothing
-      If CanaliDaStampare.Count = 0 Then Return Nothing
-      AppConfig.ActiveProfile.CanaliDaEsportareNelCsv = CanaliDaStampare.Select(Function(x) x.ChannelId).ToList
-      AppConfig.Salva()
-      'SalvaListaIntestazioniDaXml(CanaliDaStampare.ToList)
-      Return CanaliDaStampare
-    Else
-      Return Nothing
-    End If
-  End Function
 
   'Private Function CaricaListaIntestazioniDaXml() As List(Of String)
 

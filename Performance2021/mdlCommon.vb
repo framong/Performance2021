@@ -186,21 +186,6 @@ Public Class clsGeoCalculations
 
 
 
-  Public Shared Function XYIntersectionPoint(s1 As clsXYdouble, e1 As clsXYdouble, s2 As clsXYdouble, e2 As clsXYdouble) As clsXYdouble
-    Dim a1 = e1.Y - s1.Y
-    Dim b1 = s1.X - e1.X
-    Dim c1 = a1 * s1.X + b1 * s1.Y
-
-    Dim a2 = e2.Y - s2.Y
-    Dim b2 = s2.X - e2.X
-    Dim c2 = a2 * s2.X + b2 * s2.Y
-
-    Dim delta = a1 * b2 - a2 * b1
-
-    'If lines are parallel, the result will be (NaN, NaN).
-    Return If(delta = 0, New clsXYdouble(Single.NaN, Single.NaN), New clsXYdouble((b2 * c1 - b1 * c2) / delta, (a1 * c2 - a2 * c1) / delta))
-  End Function
-
 
   Public Shared Function CalculatesRelativePositionXY(DestinationPosition As clsGeographicPosition, RefPosition As clsGeographicPosition, Axis As Double) As clsXYdouble
     Dim BrgDeg As Double = clsGeoCalculations.BearingDegrees(RefPosition, DestinationPosition)
@@ -1025,38 +1010,6 @@ Module mdlCommon
     Return Radians / System.Math.PI * 180
   End Function
 
-  Public Function ColoreInScala(Coefficiente As Integer) As Color
-    '0: blu RGB:0,0,255 
-    '64: turchese RGB:0,255,255 
-    '128: verde RGB:0,255,0
-    '192: giallo RGB:255,255,0 
-    '256: rosso RGB:255,0,0 
-    'Coefficiente -= 1
-    Dim R, G, B As Byte
-    Select Case Coefficiente
-      Case 0 To 64
-        R = 0
-        G = System.Math.Min(255, Coefficiente * 4)
-        B = 255
-      Case 65 To 128
-        R = 0
-        G = 255
-        B = System.Math.Max(0, 255 - (Coefficiente - 64) * 4)
-      Case 129 To 192
-        R = 255 - (192 - Coefficiente) * 4
-        G = 255
-        B = 0
-      Case 193 To 256
-        R = 255
-        G = System.Math.Max(0, 255 - (Coefficiente - 192) * 4)
-        B = 0
-        ' andrá aggiunto il rosso scuro
-      Case Else
-        Stop
-    End Select
-    Return Color.FromRgb(R, G, B)
-  End Function
-
   'Public Function ColoreScuroInScala(Coefficiente As Integer) As Color
   '  '0: blu RGB:0,0,255 
   '  '64: turchese RGB:0,255,255 
@@ -1123,35 +1076,6 @@ Module mdlCommon
   '  Next
   '  Return ListaColori
   'End Function
-
-  Public Function TonalitaRosso(Trasparenza As Byte, Indice As Integer) As Color
-    Dim idx As Integer = ((Indice / 4) - Int(Indice / 4)) * 4
-    Select Case idx
-      Case 0
-        Return Color.FromArgb(Trasparenza, 255, 0, 0)
-      Case 1
-        Return Color.FromArgb(Trasparenza, 180, 0, 0)
-      Case 2
-        Return Color.FromArgb(Trasparenza, 255, 128, 0)
-      Case 3
-        Return Color.FromArgb(Trasparenza, 255, 0, 128)
-    End Select
-
-  End Function
-
-  Public Function TonalitaVerde(Trasparenza As Byte, Indice As Integer) As Color
-    Dim idx As Integer = ((Indice / 4) - Int(Indice / 4)) * 4
-    Select Case idx
-      Case 0
-        Return Color.FromArgb(Trasparenza, 0, 255, 0)
-      Case 1
-        Return Color.FromArgb(Trasparenza, 0, 180, 0)
-      Case 2
-        Return Color.FromArgb(Trasparenza, 128, 255, 0)
-      Case 3
-        Return Color.FromArgb(Trasparenza, 60, 255, 180)
-    End Select
-  End Function
 
   Dim ListaChiavi As New Dictionary(Of String, System.Windows.Media.Color)
 
@@ -1284,20 +1208,6 @@ Module mdlCommon
   End Sub
 
 
-  Private Sub GetValoriPortStbd(CampoValori As clsChannel2020, IdIniziale As Integer, IdFinale As Integer, CampoTack As clsChannel2020, ByRef ValoriPort As List(Of Double), ByRef ValoriStbd As List(Of Double), ByRef ValoriAbs As List(Of Double?))
-    For i As Integer = IdIniziale To IdFinale
-      Dim Vtmp As Double = CampoValori.Valori(i)
-      If Not Double.IsNaN(Vtmp) Then
-        ValoriAbs.Add(Vtmp)
-        If CampoTack.Valori(i) < 0 Then
-          ValoriPort.Add(Vtmp)
-        Else
-          ValoriStbd.Add(Vtmp)
-        End If
-      End If
-    Next
-  End Sub
-
   'Public Sub ImpostaCanaliAsIsSelected(CanaliOrdinata As IEnumerable(Of clsChannel2020))
   '  For Each Canale As clsChannel2020 In DataProvider2020.Channels.ListaCanali
   '    Canale.IsSelected = False
@@ -1327,20 +1237,6 @@ Module mdlCommon
   '  Next
   '  Return -1
   'End Function
-
-  Public Function Metri(Distanza As Double, UnitaMisura As eUnitaMisura) As Double
-    Select Case UnitaMisura
-      Case eUnitaMisura.eGradiGeo
-        Return Distanza * 60 * pMetriMiglioNautico
-      Case eUnitaMisura.eLunghezza
-        Return Distanza * pMetriPerBoatLenght
-      Case eUnitaMisura.eMetri
-        Return Distanza
-      Case eUnitaMisura.eMiglia
-        Return Distanza * pMetriMiglioNautico
-    End Select
-    Return Distanza
-  End Function
 
   Public Function TwaPoppaPerFunzioneDelta(Twa As Double) As Double
     If Math.Abs(Twa) > 90 Then
@@ -1555,11 +1451,6 @@ Module mdlCommon
 
   End Function
 
-  Public Function Media180(ValoreA As Double, ValoreB As Double) As Double
-    Dim mVal() As Double = {ValoreA, ValoreB}
-    Return Media180(mVal)
-  End Function
-
 
   Public Function Media180(Valori As Double()) As Double
     If Valori Is Nothing Then Return 0
@@ -1675,58 +1566,6 @@ Module mdlCommon
     Next
     Return Somma / v.Count
 
-  End Function
-
-  Public Function MediaTack(Valori As Double?(), Tack As Double?()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim Somma As Double = 0
-    Dim Counter As Integer = 0
-    For i As Integer = 0 To Valori.Count - 1
-      If Not Double.IsNaN(Valori(i)) AndAlso Not Double.IsNaN(Tack(i)) Then
-        Somma += (Valori(i) * IIf(Tack(i) > 0, 1, -1))
-        Counter += 1
-      End If
-    Next
-    Return Somma / Counter
-  End Function
-
-  Public Function MediaTack(Valori As Double(), Tack As Double()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim Somma As Double = 0
-    Dim Counter As Integer = 0
-    For i As Integer = 0 To Valori.Count - 1
-      If Not Double.IsNaN(Valori(i)) AndAlso Not Double.IsNaN(Tack(i)) Then
-        Somma += (Valori(i) * IIf(Tack(i) > 0, 1, -1))
-        Counter += 1
-      End If
-    Next
-    Return Somma / Counter
-  End Function
-
-  Public Function MediaTackReversed(Valori As Double?(), Tack As Double?()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim Somma As Double = 0
-    Dim Counter As Integer = 0
-    For i As Integer = 0 To Valori.Count - 1
-      If Not Double.IsNaN(Valori(i)) AndAlso Not Double.IsNaN(Tack(i)) Then
-        Somma += (Valori(i) * IIf(Tack(i) > 0, -1, 1))
-        Counter += 1
-      End If
-    Next
-    Return Somma / Counter
-  End Function
-
-  Public Function MediaTackReversed(Valori As Double(), Tack As Double()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim Somma As Double = 0
-    Dim Counter As Integer = 0
-    For i As Integer = 0 To Valori.Count - 1
-      If Not Double.IsNaN(Valori(i)) AndAlso Not Double.IsNaN(Tack(i)) Then
-        Somma += (Valori(i) * IIf(Tack(i) > 0, -1, 1))
-        Counter += 1
-      End If
-    Next
-    Return Somma / Counter
   End Function
 
   Public Sub PowerZoneReport()
@@ -2176,31 +2015,6 @@ Module mdlCommon
   Declare Function SetForegroundWindow Lib "user32.dll" (ByVal hwnd As Integer) As Integer
 
 
-  Private Function VerificaCanali(sql As String, ListaCampi As List(Of String)) As Boolean
-    Dim r As New Text.RegularExpressions.Regex("\[([^\]]*)\]")
-    Dim Risultati As Text.RegularExpressions.MatchCollection = r.Matches(sql)
-
-    For Each risultato In Risultati
-      If ListaCampi.Find(Function(x) x = risultato.value.ToString.TrimEnd("]").TrimStart("[")) Is Nothing Then
-        Return False
-      End If
-    Next
-    Return True
-
-  End Function
-
-  Public Function VerificaCampo(Nome As String, ListaCampi As List(Of String)) As Boolean
-    Return Not ListaCampi.Find(Function(x) x = Nome) Is Nothing
-  End Function
-
-  Public Function sqlWhere(LatiPerGiro As Integer) As String
-    If LatiPerGiro > 0 Then
-      Return "WHERE [Block.Boat.LegTimes.Sum] >= 0 "
-    Else
-      Return ""
-    End If
-  End Function
-
   Public Function CartellaParent(FilePath As String, SeparatoreFinale As Boolean) As String
     Return CartellaParent(New System.IO.FileInfo(FilePath), SeparatoreFinale)
   End Function
@@ -2214,14 +2028,6 @@ Module mdlCommon
       End If
     Else
       Return FI.DirectoryName
-    End If
-  End Function
-
-  Public Function PathSepChar(FI As System.IO.FileInfo) As String
-    If FI.FullName.Split(System.IO.Path.DirectorySeparatorChar).Count > FI.FullName.Split(System.IO.Path.AltDirectorySeparatorChar).Count Then
-      Return System.IO.Path.DirectorySeparatorChar
-    Else
-      Return System.IO.Path.AltDirectorySeparatorChar
     End If
   End Function
 
@@ -2345,46 +2151,6 @@ Public Class cls360vector
   '    End If
   '    pBRGdeg = pObjCalcoliDuePuntiGeo.RottaTrue
   'End Sub
-
-  Public Function VettoreSomma(Vettore As cls360vector) As cls360vector
-    ' restituisce il vettore somma dei due vettori ovvero quello corrente e quello passato nella funzione
-    ' esempio è il calcolo del vento sull'acqua partendo da vento al suolo e vettore inverso della corrente
-    ' esempio è il calcolo del vento al suolo partendo da vento sull'acqua ed il vettore della corrente
-    ' esempio è il calcolo di COG e SOG con noti CRS, BS ed il vettore della corrente
-    ' esempio è il calcolo di CRS e BS con noti COG, SOG ed vettore inverso della corrente
-
-    Dim Vme_O, Vme_V, VettoreO, VettoreV, Vres_O, Vres_V As Double
-    Vme_O = pRNG * System.Math.Cos(GradiToRadianti(pBRGdeg))
-    Vme_V = pRNG * System.Math.Sin(GradiToRadianti(pBRGdeg))
-    VettoreO = DistanzaCorretta(Vettore) * System.Math.Cos(GradiToRadianti(Vettore.BRGdeg))
-    VettoreV = DistanzaCorretta(Vettore) * System.Math.Sin(GradiToRadianti(Vettore.BRGdeg))
-    Vres_O = VettoreO + Vme_O
-    Vres_V = VettoreV + Vme_V
-    Dim Versore As Double = System.Math.Sqrt(System.Math.Pow(Vres_O, 2) + System.Math.Pow(Vres_V, 2))
-    If Versore = 0 Then
-      Return New cls360vector(Versore, pBRGdeg, pDistUM)
-    End If
-    Dim Angolo As Double = RadiantiToGradi(System.Math.Atan2(Vres_V, Vres_O))
-    If Angolo < 0 Then Angolo += 360
-    Return New cls360vector(Versore, Angolo, pDistUM)
-  End Function
-
-  Public Function VettoreDifferenza(Vettore As cls360vector) As cls360vector
-    ' restituisce il vettore che va dal vertice di quello corrente al vertice di quello passato nella funzione 
-    ' come ad esempio nel caso del calcolo della corrente quando si passano i due vettori CRS_BS e COG_SOG
-
-    Dim Vme_O, Vme_V, VettoreO, VettoreV, Vres_O, Vres_V As Double
-    Vme_O = pRNG * System.Math.Cos(GradiToRadianti(pBRGdeg))
-    Vme_V = pRNG * System.Math.Sin(GradiToRadianti(pBRGdeg))
-    VettoreO = DistanzaCorretta(Vettore) * System.Math.Cos(GradiToRadianti(Vettore.BRGdeg))
-    VettoreV = DistanzaCorretta(Vettore) * System.Math.Sin(GradiToRadianti(Vettore.BRGdeg))
-    Vres_O = VettoreO - Vme_O
-    Vres_V = VettoreV - Vme_V
-    Dim Versore As Double = System.Math.Sqrt(System.Math.Pow(Vres_O, 2) + System.Math.Pow(Vres_V, 2))
-    Dim Angolo As Double = RadiantiToGradi(System.Math.Atan2(Vres_V, Vres_O))
-    If Angolo < 0 Then Angolo += 360
-    Return New cls360vector(Versore, Angolo, pDistUM)
-  End Function
 
   Public Function GradiToRadianti(AngoloGradi As Double) As Double
     Return AngoloGradi * System.Math.PI / 180
@@ -2942,17 +2708,6 @@ Public Class clsFiles
     Else
       Return PathFileOrCartella
     End If
-  End Function
-
-  Public Function CartelleParentMatriceNomi(PathFileOrCartella As String) As String()
-    Dim fldTMP As String = CartellaParentFullPath(PathFileOrCartella, False)
-    Dim cSep As String = trovaSeparatorePath(PathFileOrCartella)
-    If fldTMP.IndexOf(cSep) = -1 Then
-      Return {fldTMP}
-    Else
-      Return fldTMP.Split(cSep)
-    End If
-
   End Function
 
 
@@ -4308,33 +4063,6 @@ End Class
 
 
 Public Class clsVettori
-
-  Public Shared Function VettoreSomma(PrimoVettore As System.Numerics.Vector2, SecondoVettore As System.Numerics.Vector2) As System.Numerics.Vector2
-    Return System.Numerics.Vector2.Add(PrimoVettore, SecondoVettore)
-  End Function
-
-  Public Shared Function VettoreDifferenza(VettoreBase As System.Numerics.Vector2, VettoreDaSottrarre As System.Numerics.Vector2) As System.Numerics.Vector2
-    Return System.Numerics.Vector2.Subtract(VettoreBase, VettoreDaSottrarre)
-  End Function
-
-  Public Shared Function VettoreSomma(PrimoVettore As System.Numerics.Vector3, SecondoVettore As System.Numerics.Vector3) As System.Numerics.Vector3
-    Return System.Numerics.Vector3.Add(PrimoVettore, SecondoVettore)
-  End Function
-
-  Public Shared Function VettoreDifferenza(VettoreBase As System.Numerics.Vector3, VettoreDaSottrarre As System.Numerics.Vector3) As System.Numerics.Vector3
-    Return System.Numerics.Vector3.Subtract(VettoreBase, VettoreDaSottrarre)
-  End Function
-
-  Public Shared Function BrgToAlfa(Bearing As Double) As Double
-    Dim sBrg As Double = Math.Sin(Radians(Bearing))
-    Dim cBrg As Double = Math.Cos(Radians(Bearing))
-    Dim tmp As Double = Degrees(Math.Atan2(sBrg, cBrg)) Mod 360
-    If tmp < 0 Then
-      Return 360 + tmp
-    Else
-      Return tmp
-    End If
-  End Function
 
 End Class
 

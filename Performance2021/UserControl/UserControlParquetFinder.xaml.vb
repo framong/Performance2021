@@ -1251,21 +1251,6 @@ Public Class clsParquetFinder
     End Try
   End Function
 
-  Private Sub ImpostaManualmenteTipoPeriodi()
-
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eAcceleration)
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eGybe)
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eTack)
-    _ListaTipoPeriodi.Add(clsPeriod2021.ePeriodType.eStraightLineVmg)
-
-    '_ListaTipoPeriodi.Add(clsPeriod2021.ePeriodType.eBrAway)
-    '_ListaTipoPeriodi.Add(clsPeriod2021.ePeriodType.eFinish)
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eMultiManoeuvres)
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eRoundUp)
-    '_ListaTipoPeriodi.Add(clsPeriod2020.ePeriodType.eStart)
-
-  End Sub
-
   Private Sub ImpostaDescrizionePeriodiAndTimeRange()
     _StringaDescrizioneFiltro = ""
     If _ListaTipoPeriodi.Count = 0 Then

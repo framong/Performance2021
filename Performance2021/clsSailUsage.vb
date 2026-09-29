@@ -552,14 +552,6 @@ Public Class clsSailUse
   End Sub
 
 
-  Public Function TotalUse() As TimeSpan
-    Dim ts As New TimeSpan(0)
-    For Each t In TR
-      ts = ts + t.Durata
-    Next
-    Return ts
-  End Function
-
 End Class
 
 Public Class clsFileFaroGz

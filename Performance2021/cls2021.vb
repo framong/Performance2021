@@ -205,15 +205,6 @@ Public Class clsEzriz
     Return MY_IP
   End Function
 
-  Private Shared Sub GetNTP()
-    Dim I_TIME() As String = fn_NTPTIME()
-    Dim INFO As String
-    For I = 0 To UBound(I_TIME)
-      INFO = "ITEM " + I.ToString + " = " + I_TIME(I)
-      Debug.Print(INFO)
-    Next
-  End Sub
-
 End Class
 
 
@@ -226,11 +217,6 @@ Public Class clsChStats
   Public RH As New clsArrayStats(False)
   Public ECCTest As New clsArrayStats(False)
   Public Vmg As New clsArrayStats(False)
-
-  Public Function ValidIndexes(Valori As Double(), Filtro As clsFiltroDati) As Integer()
-    Dim obj = Valori.Select(Function(x, i) New With {.chiave = x, .Indice = i}).Where(Function(x) Filtro.DatoValido(x.chiave)).ToArray
-    Return obj.Select(Function(x) x.Indice).ToArray
-  End Function
 
 End Class
 
@@ -1039,11 +1025,6 @@ Public Class XYplotDataTable
     Return MathNet.Numerics.Statistics.Statistics.Percentile(YValuesFilt, 2)
   End Function
 
-  Public Function YMode() As Double
-    If Samples() = 0 Then Return 0
-    Return MathNet.Numerics.Statistics.Statistics.Median(YValuesFilt)
-  End Function
-
   Public Function Samples() As Double
     Return YValuesFilt.Count
   End Function
@@ -1761,58 +1742,6 @@ Public Class clsSettings2021
     'ProfileLoaded = LoadProfile()
   End Sub
 
-  Private Function LoadProfile() As Boolean
-    'Dim DataPathFile As String = System.IO.Path.Combine(ApplicationDataFolder, DataPathFileName)
-    If Not System.IO.File.Exists(DataPathFile) Then
-      Dim file As System.IO.StreamWriter
-      file = My.Computer.FileSystem.OpenTextFileWriter(DataPathFile, True)
-      file.WriteLine("C:\Performance2021\Profiles\Default\Default.prf")
-      file.Close()
-    End If
-    Dim Contenuto As String = My.Computer.FileSystem.ReadAllText(DataPathFile).Trim
-    Dim c As Char() = {vbCr, vbLf}
-    Dim files As String() = Contenuto.Split(c, StringSplitOptions.RemoveEmptyEntries)
-    Dim ActiveProfileFile As String = ""
-    If files.Count = 0 Then
-      Dim file As System.IO.StreamWriter
-      file = My.Computer.FileSystem.OpenTextFileWriter(DataPathFile, True)
-      file.WriteLine("C:\Performance2021\Profiles\Default\Default.prf")
-      file.Close()
-    ElseIf files.Count = 1 Then
-      ActiveProfileFile = My.Computer.FileSystem.ReadAllText(DataPathFile).Trim.TrimEnd("*")
-    Else
-
-
-      Dim tmp As String = files.Where(Function(x) x.ToString.EndsWith("*")).FirstOrDefault()
-      If tmp = Nothing Then
-        Stop
-        End
-      Else
-        ActiveProfileFile = tmp.Trim.TrimEnd("*")
-      End If
-    End If
-    'Dim ActiveProfileFile As String = My.Computer.FileSystem.ReadAllText(DataPathFile).Trim
-    ActiveProfile = clsKillerSeriale.LoadConfigurationGeneric(Of clsProfile2021)(ActiveProfileFile)
-
-    If ActiveProfile Is Nothing Then
-      If Not System.IO.File.Exists(ActiveProfileFile) Then
-        Dim fd As String = System.IO.Path.GetDirectoryName(ActiveProfileFile)
-        If Not System.IO.Directory.Exists(fd) Then
-          System.IO.Directory.CreateDirectory(fd)
-        End If
-        'System.IO.File.Create(ActiveProfileFile)
-      End If
-      ActiveProfile = New clsProfile2021(System.IO.Path.GetFileNameWithoutExtension(ActiveProfileFile), ActiveProfileFile)
-      Salva()
-    Else
-      'ActiveProfile.ProfileName = System.IO.Path.GetFileNameWithoutExtension(ActiveProfileFile)
-      'ActiveProfile.ProfileFolder = System.IO.Path.GetDirectoryName(ActiveProfileFile)
-      ActiveProfile.ActiveProfileFilePath = ActiveProfileFile
-      ActiveProfile.ImpostaValoriDefaultMancanti()
-    End If
-    Return True
-  End Function
-
   'Private Sub LoadSelectedProfile(SelectedPath As String)
   '    Dim ActiveProfileFile As String = ""
   '    If Not System.IO.File.Exists(SelectedPath) Then
@@ -2025,31 +1954,6 @@ Public Class clsMailingListSettings
     MailingList = New List(Of String)
     MailingList.Add("fm.mongelli@gmail.com")
     MailingList.Add("office@paranna.it")
-
-    'Dim mail As MailMessage = New MailMessage()
-    'Dim SmtpServer As SmtpClient = New SmtpClient("smtp.gmail.com")
-    'mail.From = New MailAddress("your mail@gmail.com")
-    'mail.[To].Add("to_mail@gmail.com")
-    'mail.Subject = "Test Mail - 1"
-    'mail.Body = "mail with attachment"
-    'Dim attachment As System.Net.Mail.Attachment
-    'attachment = New System.Net.Mail.Attachment("c:/textfile.txt")
-    'mail.Attachments.Add(attachment)
-    'SmtpServer.Port = 587
-    'SmtpServer.Credentials = New System.Net.NetworkCredential("your mail@gmail.com", "your password")
-    'SmtpServer.EnableSsl = True
-    'SmtpServer.Send(mail)
-
-
-  End Sub
-  Public Sub SetDefault()
-    SmtpServerAddress = "smtp.gmail.com"
-    SmtpServerPort = 465
-    SmtpAccount = "yourgmailaddress"
-    SmtpPassword = "yourgmailpassword"
-    MailSender = "yourgmailaddress"
-    MailingList = New List(Of String)
-    MailingList.Add("recipientemail")
 
     'Dim mail As MailMessage = New MailMessage()
     'Dim SmtpServer As SmtpClient = New SmtpClient("smtp.gmail.com")
@@ -2462,19 +2366,6 @@ Public Class clsProfile2021
         Return False
     End Select
   End Function
-
-  Private Sub AggiungiSeEsiste(ByRef Lista As List(Of String), CanaleChiave As clsChannels2020.eCanaliChiave)
-    Dim c = DataProvider2020.Channels.ListaCanali.Where(Function(x) x.CanaleChiave = CanaleChiave).FirstOrDefault
-    If Not c Is Nothing Then
-      Lista.Add(c.ChannelId)
-    End If
-  End Sub
-
-  Private Sub AggiungiSeEsiste(ByRef Lista As List(Of String), Canale As String)
-    If DataProvider2020.Intestazioni.IndexOf(Canale) > -1 Then
-      Lista.Add(Canale)
-    End If
-  End Sub
 
   Private Function CanaliPavarotStandard() As List(Of String)
     Dim l As New List(Of String)
@@ -3482,20 +3373,6 @@ Public Class clsPeriodsManager2021
   '  Next
   'End Sub
 
-  Public Function TwsEquivalentAtNorma(ValoriTws As List(Of Double), ValoriVmgP As List(Of Double), IsUpwind As Boolean, RangeCoeff As Double) As clsVmgPercentage
-    Dim VmgPerc As New clsVmgPercentage
-    Dim NormaVmgP As Double = NormaStat(ValoriVmgP, True)
-    VmgPerc.NormaVmgPerc = NormaVmgP
-    For i As Integer = 0 To System.Math.Min(ValoriTws.Count, ValoriVmgP.Count) - 1
-      If Not Double.IsNaN(ValoriTws(i)) Then
-        If ValoriVmgP(i) > NormaVmgP * (1 - RangeCoeff) AndAlso ValoriVmgP(i) < NormaVmgP * (1 + RangeCoeff) Then
-          VmgPerc.AggiungiCoppia(ValoriTws(i), ValoriVmgP(i), IsUpwind)
-        End If
-      End If
-    Next
-    Return VmgPerc
-  End Function
-
   Private Function NormaStat(Valori As List(Of Double), ApplicaMinValue As Boolean) As Double
     Dim Mediana As Double
     alglib.basestat.samplemedian(Valori.ToArray, Valori.Count, Mediana)
@@ -3635,10 +3512,6 @@ Public Class clsPeriods2021
   Public Property CollectionTack As New ObservableCollection(Of clsPeriod2021)
   Public Property CollectionGybe As New ObservableCollection(Of clsPeriod2021)
 
-
-  Public Function TrovaPeriodo2021(TR As clsTimeRange) As clsPeriod2021
-    Return Lista.Where(Function(x) x.TR.StringaPeriodo = TR.StringaPeriodo).FirstOrDefault
-  End Function
 
   Public Sub AggiornaCollections()
     ListaOrdinata.Clear()
@@ -4381,28 +4254,6 @@ Public Class clsChannelStats2021
       yy(i) = yy(i) / Totale * 100
     Next
     Distribuzione = New Distribuzione(xx, yy)
-  End Sub
-
-  Public Sub AggiornaDerivative(DaySeconds As Double())
-    Dim Deriv(ValoriRaw.Count - 1) As Double
-    If Deriv.Count = 0 Then Exit Sub
-    Derivative = New clsChannelStats2021(Channel)
-    Dim prev As Double = ValoriRaw(0)
-    Dim prevDS As Double = DaySeconds(0)
-    If Is360 Then
-      For i As Integer = 0 To ValoriRaw.Count - 1
-        Deriv(i) = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(prev, ValoriRaw(i)) / (DaySeconds(i) - prevDS)
-        prev = ValoriRaw(i)
-        prevDS = DaySeconds(i)
-      Next
-    Else
-      For i As Integer = 0 To ValoriRaw.Count - 1
-        Deriv(i) = (ValoriRaw(i) - prev) / (DaySeconds(i) - prevDS)
-        prev = ValoriRaw(i)
-        prevDS = DaySeconds(i)
-      Next
-    End If
-    Derivative.AggiornaStats(Deriv)
   End Sub
 
 
@@ -5325,31 +5176,6 @@ Public Class clsArrayStats
   End Sub
 
 
-  Private Function riempiTwdTest() As List(Of Double)
-    Dim twdd As New List(Of Double)
-    twdd.Add(87)
-    twdd.Add(88)
-    twdd.Add(89)
-    twdd.Add(90)
-    twdd.Add(91)
-    twdd.Add(92)
-    twdd.Add(93)
-    twdd.Add(94)
-    twdd.Add(95)
-    twdd.Add(96)
-    'twdd.Add(355)
-    'twdd.Add(357)
-    'twdd.Add(5)
-    'twdd.Add(8)
-    'twdd.Add(12)
-    'twdd.Add(359)
-    'twdd.Add(1)
-    'twdd.Add(356)
-    'twdd.Add(3)
-    'twdd.Add(353)
-    Return twdd
-  End Function
-
   Public Sub New(TypeIs360 As Boolean)
     Is360 = TypeIs360
   End Sub
@@ -5416,19 +5242,6 @@ Public Class ParquetDataSource
       ListaCanali.Add(PC)
     Next
     ImpostaParquet()
-  End Sub
-
-  Public Sub ChiudiParquet()
-    ParquetReader.Dispose()
-    FsTmp.Close()
-    FsTmp.Dispose()
-  End Sub
-
-  Public Sub AggiungiCanaleMath(MathChannel As SailingChannel)
-    Dim c As New ParquetChannel(MathChannel.SailingChannelName, Me.DataSourceName)
-    c.SailingChannel = MathChannel
-    c.ChannelDetails = MathChannel.DefaultChannelDetails
-    ListaCanali.Add(c)
   End Sub
 
   Public Function ValoriDbl(Canale As ParquetChannel) As Double()
@@ -5512,10 +5325,6 @@ Public Class ParquetChannels
   Public Sub New(PathFileJson As String, ListaKnownChannels As List(Of ParquetChannel))
     PathFile = PathFileJson
     KnownChannels = ListaKnownChannels
-  End Sub
-
-  Public Sub SalvaIntestazioniNote()
-    clsKillerSeriale.SaveConfigurationGeneric(Of List(Of ParquetChannel))(KnownChannels, PathFile)
   End Sub
 
 End Class
@@ -7372,63 +7181,6 @@ Public Class clsExpeditionStart
     Return Righe
   End Function
 
-
-  Public Function EsportaCsvPartenza() As String
-    ' LineWind, Line Lenght, Bias Deg, Bias Mt, Bias Time @ Tgt
-    ' Tws, Twd, Bs, Twa, Vmg%, BsT%, TwaD, Heel, Rdr, Vdist, DistToLine, TTK@Tgt
-    ' Data @ Start-60, -50, -40, -30, -25, -20, -15, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, +1, +2, +3, +4, +5, +15, +30, +60
-
-    Dim Righe As New List(Of String)
-    Dim riga As String = "Race Start: " & StartTime.ToString("yyyy MM dd HH:mm:ss") & vbCrLf
-    riga &= "Line Wind: " & LineTwd.ToString("F0")
-    If LineBiasDeg > 0 Then
-      riga &= ", Stbd Bias:"
-    Else
-      riga &= ", Port Bias:"
-    End If
-    riga &= " Deg: " & LineBiasDeg.ToString("F0") & ","
-    riga &= " Mt: " & LineBiasMt.ToString("F0") & ","
-    riga &= " Seconds: " & LineBiasSec.ToString("F0") & "."
-    Righe.Add(riga)
-
-    If ZoneAtStart < 0.3 Then
-      riga = "Rc area"
-    ElseIf ZoneAtStart <= 0.7 Then
-      riga = "Mid line"
-    Else
-      riga = "Pin area"
-    End If
-    riga &= " at Gun, distance to line: " & BoatDataAtZero.Vdist.ToString("F1")
-    If BoatDataAtLineCrossing.SecondsToStart >= 0 Then
-      riga &= ", Late by: " & BoatDataAtLineCrossing.SecondsToStart.ToString("F0")
-    Else
-      riga &= ", Early by: " & -BoatDataAtLineCrossing.SecondsToStart.ToString("F0")
-    End If
-    riga &= "ss, Vmgtg: " & BoatDataAtZero.VmgP.ToString("F0") & "%, Bstg: " & BoatDataAtZero.BstP.ToString("F0") & "%, Twad: " & BoatDataAtZero.TwaD.ToString("F0") & "d"
-    Righe.Add(riga)
-
-
-    riga = "SecToStart" & vbTab & "Tws" & vbTab & "Twd" & vbTab & "ExpVdist" & vbTab
-    riga &= "VDist" & vbTab & "Vmg%" & vbTab
-    riga &= "TTLs" & vbTab & "TTLp" & vbTab
-    riga &= "Bs" & vbTab & "Bst%" & vbTab
-    riga &= "Twa" & vbTab & "TwaD" & vbTab
-    riga &= "Heel" & vbTab & "Rdr" & vbTab
-    Righe.Add(riga)
-
-    For Each Pbd In BoatDataTable
-      riga = Pbd.SecondsToStart.ToString("F0") & vbTab & Pbd.Tws.ToString("F1") & vbTab & Pbd.Twd.ToString("F0") & vbTab & Pbd.ExpVdist.ToString("F1") & vbTab
-      riga &= Pbd.Vdist.ToString("F1") & vbTab & Pbd.VmgP.ToString("F0") & vbTab
-      riga &= Pbd.TtlAtTgtStbd.ToString("F0") & vbTab & Pbd.TtlAtTgtPort.ToString("F0") & vbTab
-      riga &= Pbd.Bs.ToString("F1") & vbTab & Pbd.BstP.ToString("F0") & vbTab
-      riga &= Pbd.Twa.ToString("F0") & vbTab & Pbd.TwaD.ToString("F0") & vbTab
-      riga &= Pbd.Heel.ToString("F0") & vbTab & Pbd.Rdr.ToString("F0") & vbTab
-      Righe.Add(riga)
-    Next
-
-    Return String.Join(vbCrLf, Righe)
-
-  End Function
 
 
 

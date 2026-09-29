@@ -5517,49 +5517,6 @@ Public Class clsDataProvider2020
     Return HeelStbd.Average < 0
   End Function
 
-  Private Function ApproxBulbRh(CantAngle As Double) As Double
-    Dim PinOffset As Double = 0.6
-    Dim ArmLenght As Double = 3.6
-    Dim BulbOffset As Double = ArmLenght * System.Math.Sin(Radians(CantAngle - 47))
-    Return PinOffset + BulbOffset
-  End Function
-
-  Private Function UnderwaterProjectedArea(IsInner As Boolean, IsLift As Boolean, EffCant As Double, BulbRh As Double) As Double
-    If Double.IsNaN(EffCant) Then Return Double.NaN
-    If Double.IsNaN(BulbRh) Then Return Double.NaN
-    ' andrebbero pescate dalla configurazione
-    Dim DihedralAngle As Double = 19
-    Dim WingSpan As Double = 2
-    Dim WingArea As Double = 1
-    Dim BoardVert As Double = 0
-    Dim BoardHoriz As Double = 0
-    Dim TipRh As Double = 0
-    'If CInt(EffCant) = 20 Then Stop
-    If IsInner Then
-      BoardVert = WingSpan * -System.Math.Sin(Radians(EffCant + DihedralAngle))
-      BoardHoriz = WingSpan * System.Math.Cos(Radians(EffCant + DihedralAngle))
-      TipRh = BulbRh + BoardVert
-    Else
-      BoardVert = WingSpan * -System.Math.Sin(Radians(EffCant - DihedralAngle))
-      BoardHoriz = WingSpan * System.Math.Cos(Radians(EffCant - DihedralAngle))
-      TipRh = BulbRh - BoardVert
-    End If
-    Dim ImmK As Double = System.Math.Abs(TipRh / BoardVert)
-    If TipRh > 0 Then
-      ImmK = 0
-    ElseIf BulbRh < 0 Then
-      ImmK = 1
-    End If
-    If IsLift Then
-      Return ImmK * BoardHoriz * WingArea
-    Else
-      Return ImmK * System.Math.Abs(BoardVert) * WingArea
-    End If
-    'ChPortWingInnerProjPercLift.Valori(i) = PortArea * System.Math.Cos(Radians(EffCant - PortDihedral))
-    'ChPortWingInnerProjPercLwy.Valori(i) = PortArea * System.Math.Sin(Radians(ChEffPort.Valori(i) - PortDihedral))
-
-  End Function
-
   Private Sub AggiungiValore(CanaleSource As clsChannel2020, ByRef CanaleDestinazione As clsChannel2020, Indice As Integer)
     If Not CanaleSource Is Nothing AndAlso CanaleSource.Valori.Count > 0 AndAlso CanaleSource.Valori.Count > Indice Then
       CanaleDestinazione.Valori(Indice) = CanaleSource.Valori(Indice)

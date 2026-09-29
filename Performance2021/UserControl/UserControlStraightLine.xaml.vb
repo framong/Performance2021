@@ -298,62 +298,6 @@ Public Class clsTrendLines
     StampaTrendLine(False, False, "TL_DnPort", Ordine, SeriesSource, True)
   End Sub
 
-  Public Sub StampaTrendLinesUpDn(Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel))
-    StampaTrendLine(True, "TL_UpWind", Ordine, SeriesSource, True)
-    StampaTrendLine(False, "TL_DownWind", Ordine, SeriesSource, True)
-  End Sub
-
-  Public Sub StampaTrendLinesPortStbd(Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel))
-    StampaTrendLinePortStbd(True, "TL_Stbd", Ordine, SeriesSource, True)
-    StampaTrendLinePortStbd(False, "TL_Port", Ordine, SeriesSource, True)
-  End Sub
-
-  Public Sub StampaTrendLineAllTogether(Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel))
-    StampaTrendLine("TL_AllTogether", Ordine, SeriesSource, True)
-  End Sub
-
-  Public Sub StampaTrendLineGruppo(SeriesSource As ObservableCollection(Of IChartSeriesViewModel), DatiPerTL As List(Of clsTLdata), Ordine As Integer)
-    ' cancella tutte le trend line presenti
-    Dim TLS As String() = {"TL_UpPort", "TL_UpStbd", "TL_DnPort", "TL_DnStbd", "TL_Custom"}
-    Dim ds3 = SeriesSource.Where(Function(k) Not k.RenderSeries Is Nothing)
-    Dim ds2 = ds3.Where(Function(k) Not k.RenderSeries.DataSeries Is Nothing)
-    Dim ds1 = ds2.Where(Function(k) TypeOf (k.RenderSeries.DataSeries.Tag) Is String)
-    For Each ts In TLS
-      Dim DS = ds1.Where(Function(z) z.RenderSeries.DataSeries.Tag.ToString = ts).FirstOrDefault
-      If Not DS Is Nothing Then
-        SeriesSource.Remove(DS)
-      End If
-    Next
-
-    For Each DTL In DatiPerTL
-      Dim x As Double() = DTL.LineValues.XValues.ToArray
-      Dim y As Double() = DTL.LineValues.YValues.ToArray
-      Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(x, y, Ordine) ', MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquation)
-      Dim DataSeriesTmp As New XyDataSeries(Of Double, Double)
-      Dim LineaTmp As New FastLineRenderableSeries
-      LineaTmp.XAxisId = "DefaultAxisId"
-      LineaTmp.YAxisId = "DefaultAxisId"
-      LineaTmp.StrokeThickness = 5
-      LineaTmp.Stroke = DTL.LineColor
-      LineaTmp.Tag = "TL_Custom"
-      LineaTmp.IsVisible = True
-      DataSeriesTmp.AcceptsUnsortedData = True
-      'For i As Double = x.Min * 0.95 To x.Max * 1.05 Step (x.Max - x.Min) / 10
-      For i As Double = x.Min To x.Max Step (x.Max - x.Min) / 10
-        Dim ii As Double = p.Coefficients(0)
-        For g As Integer = 1 To Ordine
-          ii += p.Coefficients(g) * i ^ g
-        Next
-        DataSeriesTmp.Append(i, ii, New clsPuntoMetadata(False))
-      Next
-      LineaTmp.DataSeries = DataSeriesTmp
-      DataSeriesTmp.SeriesName = "TL: " & DTL.LineName
-      Dim CSVMtgtup As New ChartSeriesViewModel(DataSeriesTmp, LineaTmp)
-      SeriesSource.Add(CSVMtgtup)
-    Next
-
-  End Sub
-
   Public Sub StampaTrendLine(IsUp As Boolean, isStbd As Boolean, TagString As String, Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel), Stampa As Boolean)
 
 
@@ -1261,28 +1205,6 @@ Public Class clsStraightLineVM2020
     Return False
   End Function
 
-  Public Sub CreaStatistichePedestals()
-    Stop
-    'Clipboard.SetText(PeriodsManager.CreaStatistichePedestals_StraightLines)
-  End Sub
-
-  Private Function PeriodoCambiato() As Boolean
-    Dim PeriodiStLine = PeriodsManager.ListaStraightLine
-    If PeriodiStLine.Count = 0 Then Return True
-
-    If ContenitoreDistributions.ListaPeriodi.Count = PeriodiStLine.Count Then
-      For Each Periodo In ContenitoreDistributions.ListaPeriodi
-        If Not Periodo.TR.HasSameRange(Periodo.TR) Then
-          Return True
-        End If
-      Next
-    Else
-      'é cambiato il numero dei periodi
-      Return True
-    End If
-    Return False
-  End Function
-
 
   Public Function ChangeMouseMode() As String
     Dim descrizione As String = ""
@@ -1460,14 +1382,6 @@ Public Class clsStraightLineVM2020
     AggiornaControlli(Selezione)
   End Sub
 
-
-  Private Function Visibilitá(Value As Boolean) As Boolean
-    If Value Then
-      Return Visibility.Visible
-    Else
-      Return Visibility.Hidden
-    End If
-  End Function
 
   Public Sub AggiornaPeriodiVisibili()
     'If PeriodsManager.PeriodsTrigger.ListaInAggiornamento Then Exit Sub
@@ -2090,22 +2004,6 @@ Public Class clsStraightLineControlliPeriodChannelsDistributions
       'Return PeriodsManager.ListaStraightLineVmg
     End Get
   End Property
-
-  Private Function PeriodiAggiornati() As Boolean
-    If ListaPeriodi.Count = ContenitoriPeriodiChannelsDistributions.Count Then
-      For Each Periodo In ListaPeriodi
-        Dim Controllo = ContenitoriPeriodiChannelsDistributions.Where(Function(x) x.ViewModel.Periodo Is Periodo).FirstOrDefault
-        If Not Controllo Is Nothing Then
-          If Not Controllo.ViewModel.Periodo.TR.HasSameRange(Periodo.TR) Then
-            Return True
-          End If
-        End If
-      Next
-    Else
-      Return True
-    End If
-    Return False
-  End Function
 
 End Class
 
