@@ -1452,56 +1452,6 @@ Module mdlCommon
   End Function
 
 
-  Public Function Media180(Valori As Double()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim v = Valori.Where(Function(x) Not Double.IsNaN(x)).ToArray
-    If v Is Nothing Then Return 0
-    Dim AR As Double = 0
-    Dim S As Double = 0
-    Dim C As Double = 0
-    Dim sS, sC As Double
-
-    For Each Valore As Double In v
-      If Valore < 0 Then Valore += 360
-      AR = Radians(Valore)
-      S = System.Math.Sin(AR)
-      C = System.Math.Cos(AR)
-      sS += S
-      sC += C
-    Next
-    sS /= v.Count
-    sC /= v.Count
-    AR = System.Math.Atan(sS / sC)
-    If AR > System.Math.PI Then AR -= 2 * System.Math.PI
-    Return Degrees(AR)
-
-  End Function
-
-  Public Function Media180(Valori As Double?()) As Double
-    If Valori Is Nothing Then Return 0
-    Dim v = Valori.Where(Function(x) Not Double.IsNaN(x)).ToArray
-    If v Is Nothing Then Return 0
-    Dim AR As Double = 0
-    Dim S As Double = 0
-    Dim C As Double = 0
-    Dim sS, sC As Double
-
-    For Each Valore As Double In v
-      If Valore < 0 Then Valore += 360
-      AR = Radians(Valore)
-      S = System.Math.Sin(AR)
-      C = System.Math.Cos(AR)
-      sS += S
-      sC += C
-    Next
-    sS /= v.Count
-    sC /= v.Count
-    AR = System.Math.Atan(sS / sC)
-    If AR > System.Math.PI Then AR -= 2 * System.Math.PI
-    Return Degrees(AR)
-
-  End Function
-
 
   Public Function Media(ValoreA As Double, ValoreB As Double) As Double
     Dim mVal() As Double = {ValoreA, ValoreB}
@@ -2152,24 +2102,6 @@ Public Class cls360vector
   '    pBRGdeg = pObjCalcoliDuePuntiGeo.RottaTrue
   'End Sub
 
-  Public Function GradiToRadianti(AngoloGradi As Double) As Double
-    Return AngoloGradi * System.Math.PI / 180
-  End Function
-
-  Public Function RadiantiToGradi(AngoloRadianti As Double) As Double
-    Return AngoloRadianti / System.Math.PI * 180
-  End Function
-
-  Public Function DistanzaCorretta(Vettore As cls360vector) As Double
-    If pDistUM = Vettore.pDistUM Then
-      Return Vettore.RNG
-    ElseIf pDistUM = eDistUM.eMeters Then
-      Return Vettore.RNG * 1852
-    Else
-      Return Vettore.RNG / 1852
-    End If
-  End Function
-
 End Class
 
 Public Class clsCurrentCalcs
@@ -2693,20 +2625,6 @@ Public Class clsFiles
       Return "/"
     Else
       Return "\" ' serve ad individuare se il file o la cartella si trovano in un ambiente di rete o locale
-    End If
-  End Function
-
-  Public Function CartellaParentFullPath(PathFileOrCartella As String, SeparatoreFinale As Boolean) As String
-    Dim cSep As String = trovaSeparatorePath(PathFileOrCartella)
-    If cSep.Length = 0 Then Return PathFileOrCartella
-
-    If System.IO.File.Exists(PathFileOrCartella) Then
-      Return VerificaSeparatoreFinale(PathFileOrCartella.Substring(0, PathFileOrCartella.LastIndexOf(cSep)), SeparatoreFinale)
-    ElseIf System.IO.Directory.Exists(PathFileOrCartella.TrimEnd(cSep)) Then
-      Dim fldTMP As String = PathFileOrCartella.TrimEnd(cSep)
-      Return VerificaSeparatoreFinale(fldTMP.Substring(0, fldTMP.LastIndexOf(cSep)), SeparatoreFinale)
-    Else
-      Return PathFileOrCartella
     End If
   End Function
 

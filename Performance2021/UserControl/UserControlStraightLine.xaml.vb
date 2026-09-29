@@ -390,48 +390,6 @@ Public Class clsTrendLines
 
   End Sub
 
-  Public Sub StampaTrendLinePortStbd(IsStbd As Boolean, TagString As String, Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel), Visible As Boolean)
-    Dim DS = SeriesSource.Where(Function(z) z.RenderSeries.DataSeries.Tag = TagString).FirstOrDefault
-    If Not DS Is Nothing Then
-      SeriesSource.Remove(DS)
-    End If
-    Dim ListTmp As List(Of Double) = ArrayDbl(True, IsStbd, True).ToList
-    ListTmp.AddRange(ArrayDbl(False, IsStbd, True).ToList)
-    Dim x As Double() = ListTmp.ToArray
-    ListTmp.Clear()
-    ListTmp.AddRange(ArrayDbl(True, IsStbd, False).ToList)
-    ListTmp.AddRange(ArrayDbl(False, IsStbd, False).ToList)
-    Dim y As Double() = ListTmp.ToArray
-    If x.Count > 0 Then
-      Dim p As MathNet.Numerics.Polynomial = MathNet.Numerics.Polynomial.Fit(x, y, Ordine, MathNet.Numerics.LinearRegression.DirectRegressionMethod.NormalEquations)
-      Dim DataSeriesTmp As New XyDataSeries(Of Double, Double)
-      Dim LineaTmp As New FastLineRenderableSeries
-      LineaTmp.XAxisId = "DefaultAxisId"
-      LineaTmp.YAxisId = "DefaultAxisId"
-      LineaTmp.StrokeThickness = 3
-      If IsStbd Then
-        LineaTmp.Stroke = Colors.Green
-      Else
-        LineaTmp.Stroke = Colors.Red
-      End If
-      LineaTmp.StrokeDashArray = {3, 3}
-      LineaTmp.Tag = TagString
-      LineaTmp.IsVisible = Visible
-      DataSeriesTmp.AcceptsUnsortedData = True
-      For i As Double = x.Min * 0.95 To x.Max * 1.05 Step (x.Max - x.Min) / 10
-        Dim ii As Double = p.Coefficients(0)
-        For g As Integer = 1 To Ordine
-          ii += p.Coefficients(g) * i ^ g
-        Next
-        DataSeriesTmp.Append(i, ii, New clsPuntoMetadata(False))
-      Next
-      LineaTmp.DataSeries = DataSeriesTmp
-      Dim CSVMtgtup As New ChartSeriesViewModel(DataSeriesTmp, LineaTmp)
-      SeriesSource.Add(CSVMtgtup)
-    End If
-
-  End Sub
-
   Public Sub StampaTrendLine(TagString As String, Ordine As Integer, SeriesSource As ObservableCollection(Of IChartSeriesViewModel), Visible As Boolean)
     Dim DS = SeriesSource.Where(Function(z) z.RenderSeries.DataSeries.Tag = TagString).FirstOrDefault
     If Not DS Is Nothing Then

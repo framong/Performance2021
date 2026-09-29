@@ -186,18 +186,6 @@ Public Class clsEzriz
   End Function
 
 
-  Public Shared Function fn_NTPTIME() As String()
-    'Created by Doug_Strkyer
-    Dim Time_IN As String
-    Dim TIME_DATA() As String
-    Dim client As New System.Net.WebClient
-    Dim MY_IP As String = fn_GETIP()
-    Dim Time_request As String = "http://worldtimeapi.org/api/ip/" + MY_IP + ".txt"
-    Time_IN = client.DownloadString(Time_request)
-    TIME_DATA = Split(Time_IN, Chr(10))
-    Return TIME_DATA
-  End Function
-
   Public Shared Function fn_GETIP() As String
     Dim MY_IP As String
     Dim client As New System.Net.WebClient
@@ -3372,54 +3360,6 @@ Public Class clsPeriodsManager2021
   '    End If
   '  Next
   'End Sub
-
-  Private Function NormaStat(Valori As List(Of Double), ApplicaMinValue As Boolean) As Double
-    Dim Mediana As Double
-    alglib.basestat.samplemedian(Valori.ToArray, Valori.Count, Mediana)
-
-
-    Dim Intervalli As Integer = 30
-
-
-    Dim Samples(Intervalli) As Integer
-    Try
-      Dim ValoriNotNan = Valori.Where(Function(x) Not Double.IsNaN(x)).ToList
-      Dim MinAvgVal As Double = System.Math.Max(ValoriNotNan.Average, Mediana)
-      If ApplicaMinValue Then ValoriNotNan = ValoriNotNan.Where(Function(x) x > MinAvgVal).ToList
-
-      Dim ValoriAggregati As New clsValoriAggregati
-      Dim e As Integer = 1
-      Dim MaxVal As Double = (Int(ValoriNotNan.Max * 10 ^ e) / 10 ^ e) + (1 / 10 ^ e)
-      Dim MinVal As Double = Int(ValoriNotNan.Min * 10 ^ e) / 10 ^ e - 1
-      For Each valore In ValoriNotNan
-        Dim IndiceCorrente As Integer = Int((valore - MinVal) / (MaxVal - MinVal) * Intervalli)
-        If IndiceCorrente < 0 Then IndiceCorrente = 0
-        Samples(IndiceCorrente) += 1
-        ValoriAggregati.AggiungiCoppia(IndiceCorrente, valore)
-      Next
-      Dim MaxSamples As Integer = 0
-      Dim MaxSamplesIndex As Integer = -1
-      For i As Integer = 0 To Samples.Count - 1
-        If Samples(i) > MaxSamples Then
-          MaxSamples = Samples(i)
-          MaxSamplesIndex = i
-        End If
-      Next
-      Dim a = ValoriAggregati.Dizionario.Select(Function(x) New With {.Chiave = x.Key, .Samples = x.Value.ValoriY.Count}).ToList
-
-      Dim bb = a.Max(Function(x) x.Samples)
-      Dim hh = a.Where(Function(x) x.Samples = bb).ToList
-      Dim r As New List(Of Double)
-      For Each v In hh
-        r.AddRange(ValoriAggregati.Dizionario(v.Chiave).ValoriY)
-      Next
-      Return r.Average
-
-    Catch ex As Exception
-      Return Mediana
-    End Try
-
-  End Function
 
 
   Dim _VmgPercentageCheckedOnly As Boolean

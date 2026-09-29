@@ -1815,51 +1815,6 @@ End Class
 Public Class clsSpeedTest
 
 
-  Public Shared Sub Testa(Canale As clsChannel2020, Periodo As clsTimeRange)
-    Dim adesso As DateTime = Now
-    Dim Giri As Integer = 0
-    Dim str As String = ""
-    For i As Integer = 0 To Giri
-      Dim Obj As New clsValoriPeriodoCanale2020(Canale, Periodo, False)
-      Obj.AggiornaValori(Periodo, False)
-      str = "" ' Obj.Avg
-      str &= " " & Obj.AvgString
-      'str &= " " & Obj.AvgOrg
-      str &= " " & Obj.AvgPortString
-      'str &= " " & Obj.AvgOrgString
-      str &= " " & Obj.AvgStbdString
-      'str &= " " & Obj.Max
-      str &= " " & Obj.MaxString
-      'str &= " " & Obj.Min
-      str &= " " & Obj.MinString
-      'str &= " " & Obj.Ds
-      str &= " " & Obj.DsString
-    Next
-    Console.WriteLine(str)
-    Console.WriteLine(Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    adesso = Now
-
-    For i As Integer = 0 To Giri
-      Dim Obj As New clsStatisticheIntervallo(Canale, Periodo, clsGroupLines.eLineType.eDataTypeSigned)
-      str = "" 'Obj.Avg
-      str &= " " & Obj.AvgString
-      'str &= " " & Obj.AvgPort
-      str &= " " & Obj.AvgPortString
-      'str &= " " & Obj.AvgStbd
-      str &= " " & Obj.AvgStbdString
-      'str &= " " & Obj.Max
-      str &= " " & Obj.MaxString
-      'str &= " " & Obj.Min
-      str &= " " & Obj.MinString
-      'str &= " " & Obj.Sd
-      str &= " " & Obj.SdString
-    Next
-    Console.WriteLine(str)
-    Console.WriteLine(Now.Subtract(adesso).TotalSeconds.ToString("F3"))
-    Console.WriteLine()
-    Stop
-  End Sub
-
 End Class
 
 

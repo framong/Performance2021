@@ -1833,26 +1833,6 @@ Public Class clsSciChartXyPlotViewModel
 
 
 
-  'Private Function PeriodoTwaMedioValido(IdIniziale As Integer, IdFinale As Integer, Periodo As clsPeriod2021, Filtro As eTipoFiltro, FilterChannel As clsChannel2020, Filtro2 As eTipoFiltro, Filte2Channel As clsChannel2020, CanaleTwa As clsChannel2020) As Boolean
-  Private Function PeriodoTwaMedioValido(IdIniziale As Integer, IdFinale As Integer, Periodo As clsPeriod2021, CanaleTwa As clsChannel2020) As Boolean
-    If IdIniziale = IdFinale Then Return False
-    Dim Valido As Boolean = True
-    If Not CanaleTwa Is Nothing Then
-      Dim ValoreToBeChecked As Double = 0
-      Select Case Periodo.PeriodType
-        Case clsPeriod2021.ePeriodType.eTack
-          ValoreToBeChecked = If(Periodo.IsStbd, 50, -50)
-        Case clsPeriod2021.ePeriodType.eGybe
-          ValoreToBeChecked = If(Periodo.IsStbd, 135, -135)
-        Case Else
-          ValoreToBeChecked = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA).Valori.Skip(IdIniziale).Take(IdFinale - IdIniziale).Where(Function(x) Not Double.IsNaN(x)).Average
-      End Select
-      Valido = TwaValido(ValoreToBeChecked)
-      ' verifica se il filtro twa, se applicato, sia nel range
-    End If
-    Return Valido
-  End Function
-
   'Private Function RigaValida(IdIniziale As Integer, IdFinale As Integer, Periodo As clsPeriod2021, Filtro As eTipoFiltro, FilterChannel As clsChannel2020, Filtro2 As eTipoFiltro, Filte2Channel As clsChannel2020, CanaleTwa As clsChannel2020) As Boolean
   '    If IdIniziale = IdFinale Then Return False
   '    Dim Valido As Boolean = True

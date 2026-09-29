@@ -164,22 +164,6 @@ Public Class clsTabellaPeriodiCanali
 
 
 
-  Private Function StringaMedieHtml(Periodo As clsPeriod2021) As String
-    Dim strTmp As String = "<table  class=""tbtt"">"
-    strTmp &= "<tr class=""trtt""><td colspan=2><b>" & Periodo.TR.InizioFormattato(clsTimeRange.eTipoFormatoData.eSoloTime) & " (" & Periodo.TR.DurataInStringaConSeparatore & ")</b></td></tr>"
-    For Each canale In pListaCanali
-      Dim SubChannel As New clsValoriPeriodoCanale2020(canale, Periodo.TR, False)
-      Dim Media As String = SubChannel.Avg
-      Select Case canale.DataType
-        Case clsChannel2020.eDataType.e180
-          Media = Format(System.Math.Abs(SubChannel.Avg), "F" & canale.Decimals.ToString)
-        Case Else
-      End Select
-      strTmp &= "<tr class=""trtt""><td><b>" & canale.ShortName & "</b>:</td><td class=""tdtt"">" & SubChannel.Avg & "</td></tr>" '  [" & SubChannel.SubSetMin & "#" & SubChannel.SubSetMax & " (" & SubChannel.SubSetDs & ")]<br/>"
-    Next
-    Return strTmp & "</table>"
-  End Function
-
 End Class
 
 
@@ -211,14 +195,6 @@ Public Class clsTests
   '  End Set
   'End Property
 
-
-  Private Sub ImpostaTestSelezionato(TestDaSelezionare As clsTest)
-    'For Each test In ListaTests
-    '  test.IsSelected = (test Is TestDaSelezionare)
-    'Next
-    TestAttivo = TestDaSelezionare
-    'OnPropertyChanged("TestAttivoOrPrimo")
-  End Sub
 
   '<JsonIgnore>
   'Public Property TestAttivoOrPrimo() As clsTest

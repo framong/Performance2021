@@ -2179,29 +2179,6 @@ Public Module Statistica
                  First().Key
   End Function
 
-  ''' <summary>
-  ''' Percentile p in [0,100] con interpolazione lineare (metodo tipo "Nearest Rank" interpolato).
-  ''' </summary>
-  <Extension>
-  Public Function GetPercentile(source As IEnumerable(Of Double), p As Double) As Double
-    If p < 0 OrElse p > 100 Then Throw New ArgumentOutOfRangeException(NameOf(p), "Il percentile deve essere tra 0 e 100.")
-    Dim arr = EnsureArray(source).OrderBy(Function(x) x).ToArray()
-    Dim n = arr.Length
-    If n = 0 Then Throw New ArgumentException("La sequenza è vuota.")
-    If n = 1 OrElse p = 0 Then Return arr(0)
-    If p = 100 Then Return arr(n - 1)
-
-    Dim pos = (p / 100.0) * (n - 1)   ' indice reale 0-based
-    Dim k = CInt(Math.Floor(pos))
-    Dim d = pos - k
-    If k >= n - 1 Then
-      Return arr(n - 1)
-    Else
-      Return arr(k) + d * (arr(k + 1) - arr(k))
-    End If
-  End Function
-
-
 #End Region
 
 #Region "Math.NET Numerics (opzionale)"

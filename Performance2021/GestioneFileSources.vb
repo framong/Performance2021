@@ -701,20 +701,6 @@ Public Class clsExportToCsv
   'End Function
 
 
-  Private Function IntestazioniDefault() As List(Of String)
-    Dim lTmp As New List(Of String)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eTWS)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eVMG)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eSOW)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eTWA)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eAWA)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eLWY)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eAWS)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eHEEL)
-    AggiungiIntestazioneSeEsiste(lTmp, clsChannels2020.eCanaliChiave.eTrimNorm)
-    Return lTmp
-  End Function
-
   Private Sub AggiungiIntestazioneSeEsiste(ByRef lista As List(Of String), CanaleChiave As clsChannels2020.eCanaliChiave)
     If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then
       lista.Add("_" & System.Enum.GetName(GetType(clsChannels2020.eCanaliChiave), CanaleChiave).TrimStart("e"))
