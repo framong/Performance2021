@@ -376,7 +376,7 @@ Public Class UserControlPavarotViewModel
   'Public Property LastUsedPavarotSettings2020 As clsPavarotSettings2020
 
   Public WithEvents PavarotSelectionSettings As New clsPavarotSelectionSettings
-  Dim _OutputType As eOutputType = eOutputType.eSinglePeriod
+  Dim _OutputType As eOutputType = eOutputType.eColorByTack
   Public Property AutoRefreshGroupBy As Boolean
   Public Property PlotTrendLines As Boolean = False
   Public Property PlotTargetsIfAvailable As Boolean = True

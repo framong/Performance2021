@@ -502,7 +502,7 @@
         <ContentControl x:Name="hostLineUp" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
       </TabItem>
 
-      <TabItem Name="TackGybesAnalysis" Header="TacksGybes" Width="80">
+      <TabItem Name="TackGybesAnalysis" Header="TacksGybes" Width="80" Visibility="Collapsed">
         <ContentControl x:Name="hostPavarot" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
       </TabItem>
 
