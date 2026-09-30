@@ -189,6 +189,7 @@ Public Class ManeuverResult
     Public Property OffsetAfter As Double       ' [gradi] offset cse mura "after"
     Public Property PairResidual As Double      ' |corrente_before - corrente_after| [nodi] (~0 se risolto)
     Public Property PairConverged As Boolean    ' False -> usati i valori globali come fallback
+    Public Property GlobalPairResidual As Double ' |corrente_before - corrente_after| [nodi] applicando le correzioni GLOBALI
 
     ' ---- OTTIMIZZAZIONE GLOBALE (secondaria, condivisa tra gli elementi) ----
     Public Property GlobalCurrentSet As Double     ' [gradi] corrente dell'epoca
@@ -203,6 +204,67 @@ Public Class ManeuverResult
     Public Property UnderIdentified As Boolean    ' True se la globale e' degenere (k fissato d'ufficio)
     Public Property HeadingSpreadStbd As Double   ' [gradi]
     Public Property HeadingSpreadPort As Double   ' [gradi]
+
+    ' ---- gruppi del report (vedi AnalyzeReport); 1-based, 0 = non assegnato ----
+    Public Property TimeGroupId As Integer
+    Public Property ZoneId As Integer
+
+    ' ---- testi per la visualizzazione ----
+    Public ReadOnly Property Tipo As String
+        Get
+            Return If(IsUpwind, "Tack", "Gybe")
+        End Get
+    End Property
+    Public ReadOnly Property Mura As String
+        Get
+            Return ResultsClipboard.NomeMura(BeforeTackSign) & ">" & ResultsClipboard.NomeMura(AfterTackSign)
+        End Get
+    End Property
+    Public ReadOnly Property Converge As String
+        Get
+            Return If(PairConverged, "Si", "No")
+        End Get
+    End Property
+End Class
+
+
+''' <summary>Correzioni stimate da un modello (corrente unica / per fascia di tempo / per zona).</summary>
+Public Class CalibrationModel
+    Public Property Name As String
+    Public Property GroupCount As Integer
+    Public Property LogCoefficient As Double   ' k
+    Public Property OffsetStbd As Double       ' [gradi] mura twa>0
+    Public Property OffsetPort As Double       ' [gradi] mura twa<0
+    Public Property Rms As Double              ' [nodi] residuo su tutti i tratti
+End Class
+
+
+''' <summary>Corrente stimata per un gruppo di manovre (fascia di tempo o zona).</summary>
+Public Class GroupResult
+    Public Property Id As Integer              ' 1-based
+    Public Property Label As String
+    Public Property ManeuverCount As Integer
+    Public Property FirstTime As DateTime
+    Public Property LastTime As DateTime
+    Public Property MeanLat As Double
+    Public Property MeanLon As Double
+    Public Property CurrentSet As Double       ' [gradi] verso cui scorre
+    Public Property CurrentDrift As Double     ' [nodi]
+    Public Property Rms As Double              ' [nodi]
+End Class
+
+
+''' <summary>Risultato completo: manovre + tre modelli di corrente a confronto.</summary>
+Public Class ManeuverReport
+    Public Property Maneuvers As ManeuverResult() = Array.Empty(Of ManeuverResult)()
+    Public Property Unica As CalibrationModel
+    Public Property ByTime As CalibrationModel
+    Public Property ByZone As CalibrationModel
+    Public Property TimeGroups As GroupResult() = Array.Empty(Of GroupResult)()
+    Public Property ZoneGroups As GroupResult() = Array.Empty(Of GroupResult)()
+    Public Property UnderIdentified As Boolean
+    Public Property TimeWindowMin As Double
+    Public Property ZoneNm As Double
 End Class
 
 
@@ -256,15 +318,211 @@ Public Module ManeuverCurrentAnalyzer
                             Optional assumedLog As Double = 1.0,
                             Optional minHeadingSpreadDeg As Double = 12.0) As ManeuverResult()
 
-        If ch Is Nothing OrElse ch.Count < 3 Then Return Array.Empty(Of ManeuverResult)()
+        Dim pairs As List(Of Pair) = BuildPairs(ch, startTime, endTime, period, yawThreshold,
+                                                preBuffer, postBuffer, searchWindow)
+        Return ResultsFromPairs(ch, pairs, coherenceHorizon, mode, assumedLog, minHeadingSpreadDeg)
+    End Function
+
+
+    ''' <summary>
+    ''' Come Analyze, ma restituisce anche il confronto tra tre modelli di corrente:
+    ''' unica su tutto il range, per fasce fisse di tempo (timeWindowMin) e per zone (zoneNm).
+    ''' Nei modelli a gruppi k resta quello del modello a corrente unica; offset Stbd/Port
+    ''' sono comuni a tutti i gruppi e cambia solo la corrente.
+    ''' </summary>
+    Public Function AnalyzeReport(ch As NavChannels,
+                                  startTime As DateTime, endTime As DateTime,
+                                  timeWindowMin As Double, zoneNm As Double,
+                                  Optional period As Double = 40.0,
+                                  Optional yawThreshold As Double = 3.0,
+                                  Optional preBuffer As Double = 5.0,
+                                  Optional postBuffer As Double = 40.0,
+                                  Optional searchWindow As Double = 15.0,
+                                  Optional mode As CalibMode = CalibMode.Auto,
+                                  Optional assumedLog As Double = 1.0,
+                                  Optional minHeadingSpreadDeg As Double = 12.0) As ManeuverReport
+
+        Dim rep As New ManeuverReport With {.TimeWindowMin = timeWindowMin, .ZoneNm = zoneNm}
+        Dim pairs As List(Of Pair) = BuildPairs(ch, startTime, endTime, period, yawThreshold,
+                                                preBuffer, postBuffer, searchWindow)
+        rep.Maneuvers = ResultsFromPairs(ch, pairs, Double.PositiveInfinity, mode, assumedLog, minHeadingSpreadDeg)
+        If rep.Maneuvers.Length = 0 Then Return rep   ' pairs ora e' ordinata come rep.Maneuvers
+
+        Dim g As ManeuverResult = rep.Maneuvers(0)
+        rep.UnderIdentified = g.UnderIdentified
+        rep.Unica = New CalibrationModel With {
+            .Name = "Corrente unica", .GroupCount = 1, .LogCoefficient = g.GlobalLogCoefficient,
+            .OffsetStbd = g.GlobalCompassOffsetStbd, .OffsetPort = g.GlobalCompassOffsetPort, .Rms = g.GlobalRms}
+
+        ' posizione media di ogni manovra (stessa area usata per i risultati)
+        Dim lat(pairs.Count - 1) As Double, lon(pairs.Count - 1) As Double
+        For i As Integer = 0 To pairs.Count - 1
+            MeanPosition(ch, pairs(i).BeforeStart, pairs(i).AfterEnd, lat(i), lon(i))
+        Next
+
+        ' --- per fasce di tempo ---
+        Dim tLabels As New List(Of String)()
+        Dim tIds As Integer() = AssegnaFasceTempo(pairs, timeWindowMin, tLabels)
+        rep.ByTime = New CalibrationModel With {.Name = "Per fascia di tempo (" & timeWindowMin.ToString("0.#") & " min)"}
+        rep.TimeGroups = FitGruppi(pairs, tIds, tLabels, lat, lon, g.GlobalLogCoefficient, rep.ByTime)
+
+        ' --- per zone ---
+        Dim zLabels As New List(Of String)()
+        Dim zIds As Integer() = AssegnaZone(lat, lon, zoneNm, zLabels)
+        rep.ByZone = New CalibrationModel With {.Name = "Per zona (" & zoneNm.ToString("0.##") & " nm)"}
+        rep.ZoneGroups = FitGruppi(pairs, zIds, zLabels, lat, lon, g.GlobalLogCoefficient, rep.ByZone)
+
+        For i As Integer = 0 To rep.Maneuvers.Length - 1
+            rep.Maneuvers(i).TimeGroupId = tIds(i) + 1
+            rep.Maneuvers(i).ZoneId = zIds(i) + 1
+        Next
+        Return rep
+    End Function
+
+
+    ' ---------------------------------------------------- fasce fisse di tempo
+    ' Blocchi di "windowMin" minuti allineati alla mezzanotte del primo giorno (14:00-14:30, ...).
+    ' Restituisce l'id (0-based, progressivo) di ogni coppia; labels = etichetta di ogni id.
+    Private Function AssegnaFasceTempo(pairs As List(Of Pair), windowMin As Double,
+                                       labels As List(Of String)) As Integer()
+        If windowMin < 1.0 Then windowMin = 1.0
+        Dim t0 As DateTime = pairs(0).TackChange.Date
+        Dim ids(pairs.Count - 1) As Integer
+        Dim blocchi As New List(Of Long)()
+        For i As Integer = 0 To pairs.Count - 1
+            Dim b As Long = CLng(Math.Floor((pairs(i).TackChange - t0).TotalMinutes / windowMin))
+            Dim idx As Integer = blocchi.IndexOf(b)
+            If idx < 0 Then
+                blocchi.Add(b) : idx = blocchi.Count - 1
+                Dim s As DateTime = t0.AddMinutes(b * windowMin)
+                labels.Add(s.ToString("HH:mm") & "-" & s.AddMinutes(windowMin).ToString("HH:mm"))
+            End If
+            ids(i) = idx
+        Next
+        Return ids
+    End Function
+
+
+    ' ---------------------------------------------------- zone per distanza
+    ' Clustering greedy in ordine di tempo: una manovra entra nella prima zona il cui
+    ' baricentro dista <= zoneNm, altrimenti apre una nuova zona. Senza posizione: zona "n/d".
+    Private Function AssegnaZone(lat As Double(), lon As Double(), zoneNm As Double,
+                                 labels As List(Of String)) As Integer()
+        Dim ids(lat.Length - 1) As Integer
+        Dim zLat As New List(Of Double)(), zLon As New List(Of Double)(), zN As New List(Of Integer)()
+        Dim nd As Integer = -1
+        For i As Integer = 0 To lat.Length - 1
+            If Double.IsNaN(lat(i)) OrElse Double.IsNaN(lon(i)) Then
+                If nd < 0 Then
+                    zLat.Add(Double.NaN) : zLon.Add(Double.NaN) : zN.Add(0)
+                    labels.Add("n/d") : nd = zLat.Count - 1
+                End If
+                ids(i) = nd
+                Continue For
+            End If
+            Dim best As Integer = -1
+            Dim bestD As Double = Double.MaxValue
+            For z As Integer = 0 To zLat.Count - 1
+                If z = nd Then Continue For
+                Dim d As Double = DistanzaNm(lat(i), lon(i), zLat(z), zLon(z))
+                If d <= zoneNm AndAlso d < bestD Then best = z : bestD = d
+            Next
+            If best < 0 Then
+                zLat.Add(lat(i)) : zLon.Add(lon(i)) : zN.Add(1)
+                labels.Add("Z" & zLat.Count.ToString())
+                best = zLat.Count - 1
+            Else
+                zN(best) += 1
+                zLat(best) += (lat(i) - zLat(best)) / zN(best)   ' baricentro mobile
+                zLon(best) += (lon(i) - zLon(best)) / zN(best)
+            End If
+            ids(i) = best
+        Next
+        Return ids
+    End Function
+
+    Private Function DistanzaNm(lat1 As Double, lon1 As Double, lat2 As Double, lon2 As Double) As Double
+        Dim dy As Double = (lat2 - lat1) * 60.0
+        Dim dx As Double = (lon2 - lon1) * 60.0 * Math.Cos((lat1 + lat2) * 0.5 * Math.PI / 180.0)
+        Return Math.Sqrt(dx * dx + dy * dy)
+    End Function
+
+
+    ' ---------------------------------------------------- stima con una corrente per gruppo
+    ' k fisso (k0), offset Stbd/Port comuni, una corrente per ogni gruppo.
+    Private Function FitGruppi(pairs As List(Of Pair), ids As Integer(), labels As List(Of String),
+                               lat As Double(), lon As Double(), k0 As Double,
+                               model As CalibrationModel) As GroupResult()
+        Dim n As Integer = labels.Count
+        Dim legs As New List(Of Leg)()
+        For i As Integer = 0 To pairs.Count - 1
+            pairs(i).Before.Epoch = ids(i) : pairs(i).After.Epoch = ids(i)
+            legs.Add(pairs(i).Before) : legs.Add(pairs(i).After)
+        Next
+
+        Dim currents(n - 1) As V2
+        Dim k As Double, dPlus As Double, dMinus As Double
+        Fit(legs, n, False, k0, k, dPlus, dMinus, currents)
+
+        Dim ssG(n - 1) As Double, ssAll As Double
+        Dim cntMan(n - 1) As Integer
+        Dim sLat(n - 1) As Double, sLon(n - 1) As Double, cPos(n - 1) As Integer
+        Dim tMin(n - 1) As DateTime, tMax(n - 1) As DateTime
+        For i As Integer = 0 To pairs.Count - 1
+            Dim g As Integer = ids(i)
+            For Each l In {pairs(i).Before, pairs(i).After}
+                Dim off As Double = If(l.Tack > 0, dPlus, dMinus)
+                Dim r As V2 = l.Ground - currents(g) - (l.Water.Rotated(off) * k)
+                Dim q As Double = r.E * r.E + r.N * r.N
+                ssG(g) += q : ssAll += q
+            Next
+            If cntMan(g) = 0 Then
+                tMin(g) = pairs(i).TackChange : tMax(g) = pairs(i).TackChange
+            Else
+                If pairs(i).TackChange < tMin(g) Then tMin(g) = pairs(i).TackChange
+                If pairs(i).TackChange > tMax(g) Then tMax(g) = pairs(i).TackChange
+            End If
+            cntMan(g) += 1
+            If Not Double.IsNaN(lat(i)) AndAlso Not Double.IsNaN(lon(i)) Then
+                sLat(g) += lat(i) : sLon(g) += lon(i) : cPos(g) += 1
+            End If
+        Next
+
+        model.GroupCount = n
+        model.LogCoefficient = k
+        model.OffsetStbd = dPlus
+        model.OffsetPort = dMinus
+        model.Rms = Math.Sqrt(ssAll / legs.Count)
+
+        Dim res(n - 1) As GroupResult
+        For g As Integer = 0 To n - 1
+            res(g) = New GroupResult With {
+                .Id = g + 1, .Label = labels(g), .ManeuverCount = cntMan(g),
+                .FirstTime = tMin(g), .LastTime = tMax(g),
+                .MeanLat = If(cPos(g) > 0, sLat(g) / cPos(g), Double.NaN),
+                .MeanLon = If(cPos(g) > 0, sLon(g) / cPos(g), Double.NaN),
+                .CurrentSet = currents(g).BearingDeg, .CurrentDrift = currents(g).Mag,
+                .Rms = Math.Sqrt(ssG(g) / (2 * cntMan(g)))}
+        Next
+        Return res
+    End Function
+
+
+    ' ---------------------------------------------------- 1) segmentazione: trova coppie
+    Private Function BuildPairs(ch As NavChannels,
+                                startTime As DateTime, endTime As DateTime,
+                                period As Double, yawThreshold As Double,
+                                preBuffer As Double, postBuffer As Double,
+                                searchWindow As Double) As List(Of Pair)
+
+        Dim pairs As New List(Of Pair)()
+        If ch Is Nothing OrElse ch.Count < 3 Then Return pairs
 
         Dim t As DateTime() = ch.Time
         Dim twa As Double() = ch.Twa
         Dim yaw As Double() = ch.YawRate
         Dim nSamp As Integer = ch.Count
 
-        ' -------- 1) segmentazione: trova coppie --------
-        Dim pairs As New List(Of Pair)()
         Dim i As Integer = 0
         While i < nSamp - 1
             ' entro finestra temporale
@@ -312,7 +570,9 @@ Public Module ManeuverCurrentAnalyzer
             If bStart >= startTime AndAlso aEnd <= endTime Then
                 Dim legB As Leg = MeanLeg(ch, bStart, bEnd)
                 Dim legA As Leg = MeanLeg(ch, aStart, aEnd)
-                If legB IsNot Nothing AndAlso legA IsNot Nothing Then
+                ' manovra "finta" (giro di boa, giro completo, virata abortita): la mura media
+                ' prima e dopo e' la stessa -> non e' una virata/strambata, non serve alla calibrazione
+                If legB IsNot Nothing AndAlso legA IsNot Nothing AndAlso legB.Tack <> legA.Tack Then
                     pairs.Add(New Pair With {
                         .Before = legB, .After = legA, .TackChange = tChange, .IsUpwind = upwind,
                         .TransStart = transStart, .TransEnd = transEnd,
@@ -324,6 +584,16 @@ Public Module ManeuverCurrentAnalyzer
             ' salta oltre la fine del run per non ridetettare lo stesso cambio
             i = Math.Max(i + 1, b + 1)
         End While
+
+        Return pairs
+    End Function
+
+
+    ' ---------------------------------------------------- stima globale + risultati per manovra
+    ' Ordina "pairs" per tempo (in place): l'indice i di pairs corrisponde a res(i).
+    Private Function ResultsFromPairs(ch As NavChannels, pairs As List(Of Pair),
+                                      coherenceHorizon As Double, mode As CalibMode,
+                                      assumedLog As Double, minHeadingSpreadDeg As Double) As ManeuverResult()
 
         If pairs.Count = 0 Then Return Array.Empty(Of ManeuverResult)()
 
@@ -414,6 +684,7 @@ Public Module ManeuverCurrentAnalyzer
                 .CurrentSet = pairCur.BearingDeg, .CurrentDrift = pairCur.Mag,
                 .OffsetBefore = offBefore, .OffsetAfter = offAfter,
                 .PairResidual = pairRes, .PairConverged = conv,
+                .GlobalPairResidual = (gCurB - gCurA).Mag,
                 .GlobalCurrentSet = gc.BearingDeg, .GlobalCurrentDrift = gc.Mag,
                 .GlobalLogCoefficient = k,
                 .GlobalCompassOffsetStbd = dPlus, .GlobalCompassOffsetPort = dMinus,

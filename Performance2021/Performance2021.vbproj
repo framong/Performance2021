@@ -154,6 +154,10 @@
       <DependentUpon>LoadingForm.xaml</DependentUpon>
     </Compile>
     <Compile Include="ManeuverCurrentAnalyzer.vb" />
+    <Compile Include="ManeuverCurrentWindow.xaml.vb">
+      <DependentUpon>ManeuverCurrentWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MilfDataProvider.vb" />
     <Compile Include="ResultsClipboard.vb" />
     <Compile Include="SailList.xaml.vb">
@@ -283,6 +287,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="RenameProfileForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ManeuverCurrentWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

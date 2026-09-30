@@ -328,6 +328,15 @@ Class MainWindow
 
     lbl_sb_LoadedFiles.Content = ""
 
+    ' 6) finestra Long Range Auto Check: conserva i canali del set precedente
+    If _finestraCorrente IsNot Nothing Then
+      Try
+        _finestraCorrente.Close()
+      Catch ex As Exception
+      End Try
+      _finestraCorrente = Nothing
+    End If
+
   End Sub
 
   ''' <summary>
@@ -1717,12 +1726,16 @@ Class MainWindow
   Private Sub btn_CurrAnalyzer_Click(sender As Object, e As RoutedEventArgs)
     Dim NC As New NavChannels
     NC.SetChannels(DataPlotSync.VisibleRange.IdRigaIniziale, DataPlotSync.VisibleRange.IdRigaFinale)
-    Dim rr As ManeuverResult() = ManeuverCurrentAnalyzer.Analyze(NC, DataPlotSync.VisibleRange.Start, DataPlotSync.VisibleRange.Finish)
 
-    ResultsClipboard.CopyResultsToClipboard(rr)
-
-
+    ' una sola finestra: se e' gia' aperta la sostituisco (i canali sono quelli del range attuale)
+    If _finestraCorrente IsNot Nothing Then _finestraCorrente.Close()
+    _finestraCorrente = New ManeuverCurrentWindow(NC, DataPlotSync.VisibleRange.Start, DataPlotSync.VisibleRange.Finish)
+    _finestraCorrente.Owner = Me
+    _finestraCorrente.Show()
   End Sub
+
+  ' finestra "Long Range Auto Check": tiene una copia dei canali, va chiusa al cambio dataset
+  Private _finestraCorrente As ManeuverCurrentWindow
 
   Private Sub CrossoversAnalysis_GotFocus(sender As Object, e As RoutedEventArgs) Handles CrossoversAnalysis.GotFocus
     AssicuraCtrlXover()
