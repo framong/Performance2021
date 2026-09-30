@@ -2546,7 +2546,8 @@ Public Class UserControlPavarotPlotViewModelStandardChannel ' canali nella lista
         End If
       End If
       Dim ToggleSign As Integer = IIf(Pavarot.IsStbd, -1, 1)
-      Dim MatriceValori As Double() = Valori(Pavarot.TimeRangeStandardPavarot, Pavarot.IsChecked)
+      ToggleSign *= IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) ' stesso segno delle modalita' raggruppate
+      Dim MatriceValori As Double() = Valori(Pavarot.TimeRangeStandardPavarot, Pavarot.IsStbd)
       If MatriceValori Is Nothing Then Exit Sub
       Dim DataSeriesTMP As New XyDataSeries(Of Double, Double)
       Dim LineaTmp As New FastLineRenderableSeries

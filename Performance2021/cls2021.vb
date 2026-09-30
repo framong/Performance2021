@@ -4745,14 +4745,18 @@ Public Class clsPavarotDetails2021
       Dim chCog As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCOG)
       Dim chBs As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
       Dim chLwyN As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLwyNorm)
-      Dim chYawRate As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLwyNorm)
+      Dim chYawRate As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eYRT)
 
       If chCse Is Nothing Then
         chCse = DataProvider2020.CseFromHdgAndLeeway()
       End If
 
-      Dim r = chBs.Valori.Where(Function(x) Not Double.IsNaN(x)).Skip(IdAnte).Take(IdPost - IdAnte).ToArray
-      If r.Count > 0 Then
+      ' percentile 95 del valore assoluto dello yaw rate nella finestra della manovra (prima si prende la finestra, poi si scartano i NaN)
+      Dim r As Double() = Nothing
+      If Not chYawRate Is Nothing Then
+        r = chYawRate.Valori.Skip(IdAnte).Take(IdPost - IdAnte).Where(Function(x) Not Double.IsNaN(x)).Select(Function(x) Math.Abs(x)).ToArray
+      End If
+      If Not r Is Nothing AndAlso r.Count > 0 Then
         RotPerc95 = MathNet.Numerics.Statistics.Statistics.Percentile(r, 95)
       Else
         RotPerc95 = Double.NaN
