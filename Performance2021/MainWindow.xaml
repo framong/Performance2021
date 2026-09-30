@@ -506,6 +506,14 @@
         <ContentControl x:Name="hostPavarot" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
       </TabItem>
 
+      <TabItem Name="TacksAnalysis" Header="Tacks" Width="80">
+        <ContentControl x:Name="hostTacks" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
+      <TabItem Name="GybesAnalysis" Header="Gybes" Width="80">
+        <ContentControl x:Name="hostGybes" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+      </TabItem>
+
       <TabItem Name="CrossoversAnalysis" Header="Crossover" Width="80">
         <ContentControl x:Name="hostXover"/>
       </TabItem>

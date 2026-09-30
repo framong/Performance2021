@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 09 30 03"
+    Versione = "v02 - 2026 09 30 04"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -352,6 +352,8 @@ Class MainWindow
     ctrlReaching = Nothing : hostReaching.Content = Nothing
     ctrlLineUp = Nothing : hostLineUp.Content = Nothing
     ctrlPavarot = Nothing : hostPavarot.Content = Nothing
+    ctrlTacks = Nothing : hostTacks.Content = Nothing
+    ctrlGybes = Nothing : hostGybes.Content = Nothing
     ctrlXover = Nothing : hostXover.Content = Nothing
     ctrlXYplot = Nothing : hostXYplot.Content = Nothing
     ctrlBenchmarks = Nothing : hostBenchmarks.Content = Nothing
@@ -1182,6 +1184,8 @@ Class MainWindow
   Public ctrlReaching As UserControlStraightLineReaching
   Public ctrlLineUp As UserControlStraightLine
   Public ctrlPavarot As UserControlPavarot
+  Public ctrlTacks As UserControlPavarot ' come TacksGybes ma solo virate
+  Public ctrlGybes As UserControlPavarot ' come TacksGybes ma solo strambate
   Public ctrlXover As UserControlCrossoverTwsTwa
   Public ctrlXYplot As UserControlSciChartXYplot
   Public ctrlPolars As UserControlPolarManager
@@ -1233,6 +1237,18 @@ Class MainWindow
     If ctrlPavarot IsNot Nothing Then Exit Sub
     ctrlPavarot = New UserControlPavarot
     hostPavarot.Content = ctrlPavarot
+  End Sub
+
+  Private Sub AssicuraCtrlTacks()
+    If ctrlTacks IsNot Nothing Then Exit Sub
+    ctrlTacks = New UserControlPavarot(UserControlPavarotViewModel.eFiltroManovre.eVirate)
+    hostTacks.Content = ctrlTacks
+  End Sub
+
+  Private Sub AssicuraCtrlGybes()
+    If ctrlGybes IsNot Nothing Then Exit Sub
+    ctrlGybes = New UserControlPavarot(UserControlPavarotViewModel.eFiltroManovre.eStrambate)
+    hostGybes.Content = ctrlGybes
   End Sub
 
   Private Sub AssicuraCtrlXover()
@@ -1312,6 +1328,24 @@ Class MainWindow
       If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " tabPAV.2 - PavarotTabGotFocus")
     End If
 
+  End Sub
+
+  Private Sub AggiornaTabPavarot(Ctrl As UserControlPavarot)
+    If IsInDesignMode Then Exit Sub
+    If DataProvider2020 Is Nothing Then Exit Sub
+    If Not DataProvider2020.ValoriCaricati Then Exit Sub
+    If Ctrl Is Nothing OrElse Ctrl.PavarotVM2020 Is Nothing Then Exit Sub
+    If Ctrl.PavarotVM2020.ControlliPavarotBasicPlot Is Nothing Then Ctrl.PavarotVM2020.PavarotTabGotFocus()
+  End Sub
+
+  Private Sub TacksAnalysis_GotFocus(sender As Object, e As RoutedEventArgs) Handles TacksAnalysis.GotFocus
+    AssicuraCtrlTacks()
+    AggiornaTabPavarot(ctrlTacks)
+  End Sub
+
+  Private Sub GybesAnalysis_GotFocus(sender As Object, e As RoutedEventArgs) Handles GybesAnalysis.GotFocus
+    AssicuraCtrlGybes()
+    AggiornaTabPavarot(ctrlGybes)
   End Sub
 
   Private Sub Button_Click_2(sender As Object, e As RoutedEventArgs)

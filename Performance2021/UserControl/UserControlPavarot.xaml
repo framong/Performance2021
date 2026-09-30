@@ -44,8 +44,8 @@
           <MenuItem>
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
-                <CheckBox Content="Tacks" IsChecked="{Binding PavarotSelectionSettings.UpwindSelected}" Width="80"></CheckBox>
-                <CheckBox Content="Gybes" IsChecked="{Binding PavarotSelectionSettings.DownwindSelected}" Width="80" Padding="0,0,5,0"></CheckBox>
+                <CheckBox Content="Tacks" IsChecked="{Binding PavarotSelectionSettings.UpwindSelected}" Visibility="{Binding MostraFiltroTipo}" Width="80"></CheckBox>
+                <CheckBox Content="Gybes" IsChecked="{Binding PavarotSelectionSettings.DownwindSelected}" Visibility="{Binding MostraFiltroTipo}" Width="80" Padding="0,0,5,0"></CheckBox>
                 <CheckBox Content="Stbd Entry" IsChecked="{Binding PavarotSelectionSettings.StbdSelected}" Width="80"></CheckBox>
                 <CheckBox Content="Port Entry" IsChecked="{Binding PavarotSelectionSettings.PortSelected}" Width="80"></CheckBox>
               </StackPanel>

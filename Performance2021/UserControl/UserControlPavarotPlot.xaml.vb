@@ -61,7 +61,7 @@
 				Dim Indice As Integer = TrovaIndice(Posizione, DirectCast(ds, SciChart.Charting.Model.DataSeries.DataSeries(Of Double, Double)).XValues.ToList, ds.Count)
 				Dim Valore As Double = ds.YValues(Indice)
 				If IsNumeric(rs.Tag) Then
-					For Each pav In PeriodsManager.CollectionPavarot
+					For Each pav In DirectCast(scs.DataContext, SPwpf.UserControlPavarotPlotViewModel).ParentVM.Lista
 						If pav.IsStbd AndAlso CInt(rs.Tag) = 1 Then
 							If Canale Is Nothing Then
 								pav.StrTempVal = Format(Valore, "F0")

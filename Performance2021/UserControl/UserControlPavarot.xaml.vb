@@ -34,6 +34,10 @@ Public Class UserControlPavarot
   Public WithEvents PavarotVM2020 As UserControlPavarotViewModel
 
   Public Sub New()
+    Me.New(UserControlPavarotViewModel.eFiltroManovre.eTutte)
+  End Sub
+
+  Public Sub New(Filtro As UserControlPavarotViewModel.eFiltroManovre)
 
     ' This call is required by the designer.
     InitializeComponent()
@@ -42,7 +46,7 @@ Public Class UserControlPavarot
     If IsInDesignMode Then Exit Sub
 
     ' >>> QUESTA RIGA MANCAVA <
-    PavarotVM2020 = New UserControlPavarotViewModel()
+    PavarotVM2020 = New UserControlPavarotViewModel(Filtro)
 
     Me.DataContext = PavarotVM2020
 

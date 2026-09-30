@@ -192,9 +192,9 @@ Public Class clsPavarotSelectionSettings
     End Set
   End Property
 
-  Public Sub VerificaIsCheckedPavarots()
-    If Not PeriodsManager Is Nothing Then
-      For Each sl In PeriodsManager.CollectionPavarot
+  Public Sub VerificaIsCheckedPavarots(Periodi As IEnumerable(Of clsPeriod2021))
+    If Not PeriodsManager Is Nothing AndAlso Not Periodi Is Nothing Then
+      For Each sl In Periodi
         sl.IsChecked = PeriodIsSelected(sl)
       Next
     End If
@@ -393,6 +393,21 @@ Public Class UserControlPavarotViewModel
     eGroupByTackAndKey = 4
   End Enum
 
+  Public Enum eFiltroManovre ' tipo di manovre gestite dal controllo: tutte (scheda TacksGybes), solo virate o solo strambate
+    eTutte = 0
+    eVirate = 1
+    eStrambate = 2
+  End Enum
+
+  Public Property FiltroManovre As eFiltroManovre = eFiltroManovre.eTutte
+
+  ' i filtri Tacks/Gybes hanno senso solo quando il controllo gestisce entrambi i tipi
+  Public ReadOnly Property MostraFiltroTipo As System.Windows.Visibility
+    Get
+      Return If(FiltroManovre = eFiltroManovre.eTutte, System.Windows.Visibility.Visible, System.Windows.Visibility.Collapsed)
+    End Get
+  End Property
+
   Public Property PavSettings As clsPavarotSettings
     Get
       Return AppConfig.ActiveProfile.PavarotSettings
@@ -406,6 +421,11 @@ Public Class UserControlPavarotViewModel
 
 
   Public Sub New()
+    Me.New(eFiltroManovre.eTutte)
+  End Sub
+
+  Public Sub New(Filtro As eFiltroManovre)
+    FiltroManovre = Filtro
     LastPavarotPlot = New clsLastPavarotPlot(AppConfig.ActiveProfile.PavarotSettings)
     'AppConfig.ActiveProfile.PavarotSettings.GybeSecPost
     'Stop
@@ -455,7 +475,14 @@ Public Class UserControlPavarotViewModel
 
   Public Property Lista As ObservableCollection(Of clsPeriod2021)
     Get
-      Return PeriodsManager.Periods.CollectionPavarot
+      Select Case FiltroManovre
+        Case eFiltroManovre.eVirate
+          Return PeriodsManager.Periods.CollectionTack
+        Case eFiltroManovre.eStrambate
+          Return PeriodsManager.Periods.CollectionGybe
+        Case Else
+          Return PeriodsManager.Periods.CollectionPavarot
+      End Select
     End Get
     Set(value As ObservableCollection(Of clsPeriod2021))
       PeriodsManager.Periods.CollectionPavarot = value
@@ -496,7 +523,7 @@ Public Class UserControlPavarotViewModel
     Next
 
     Dim objPdf As New clsPdf
-    objPdf.StampReportPavarot(Lista, ListaXY)
+    objPdf.StampReportPavarot(Lista, ListaXY, Me.Lista)
   End Sub
 
   Public Sub Recalc()
@@ -525,7 +552,7 @@ Public Class UserControlPavarotViewModel
     End If
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " PV.1 - contenitori creati " & Now.Subtract(TmrPV).TotalMilliseconds.ToString("F0") & " ms")
     TmrPV = Now
-    Dim ListaChecked = PeriodsManager.ListaPavarot.Where(Function(x) x.IsChecked = True).ToList
+    Dim ListaChecked = Lista.Where(Function(x) x.IsChecked = True).ToList
     'Dim Risultato As clsLastPavarotPlot.eResult = LastPavarotPlot.DataHasChanged(AppConfig.ActiveProfile.PeriodsSettings, ListaChecked, OutputType)
     Dim Risultato As clsLastPavarotPlot.eResult = LastPavarotPlot.DataHasChanged(AppConfig.ActiveProfile.PavarotSettings, ListaChecked, OutputType)
     If ForzaRefresh Then Risultato = clsLastPavarotPlot.eResult.eDataRefresh
@@ -550,9 +577,9 @@ Public Class UserControlPavarotViewModel
     If DataProvider2020 Is Nothing Then Exit Sub
     If Not DataProvider2020.ValoriCaricati Then Exit Sub
     If PeriodsManager Is Nothing Then Exit Sub
-    If PeriodsManager.CollectionPavarot Is Nothing Then Exit Sub
+    If Lista Is Nothing Then Exit Sub
 
-    For Each p In PeriodsManager.CollectionPavarot
+    For Each p In Lista
       p.UpdateDetails()
     Next
 
@@ -1382,7 +1409,7 @@ Public Class UserControlPavarotViewModel
 
 
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       'Dim Pavarot2020 As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -1470,7 +1497,7 @@ Public Class UserControlPavarotViewModel
     Dim TL As New clsTrendLines
 
     '    For Each Pavarot In PeriodsManager.ListaPavarot
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -1543,7 +1570,7 @@ Public Class UserControlPavarotViewModel
 
     '    For Each Pavarot In PeriodsManager.ListaPavarot
     '  Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -1640,7 +1667,7 @@ Public Class UserControlPavarotViewModel
     '    MaxTws = System.Math.Max(X, MaxTws)
     '    MinTws = System.Math.Min(X, MinTws)
     '    Dim Y As Double = Pavarot.VmgGainLossTotalAvgKts(Pavarot.TimeRangeEntry.IdRigaFinale, Pavarot.TimeRangeExit.IdRigaIniziale)
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -1814,7 +1841,7 @@ Public Class UserControlPavarotViewModel
     Dim TwsStbd As New List(Of Double)
     Dim TL As New clsTrendLines
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       '    For Each Pavarot In PeriodsManager.ListaPavarot
       '  Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
       '  Dim Period2021 As clsPeriod2021 = DataProvider2020.PeriodsManager2021.Periods.TrovaPeriodo2021(PeriodsManager.ListaPavarot(i).TimeRange)
@@ -1920,7 +1947,7 @@ Public Class UserControlPavarotViewModel
     Dim AtLeastOneGybe As Boolean = False
     Dim TL As New clsTrendLines
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In Lista ' questa e' la lista delle manovre gia' selezionate
       'cicla tra le pavarot checkate
       'Dim Period2021 As clsPeriod2021 = DataProvider2020.PeriodsManager2021.Periods.TrovaPeriodo2021(PeriodsManager.ListaPavarot(i).TimeRange)
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
@@ -2380,7 +2407,7 @@ Public Class UserControlPavarotViewModel
   End Function
 
   Private Sub PavarotSelectionSettings_SettingChanged() Handles PavarotSelectionSettings.SettingChanged
-    PavarotSelectionSettings.VerificaIsCheckedPavarots()
+    PavarotSelectionSettings.VerificaIsCheckedPavarots(Lista)
     VerificaAutoRefresh()
   End Sub
 
@@ -2532,7 +2559,7 @@ Public Class UserControlPavarotPlotViewModelStandardChannel ' canali nella lista
 
 
     SeriesSource.Clear()
-    For Each Pavarot In PeriodsManager.CollectionPavarot ' questa e' la lista delle manovre gia' selezionate
+    For Each Pavarot In ParentVM.Lista ' questa e' la lista delle manovre gia' selezionate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -2668,7 +2695,7 @@ Public Class UserControlPavarotPlotViewModelStandardChannel ' canali nella lista
     Dim ValoriStbd As New clsValoriAggregati
     Dim Moltiplicatore As Integer = DataProvider2020.Hz
     SeriesSource.Clear()
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -2803,7 +2830,7 @@ Public Class UserControlPavarotPlotViewModelStandardChannel ' canali nella lista
     Titolo = Canale.LongName
     SeriesSource.Clear()
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'cicla tra le pavarot checkate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -3051,7 +3078,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     'qui potrei ottimizzare ma... almeno per ora mastica
     Dim Ch As clsCanaliDelta = CaricaCanaliDelta()
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
 
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -3383,7 +3410,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     Dim ValoriPort As New clsValoriAggregati
     Dim ValoriStbd As New clsValoriAggregati
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -3470,7 +3497,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
 
     Dim Moltiplicatore As Integer = 2
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4029,7 +4056,7 @@ Public Class clsPavarotAdvancedPlotViewModel
         DrawXyPlotGroupByTack()
         Exit Sub
     End Select
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'cicla tra le pavarot checkate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -4088,7 +4115,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim TwsPort As New List(Of Double)
     Dim TwsStbd As New List(Of Double)
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4174,7 +4201,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim GrId As New Dictionary(Of String, Integer)
     Dim contatore As Integer = 0
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4435,7 +4462,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim CanaleLat As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLat)
     Dim CanaleLng As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLng)
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4483,7 +4510,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim ValoriXPort As New clsValoriAggregati
     Dim ValoriXStbd As New clsValoriAggregati
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4593,7 +4620,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim CanaleLat As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLat)
     Dim CanaleLng As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLng)
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
       If RigaIniziale = RigaFinale Then Continue For
@@ -4728,7 +4755,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     '  Exit Sub
     'End If
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'cicla tra le pavarot checkate
       'Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
@@ -4785,7 +4812,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim TwsPort As New List(Of Double)
     Dim TwsStbd As New List(Of Double)
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'cicla tra le pavarot checkate
       'Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
@@ -4858,7 +4885,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim GrId As New Dictionary(Of String, Integer)
     Dim contatore As Integer = 0
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'cicla tra le pavarot checkate
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -5015,7 +5042,7 @@ Public Class clsPavarotAdvancedPlotViewModel
     Dim AtLeastOneTack As Boolean = False
     Dim AtLeastOneGybe As Boolean = False
 
-    For Each Pavarot In PeriodsManager.CollectionPavarot
+    For Each Pavarot In ParentVM.Lista
       'Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
       Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
       Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
@@ -5217,8 +5244,8 @@ Public Class clsPavarotAdvancedPlotViewModel
 
 
 
-    If Not PeriodsManager.CollectionPavarot Is Nothing Then
-      For Each pavarot In PeriodsManager.CollectionPavarot
+    If Not ParentVM.Lista Is Nothing Then
+      For Each pavarot In ParentVM.Lista
         Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(pavarot.TimeRangeStandardPavarot.Start)
         Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(pavarot.TimeRangeStandardPavarot.Finish)
         If RigaIniziale = RigaFinale Then Continue For
@@ -5583,7 +5610,7 @@ Public Class clsPavarotAdvancedPlotContainerViewModel
 
   Public ReadOnly Property ListaPeriodi As List(Of clsPeriod2021)
     Get
-      Return PeriodsManager.CollectionPavarot.ToList
+      Return ParentVM.Lista.ToList
     End Get
   End Property
 

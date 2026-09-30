@@ -47,7 +47,8 @@ Public Class clsPdf
   'End Sub
 
 
-  Public Sub StampReportPavarot(Controlli As List(Of SciChart.Charting.Visuals.SciChartSurface), GraficiXY As List(Of SciChart.Charting.Visuals.SciChartSurface))
+  Public Sub StampReportPavarot(Controlli As List(Of SciChart.Charting.Visuals.SciChartSurface), GraficiXY As List(Of SciChart.Charting.Visuals.SciChartSurface), Optional Manovre As IEnumerable(Of clsPeriod2021) = Nothing)
+    If Manovre Is Nothing Then Manovre = PeriodsManager.CollectionPavarot
     Dim PlotPerPage As Integer = 8
     Dim document As PdfDocument = New PdfDocument
     ' Create an empty page
@@ -72,7 +73,7 @@ Public Class clsPdf
     Dim T, G As Double
     Dim Pt As New List(Of String)
     Dim St As New List(Of String)
-    For Each Pav In PeriodsManager.CollectionPavarot ' .OrderBy(Function(X) X.TwsGroup(2)).OrderByDescending(Function(x) x.DettagliPavarot.VmgEntryToExitGainLossTotalMeters)
+    For Each Pav In Manovre ' .OrderBy(Function(X) X.TwsGroup(2)).OrderByDescending(Function(x) x.DettagliPavarot.VmgEntryToExitGainLossTotalMeters)
       If Pav.IsChecked Then
         If inizio = Nothing Then
           inizio = Pav.TR.Start
@@ -194,7 +195,7 @@ Public Class clsPdf
 
     If PeriodiSingoli Then
       sFont = New XFont("Verdana", 10)
-      For Each Pav In PeriodsManager.CollectionPavarot.OrderByDescending(Function(X) X.PavarotDetails.VmgTgtLossMt).OrderBy(Function(x) x.TwsGroup(2))
+      For Each Pav In Manovre.OrderByDescending(Function(X) X.PavarotDetails.VmgTgtLossMt).OrderBy(Function(x) x.TwsGroup(2))
         If Pav.IsChecked Then
           Dim testo As String = If(Pav.IsHighlighted, "* ", "") & Pav.Descrizione & " " & Pav.Keys
           H = gfx.MeasureString(testo, sFont).Height
