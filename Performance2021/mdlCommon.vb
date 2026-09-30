@@ -1267,17 +1267,14 @@ Module mdlCommon
   Public Function DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(ByVal PrimoAngolo As Double, ByVal SecondoAngolo As Double) As Double
     If Double.IsNaN(PrimoAngolo) Then Return 0
     If Double.IsNaN(SecondoAngolo) Then Return 0
-    Dim Delta As Double = DifferenzaAssolutaTraAngoli360(PrimoAngolo, SecondoAngolo, True)
-    If PrimoAngolo = 360 Then PrimoAngolo = 0
-    Try
-      If Math.Round(SommaAngolo180adAngolo360(Delta, SecondoAngolo), 2) = Math.Round(PrimoAngolo, 2) Then ' aggiunge sempre a destra
-        Return -Delta
-      Else
-        Return Delta
-      End If
-    Catch ex As Exception
-      Return -Delta
-    End Try
+    ' differenza con segno Secondo - Primo, riportata in [-180, 180)
+    Dim Delta As Double = (SecondoAngolo - PrimoAngolo) Mod 360
+    If Delta >= 180 Then
+      Delta -= 360
+    ElseIf Delta < -180 Then
+      Delta += 360
+    End If
+    Return Delta
   End Function
 
   Public Function SommaAngolo180adAngolo360(ByVal Angolo180 As Double, ByVal Angolo360 As Double) As Double
@@ -3457,6 +3454,13 @@ Public Class clsGruppoPeriodi
 
   Public Sub New(Seconds As Integer, Valore As Double, Mure As eMure, IdGruppo As Integer, Chiave As String, Colore As Color)
     _ValoriAggregati.AggiungiCoppia(Seconds, Valore)
+    _Mure = Mure
+    _IdGruppo = IdGruppo
+    _Chiave = Chiave
+    Me.Colore = Colore
+  End Sub
+
+  Public Sub New(Mure As eMure, IdGruppo As Integer, Chiave As String, Colore As Color)
     _Mure = Mure
     _IdGruppo = IdGruppo
     _Chiave = Chiave

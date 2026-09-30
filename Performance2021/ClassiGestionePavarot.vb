@@ -2180,9 +2180,9 @@ Public Class UserControlPavarotViewModel
 
     Dim durata As Double = 40
 
-    Dim b = BenchManager.ListaBenchmarks.Where(Function(x) x.Type = clsBenchmark.eBenchmarkType.eTackLoss)
+    Dim b = BenchManager.ListaBenchmarks.FirstOrDefault(Function(x) x.Type = clsBenchmark.eBenchmarkType.eTackLoss)
     If Not b Is Nothing Then
-      Dim elementi = b.First.Values.OrderBy(Function(x) x.X).ToList
+      Dim elementi = b.Values.OrderBy(Function(x) x.X).ToList
       For e As Integer = 0 To elementi.Count - 1
         Dim nx As Integer = Math.Min(e + 1, elementi.Count - 1)
         Dim pv As Integer = Math.Max(e - 1, 0)
@@ -2192,9 +2192,9 @@ Public Class UserControlPavarotViewModel
       Next
     End If
 
-    b = BenchManager.ListaBenchmarks.Where(Function(x) x.Type = clsBenchmark.eBenchmarkType.eGybeLoss)
+    b = BenchManager.ListaBenchmarks.FirstOrDefault(Function(x) x.Type = clsBenchmark.eBenchmarkType.eGybeLoss)
     If Not b Is Nothing Then
-      Dim elementi = b.First.Values.OrderBy(Function(x) x.X).ToList
+      Dim elementi = b.Values.OrderBy(Function(x) x.X).ToList
       For e As Integer = 0 To elementi.Count - 1
         Dim nx As Integer = Math.Min(e + 1, elementi.Count - 1)
         Dim pv As Integer = Math.Max(e - 1, 0)
@@ -3048,16 +3048,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     End Select
 
     'qui potrei ottimizzare ma... almeno per ora mastica
-    Dim chHdg As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eHDG)
-    Dim chCse As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
-    If chCse Is Nothing Then
-      chCse = DataProvider2020.CseFromHdgAndLeeway()
-    End If
-    Dim chCog As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCOG)
-    Dim chTwd As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWD)
-    Dim chTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
-
-    Dim CanaleNotNothing As clsChannel2020 = Nothing
+    Dim Ch As clsCanaliDelta = CaricaCanaliDelta()
 
     For Each Pavarot In PeriodsManager.CollectionPavarot
 
@@ -3066,8 +3057,6 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       If RigaIniziale = RigaFinale Then Continue For
 
       Dim Colore As System.Windows.Media.Color = Pavarot.Colore ' PavarotSyncViewModel.Colori(i)
-      'Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
-      'Dim Period2021 As clsPeriod2021 = DataProvider2020.PeriodsManager2021.Periods.TrovaPeriodo2021(PeriodsManager.ListaPavarot(i).TimeRange)
       If ParentVM.OutputType = UserControlPavarotViewModel.eOutputType.eColorByTack Then
         If Pavarot.IsStbd Then
           Colore = Colors.Green
@@ -3075,58 +3064,26 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
           Colore = Colors.Red
         End If
       End If
-      Dim ToggleSign As Integer = IIf(Pavarot.IsStbd, 1, -1)
 
-      Dim a As Integer = 0
       Dim DataSeriesTMP As New XyDataSeries(Of Double, Double)
       DataSeriesTMP.AcceptsUnsortedData = True
       Dim LineaTmp As New FastLineRenderableSeries
       LineaTmp.XAxisId = "DefaultAxisId"
       LineaTmp.YAxisId = "DefaultAxisId"
       LineaTmp.Stroke = Colore
-      'If Pavarot.IsStbd Then
-      '  LineaTmp.StrokeDashArray = {3, 3}
-      'End If
       LineaTmp.StrokeThickness = 2
       LineaTmp.Tag = Pavarot
-      'LineaTmp.Visibility = IIf(Pavarot.IsChecked, Visibility.Visible, Visibility.Collapsed)
-      'Dim ss As Double = Pavarot.TimeRangeStandardPavarot.Start.Subtract(Pavarot.KeyMoment).TotalSeconds
-      Dim ss As Double = -1 ' -Pavarot.PavarotStandardRange
-      'Select Case pCanaleCustom
-      '  Case eCanaleCustom.eProgressionLoss, eCanaleCustom.eHdgVariation, eCanaleCustom.eCseVariation, eCanaleCustom.eCogVariation, eCanaleCustom.eTwdVariation, eCanaleCustom.eCogTwaDelta, eCanaleCustom.eCseTwaDelta, eCanaleCustom.eHdgTwaDelta, eCanaleCustom.eTwavariation
-      '    DataSeriesTMP.Append(ss, 0, New clsPuntoMetadata(False))
-      '  Case eCanaleCustom.eEntryTack
-      '    Dim Valore As Double = IIf(Pavarot.IsStbd, 1, -1)
-      '    DataSeriesTMP.Append(ss, Valore, New clsPuntoMetadata(False))
-      'End Select
-      'Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Start)
-      ''Dim RigaRef As Integer = DataProvider2020.TrovaIndice(Pavarot.PavarotEntry)
-      'Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
-      'Dim righe As Integer = RigaFinale - RigaRef
-      'Dim sss = righe / DataProvider2020.Hz
-      'If sss > Pavarot.TimeRangeStandardPavarot.Durata.TotalSeconds + 1 Then
-      '  Dim momento As DateTime = Pavarot.TimeRangeStandardPavarot.Finish
-      '  Do While RigaFinale > RigaRef
-      '    RigaFinale -= 1
-      '    Dim momentoP As DateTime = DataProvider2020.Momento(RigaFinale)
-      '    If momento > momentoP Then
-      '      Exit Do
-      '    End If
-      '  Loop
-      'End If
-
-      Dim objDerivata As New clsDerivata(DataProvider2020.Hz, Is360, Pavarot.PavarotEntry)
-      'Dim VmgTgt As Double = -1
 
       Dim RefTime As DateTime = Pavarot.PavarotEntry ' Period2021.KeyMoment
 
       Dim RefPos As clsGeographicPosition = Nothing
       Dim RigaRef As Integer = DataProvider2020.TrovaIndice(RefTime)
+      Dim Rif As clsRiferimentoDelta = CalcolaRiferimento(Pavarot, Ch, RigaRef)
 
+      Dim Serie As New clsSerieManovra
       For Riga As Integer = RigaIniziale To RigaFinale
         Dim Momento As DateTime = DataProvider2020.Momento(Riga)
         If Momento.ToOADate > 0 Then
-          ss = Momento.Subtract(Pavarot.KeyMoment).TotalSeconds
           Dim ValoreRiga As Double = Double.NaN
 
           Select Case CanaleCustom
@@ -3135,230 +3092,19 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
               If RefPos Is Nothing Then
                 RefPos = Pavarot.PavarotDetails.PosizioneAtTime(RefTime)
               End If
-              'If Riga = RigaRef Then Stop
               ValoreRiga = Pavarot.PavarotDetails.MetriGhostVmgDaPosizione(SecFromEntry, Riga, RefPos, Pavarot.PeriodType = clsPeriod2021.ePeriodType.eGybe, Pavarot.PeriodTgt.Vmg)
             Case eCanaleCustom.eEntryTack
-              Dim Valore As Double = IIf(Pavarot.IsStbd, 1, -1)
-              ValoreRiga = Valore
-            Case eCanaleCustom.eHdgVariation
-              CanaleNotNothing = chHdg
-              If CanaleNotNothing Is Nothing Then
-                CanaleNotNothing = chCse
-                If CanaleNotNothing Is Nothing Then
-                  CanaleNotNothing = chCog
-                End If
-              End If
-              Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-              Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(ValoreNaN(CanaleNotNothing, Riga), ValoreNaN(CanaleNotNothing, RigaRef)) * Segno
-              If Double.IsNaN(ValoreNaN(CanaleNotNothing, Riga)) Then
-                ValoreRiga = Double.NaN
-              Else
-                ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-              End If
-            Case eCanaleCustom.eCseVariation
-              CanaleNotNothing = chCse
-              If CanaleNotNothing Is Nothing Then
-                CanaleNotNothing = chHdg
-                If CanaleNotNothing Is Nothing Then
-                  CanaleNotNothing = chCog
-                End If
-              End If
-              Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-              Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(ValoreNaN(CanaleNotNothing, Riga), ValoreNaN(CanaleNotNothing, RigaRef)) * Segno
-              If Double.IsNaN(ValoreNaN(CanaleNotNothing, Riga)) Then
-                ValoreRiga = Double.NaN
-              Else
-                ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-              End If
-            Case eCanaleCustom.eTwdVariation
-              Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaRef)
-              Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-              If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                ' twd variation positiva se twd stbd > twd port
-                Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            Case eCanaleCustom.eHdgTwaDelta
-              Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaRef))
-              Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-              Dim BrgIniziale As Double = ValoreNaN(chHdg, RigaRef)
-              Dim BrgAttuale As Double = ValoreNaN(chHdg, Riga)
-              If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                ValoreRiga = DeltaBrg - DeltaTwa
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            Case eCanaleCustom.eCseTwaDelta
-              Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaRef))
-              Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-              Dim BrgIniziale As Double = ValoreNaN(chCse, RigaRef)
-              Dim BrgAttuale As Double = ValoreNaN(chCse, Riga)
-              If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                ValoreRiga = DeltaBrg - DeltaTwa
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            Case eCanaleCustom.eTwaVariation
-              Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaRef))
-              Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-              If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) Then
-                Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                ValoreRiga = (TwaIniziale - TwaAttuale) * Segno
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            Case eCanaleCustom.eCogTwaDelta
-              Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaRef))
-              Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-              Dim BrgIniziale As Double = ValoreNaN(chCog, RigaRef)
-              Dim BrgAttuale As Double = ValoreNaN(chCog, Riga)
-              If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                ValoreRiga = DeltaBrg - DeltaTwa
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            Case eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
-              Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
-              Dim PavarotTgtAngle = Math.Min(TwaTgt, (180 - TwaTgt)) * 2
-              Dim DeltaCse As Double = Pavarot.PavarotDetails.EntryExitDeltaCse
-              Dim TheoreticalShift As Double = PavarotTgtAngle - DeltaCse ' positivo = lift
-
-              Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaRef)
-              Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-              If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                ' twd variation positiva se twd stbd > twd port
-                Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-                ValoreRiga -= TheoreticalShift
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-
-            Case eCanaleCustom.eCogVariation
-              CanaleNotNothing = chCog
-              If CanaleNotNothing Is Nothing Then
-                CanaleNotNothing = chCse
-                If CanaleNotNothing Is Nothing Then
-                  CanaleNotNothing = chHdg
-                End If
-              End If
-              Dim CogIniziale As Double = ValoreNaN(CanaleNotNothing, RigaRef)
-              Dim CogAttuale As Double = ValoreNaN(CanaleNotNothing, Riga)
-              If Not Double.IsNaN(CogIniziale) AndAlso Not Double.IsNaN(CogAttuale) Then
-                Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(CogAttuale, CogIniziale) * Segno
-                ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-              Else
-                ValoreRiga = Double.NaN
-              End If
-              'If Double.IsNaN(ValoreNaN(CanaleNotNothing, Riga)) Then
-              '  ValoreRiga = Double.NaN
-              'Else
-              '  ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-              'End If
-              'If ValoreRiga < -90 Then ValoreRiga += 360
+              ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+            Case Else
+              ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
           End Select
-          If Not ValoreRiga = Double.NaN Then
-            If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-            If ValoriDerivati Then
-              If Not Double.IsNaN(ValoreRiga) Then
-                Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-              End If
-            Else
-              If Not Double.IsNaN(ValoreRiga) Then DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-            End If
-          End If
+          Serie.Aggiungi(Momento.Subtract(Pavarot.KeyMoment).TotalSeconds, Momento, ValoreRiga)
         End If
+      Next
 
+      Dim Ys As List(Of Double) = ElaboraSerie(Serie)
+      For i As Integer = 0 To Ys.Count - 1
+        If Not Double.IsNaN(Ys(i)) Then DataSeriesTMP.Append(Serie.Xs(i), Ys(i), New clsPuntoMetadata(False))
       Next
       LineaTmp.IsVisible = Pavarot.IsChecked
       LineaTmp.DataSeries = DataSeriesTMP
@@ -3373,19 +3119,265 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     Return Canale.Valori(Indice)
   End Function
 
+  ' ---- elaborazione comune dei canali delta (percorso normale, raggruppato per mure e per chiave) ----
+
+  Private Class clsCanaliDelta
+    Public Hdg As clsChannel2020
+    Public Cse As clsChannel2020
+    Public Cog As clsChannel2020
+    Public Twd As clsChannel2020
+    Public Twa As clsChannel2020
+  End Class
+
+  Private Class clsRiferimentoDelta ' valori di riferimento (mediati) di una manovra
+    Public Brg As Double = Double.NaN
+    Public Twa As Double = Double.NaN
+    Public ShiftTeorico As Double = 0
+  End Class
+
+  Private Class clsSerieManovra ' righe di una manovra: secondi dal key moment, momento e valore grezzo
+    Public Xs As New List(Of Double)
+    Public Momenti As New List(Of DateTime)
+    Public Valori As New List(Of Double)
+
+    Public Sub Aggiungi(X As Double, Momento As DateTime, Valore As Double)
+      Xs.Add(X)
+      Momenti.Add(Momento)
+      Valori.Add(Valore)
+    End Sub
+  End Class
+
+  Public Overrides ReadOnly Property SmussaVisibility As System.Windows.Visibility
+    Get
+      Return System.Windows.Visibility.Visible
+    End Get
+  End Property
+
+  Private Function CaricaCanaliDelta() As clsCanaliDelta
+    Dim Ch As New clsCanaliDelta
+    Ch.Hdg = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eHDG)
+    Ch.Cse = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
+    If Ch.Cse Is Nothing Then
+      Ch.Cse = DataProvider2020.CseFromHdgAndLeeway()
+    End If
+    Ch.Cog = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCOG)
+    Ch.Twd = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWD)
+    Ch.Twa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
+    Return Ch
+  End Function
+
+  Private Function PrimoCanale(ParamArray Canali() As clsChannel2020) As clsChannel2020
+    For Each Candidato As clsChannel2020 In Canali
+      If Not Candidato Is Nothing Then Return Candidato
+    Next
+    Return Nothing
+  End Function
+
+  ' canale angolare (360 gradi) usato dal canale custom corrente
+  Private Function CanaleAngolo(Ch As clsCanaliDelta) As clsChannel2020
+    Select Case CanaleCustom
+      Case eCanaleCustom.eHdgVariation
+        Return PrimoCanale(Ch.Hdg, Ch.Cse, Ch.Cog)
+      Case eCanaleCustom.eCseVariation
+        Return PrimoCanale(Ch.Cse, Ch.Hdg, Ch.Cog)
+      Case eCanaleCustom.eCogVariation
+        Return PrimoCanale(Ch.Cog, Ch.Cse, Ch.Hdg)
+      Case eCanaleCustom.eHdgTwaDelta
+        Return Ch.Hdg
+      Case eCanaleCustom.eCseTwaDelta
+        Return Ch.Cse
+      Case eCanaleCustom.eCogTwaDelta
+        Return Ch.Cog
+      Case eCanaleCustom.eTwdVariation, eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
+        Return Ch.Twd
+    End Select
+    Return Nothing
+  End Function
+
+  ' media circolare (sin/cos) di un canale angolare attorno a una riga: 1 secondo per lato
+  Private Function MediaAngolo360(Canale As clsChannel2020, Riga As Integer) As Double
+    If Canale Is Nothing Then Return Double.NaN
+    Dim Meta As Integer = Math.Max(1, DataProvider2020.Hz)
+    Dim Seni As Double = 0
+    Dim Coseni As Double = 0
+    Dim N As Integer = 0
+    For r As Integer = Math.Max(0, Riga - Meta) To Math.Min(Canale.Valori.Count - 1, Riga + Meta)
+      Dim v As Double = Canale.Valori(r)
+      If Not Double.IsNaN(v) Then
+        Seni += Math.Sin(v * Math.PI / 180)
+        Coseni += Math.Cos(v * Math.PI / 180)
+        N += 1
+      End If
+    Next
+    If N = 0 Then Return Double.NaN
+    Dim Media As Double = Math.Atan2(Seni, Coseni) * 180 / Math.PI
+    If Media < 0 Then Media += 360
+    Return Media
+  End Function
+
+  ' media lineare del Twa "ripiegato" (TwaPoppaPerFunzioneDelta) attorno a una riga: 1 secondo per lato
+  Private Function MediaTwa(Canale As clsChannel2020, Riga As Integer) As Double
+    If Canale Is Nothing Then Return Double.NaN
+    Dim Meta As Integer = Math.Max(1, DataProvider2020.Hz)
+    Dim Somma As Double = 0
+    Dim N As Integer = 0
+    For r As Integer = Math.Max(0, Riga - Meta) To Math.Min(Canale.Valori.Count - 1, Riga + Meta)
+      Dim v As Double = Canale.Valori(r)
+      If Not Double.IsNaN(v) Then
+        Somma += TwaPoppaPerFunzioneDelta(v)
+        N += 1
+      End If
+    Next
+    If N = 0 Then Return Double.NaN
+    Return Somma / N
+  End Function
+
+  Private Function CalcolaRiferimento(Pavarot As clsPeriod2021, Ch As clsCanaliDelta, RigaRef As Integer) As clsRiferimentoDelta
+    Dim Rif As New clsRiferimentoDelta
+    Rif.Brg = MediaAngolo360(CanaleAngolo(Ch), RigaRef)
+    Rif.Twa = MediaTwa(Ch.Twa, RigaRef)
+    If CanaleCustom = eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta Then
+      Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
+      Dim PavarotTgtAngle As Double = Math.Min(TwaTgt, (180 - TwaTgt)) * 2
+      Rif.ShiftTeorico = PavarotTgtAngle - Pavarot.PavarotDetails.EntryExitDeltaCse ' positivo = lift
+    End If
+    Return Rif
+  End Function
+
+  ' valore grezzo (non smussato) dei canali delta/variazione a una riga; NaN se mancano i dati
+  Private Function ValoreRigaDelta(Pavarot As clsPeriod2021, Ch As clsCanaliDelta, Rif As clsRiferimentoDelta, Riga As Integer) As Double
+    Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
+    Dim BrgAttuale As Double = ValoreNaN(CanaleAngolo(Ch), Riga)
+    Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(Ch.Twa, Riga))
+
+    Select Case CanaleCustom
+      Case eCanaleCustom.eHdgVariation, eCanaleCustom.eCseVariation, eCanaleCustom.eCogVariation
+        If Double.IsNaN(BrgAttuale) OrElse Double.IsNaN(Rif.Brg) Then Return Double.NaN
+        Dim SegnoTack As Double = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1)
+        Return DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(BrgAttuale, Rif.Brg) * Segno * SegnoTack
+      Case eCanaleCustom.eTwdVariation, eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
+        If Double.IsNaN(BrgAttuale) OrElse Double.IsNaN(Rif.Brg) Then Return Double.NaN
+        ' twd variation positiva se twd stbd > twd port
+        Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(Rif.Brg, BrgAttuale) * -Segno
+        If CanaleCustom = eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta Then Valore -= Rif.ShiftTeorico
+        Return Valore
+      Case eCanaleCustom.eHdgTwaDelta, eCanaleCustom.eCseTwaDelta, eCanaleCustom.eCogTwaDelta
+        If Double.IsNaN(BrgAttuale) OrElse Double.IsNaN(Rif.Brg) OrElse Double.IsNaN(TwaAttuale) OrElse Double.IsNaN(Rif.Twa) Then Return Double.NaN
+        Dim DeltaTwa As Double = Math.Abs(Rif.Twa - TwaAttuale)
+        Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, Rif.Brg)
+        Return DeltaBrg - DeltaTwa
+      Case eCanaleCustom.eTwaVariation
+        If Double.IsNaN(TwaAttuale) OrElse Double.IsNaN(Rif.Twa) Then Return Double.NaN
+        Return (Rif.Twa - TwaAttuale) * Segno
+    End Select
+    Return Double.NaN
+  End Function
+
+  ' interpola linearmente i buchi interni (NaN) di al massimo 5 secondi: senza, una manovra con pochi campioni mancanti esce dalla media di quei bin e crea picchi
+  Private Function ColmaBuchi(Valori As List(Of Double), Xs As List(Of Double)) As List(Of Double)
+    Dim R As New List(Of Double)(Valori)
+    Dim i As Integer = 0
+    Do While i < R.Count
+      If Double.IsNaN(R(i)) Then
+        Dim Inizio As Integer = i - 1 ' ultimo valore valido prima del buco
+        Dim Fine As Integer = i
+        Do While Fine < R.Count AndAlso Double.IsNaN(R(Fine))
+          Fine += 1
+        Loop
+        If Inizio >= 0 AndAlso Fine < R.Count AndAlso Xs(Fine) - Xs(Inizio) > 0 AndAlso Xs(Fine) - Xs(Inizio) <= 5 Then
+          For k As Integer = Inizio + 1 To Fine - 1
+            R(k) = R(Inizio) + (R(Fine) - R(Inizio)) * (Xs(k) - Xs(Inizio)) / (Xs(Fine) - Xs(Inizio))
+          Next
+        End If
+        i = Fine
+      Else
+        i += 1
+      End If
+    Loop
+    Return R
+  End Function
+
+  ' smoothing (media mobile centrata di 2 secondi per lato, simmetrica ai bordi) e derivata; restituisce i Y allineati a Serie
+  Private Function ElaboraSerie(Serie As clsSerieManovra) As List(Of Double)
+    Dim Valori As List(Of Double) = Serie.Valori
+    Dim Smussabile As Boolean = (CanaleCustom <> eCanaleCustom.eProgressionLoss AndAlso CanaleCustom <> eCanaleCustom.eEntryTack)
+    If Smussabile Then Valori = ColmaBuchi(Valori, Serie.Xs)
+    If Smussa AndAlso Smussabile Then
+      Dim Meta As Integer = Math.Max(1, 2 * DataProvider2020.Hz)
+      Dim Lisciati As New List(Of Double)(Valori.Count)
+      For i As Integer = 0 To Valori.Count - 1
+        If Double.IsNaN(Valori(i)) Then
+          Lisciati.Add(Double.NaN)
+          Continue For
+        End If
+        Dim m As Integer = Math.Min(Meta, Math.Min(i, Valori.Count - 1 - i))
+        Dim Somma As Double = 0
+        Dim N As Integer = 0
+        For j As Integer = i - m To i + m
+          If Not Double.IsNaN(Valori(j)) Then
+            Somma += Valori(j)
+            N += 1
+          End If
+        Next
+        Lisciati.Add(Somma / N)
+      Next
+      Valori = Lisciati
+    End If
+
+    If Not ValoriDerivati Then Return Valori
+
+    Dim Risultato As New List(Of Double)(Valori.Count)
+    Dim MediaMobileDerivata As New clsMediaMobile(DataProvider2020.Hz, False)
+    For i As Integer = 0 To Valori.Count - 1
+      Dim Derivata As Double = Double.NaN
+      If i > 0 AndAlso Not Double.IsNaN(Valori(i)) AndAlso Not Double.IsNaN(Valori(i - 1)) Then
+        Dim dt As Double = Serie.Momenti(i).Subtract(Serie.Momenti(i - 1)).TotalSeconds
+        If dt > 0 Then
+          MediaMobileDerivata.AggiornaMedia((Valori(i) - Valori(i - 1)) / dt)
+          Derivata = MediaMobileDerivata.Valore
+        End If
+      End If
+      Risultato.Add(Derivata)
+    Next
+    Return Risultato
+  End Function
+
+  ' inserisce la serie di una manovra nei bin di aggregazione: un solo valore (media dei suoi campioni) per manovra e per bin
+  Private Sub AggiungiSerieAiBin(Aggregati As clsValoriAggregati, Serie As clsSerieManovra, Ys As List(Of Double), Moltiplicatore As Integer)
+    ' ricampiona la manovra sulla griglia dei bin con interpolazione lineare: ogni manovra da' esattamente un valore per bin.
+    ' Assegnare i campioni al bin piu vicino faceva sparire una manovra da un bin quando il passo dei campioni non era esattamente regolare.
+    Dim Xs As List(Of Double) = Serie.Xs
+    Dim n As Integer = Xs.Count
+    If n = 0 Then Exit Sub
+    Dim kMin As Integer = CInt(Math.Ceiling((Xs(0) - 0.5) * Moltiplicatore)) ' mezzo secondo di tolleranza ai bordi
+    Dim kMax As Integer = CInt(Math.Floor((Xs(n - 1) + 0.5) * Moltiplicatore))
+    Dim i As Integer = 0
+    For k As Integer = kMin To kMax
+      Dim t As Double = k / Moltiplicatore
+      Dim Y As Double = Double.NaN
+      If t <= Xs(0) Then
+        Y = Ys(0)
+      ElseIf t >= Xs(n - 1) Then
+        Y = Ys(n - 1)
+      Else
+        Do While i < n - 1 AndAlso Xs(i + 1) < t
+          i += 1
+        Loop
+        ' qui Xs(i) < t <= Xs(i + 1)
+        If Math.Abs(Xs(i + 1) - t) < 0.000001 Then
+          Y = Ys(i + 1)
+        ElseIf Not Double.IsNaN(Ys(i)) AndAlso Not Double.IsNaN(Ys(i + 1)) AndAlso Xs(i + 1) - Xs(i) <= 5 Then
+          Y = Ys(i) + (Ys(i + 1) - Ys(i)) * (t - Xs(i)) / (Xs(i + 1) - Xs(i))
+        End If
+      End If
+      If Not Double.IsNaN(Y) AndAlso Not Double.IsInfinity(Y) Then Aggregati.AggiungiCoppia(k, Y)
+    Next
+  End Sub
+
 
   Public Sub DrawChartAggregatiPerMure()
 
-    'qui potrei ottimizzare ma... almeno per ora mastica
-    Dim chHdg As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eHDG)
-    Dim chCse As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
-    If chCse Is Nothing Then
-      chCse = DataProvider2020.CseFromHdgAndLeeway()
-    End If
-    Dim chCog As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCOG)
-    Dim chTwd As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWD)
-    Dim chTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
-    Dim chTws As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
+    Dim Ch As clsCanaliDelta = CaricaCanaliDelta()
 
     Dim ValoriPort As New clsValoriAggregati
     Dim ValoriStbd As New clsValoriAggregati
@@ -3396,44 +3388,21 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       If RigaIniziale = RigaFinale Then Continue For
       If Pavarot.IsChecked Then
 
-        Dim Colore As System.Windows.Media.Color = Pavarot.Colore ' PavarotSyncViewModel.Colori(i)
-        'Dim Period2021 As clsPeriod2021 = DataProvider2020.PeriodsManager2021.Periods.TrovaPeriodo2021(PeriodsManager.ListaPavarot(i).TimeRange)
+        Dim Aggregati As clsValoriAggregati = ValoriPort
+        If Pavarot.IsStbd Then Aggregati = ValoriStbd
 
-
-        Dim ToggleSign As Integer = IIf(Pavarot.IsStbd, 1, -1)
-
-
-        Dim ss As Double = Pavarot.TimeRangeStandardPavarot.Start.Subtract(Pavarot.KeyMoment).TotalSeconds
-        Select Case CanaleCustom
-          Case eCanaleCustom.eProgressionLoss, eCanaleCustom.eHdgVariation, eCanaleCustom.eCseVariation, eCanaleCustom.eCogVariation, eCanaleCustom.eTwdVariation, eCanaleCustom.eCogTwaDelta, eCanaleCustom.eCseTwaDelta, eCanaleCustom.eHdgTwaDelta, eCanaleCustom.eTwaVariation, eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
-            If Pavarot.IsStbd Then
-              ValoriStbd.AggiungiCoppia(ss, 0)
-            Else
-              ValoriPort.AggiungiCoppia(ss, 0)
-            End If
-          'DataSeriesTMP.Append(ss, 0, New clsPuntoMetadata(False))
-          Case eCanaleCustom.eEntryTack
-            Dim Valore As Double = IIf(Pavarot.IsStbd, 1, -1)
-            If Pavarot.IsStbd Then
-              ValoriStbd.AggiungiCoppia(ss, Valore)
-            Else
-              ValoriPort.AggiungiCoppia(ss, Valore)
-            End If
-            'DataSeriesTMP.Append(ss, Valore, New clsPuntoMetadata(False))
-        End Select
-        'Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.PavarotEntry)
-        'Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
-        Dim objDerivata As New clsDerivata(DataProvider2020.Hz, Is360, Pavarot.PavarotEntry)
+        Dim Rif As clsRiferimentoDelta = CalcolaRiferimento(Pavarot, Ch, RigaIniziale)
         Dim VmgTgt As Double = 0
         If Not TgtManager Is Nothing Then
           If Not TgtManager.Tgt Is Nothing Then
             VmgTgt = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Vmg
           End If
         End If
+
+        Dim Serie As New clsSerieManovra
         For Riga As Integer = RigaIniziale To RigaFinale 'Pavarot.IdUltimaRigaTabella
           Dim Momento As DateTime = DataProvider2020.Momento(Riga)
           If Momento.ToOADate > 0 Then
-            ss = Momento.Subtract(Pavarot.KeyMoment).TotalSeconds '(Riga - Pavarot.IdRigaKeyMoment(clsPavarot2019.eAxisRef.eTWD)) / DataProvider2020.RawFileHz
             Dim ValoreRiga As Double = Double.NaN
 
             Select Case CanaleCustom
@@ -3445,153 +3414,14 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
                   ValoreRiga = Pavarot.PavarotDetails.MetriGhostVmgDaEntry(SecFromEntry, VmgTgt, Pavarot.IdRigaPavarotEntry, Riga)
                 End If
               Case eCanaleCustom.eEntryTack
-                Dim Valore As Double = IIf(Pavarot.IsStbd, 1, -1)
-                ValoreRiga = Valore
-              Case eCanaleCustom.eHdgVariation
-                Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(chHdg.Valori(Riga), chHdg.Valori(RigaIniziale)) * Segno
-                If Double.IsNaN(chHdg.Valori(Riga)) Then
-                  ValoreRiga = Double.NaN
-                Else
-                  ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                End If
-              Case eCanaleCustom.eCseVariation
-                Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                Dim Valore As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(chCse.Valori(Riga), chCse.Valori(RigaIniziale)) * Segno
-                If Double.IsNaN(chCse.Valori(Riga)) Then
-                  ValoreRiga = Double.NaN
-                Else
-                  ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                End If
-              Case eCanaleCustom.eTwdVariation
-                Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaIniziale)
-                Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-                If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                  ' twd variation positiva se twd stbd > twd port
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                  ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eHdgTwaDelta
-                Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                Dim BrgIniziale As Double = ValoreNaN(chHdg, RigaIniziale)
-                Dim BrgAttuale As Double = ValoreNaN(chHdg, Riga)
-                If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                  Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                  Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                  ValoreRiga = DeltaBrg - DeltaTwa
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eCseTwaDelta
-                Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                Dim BrgIniziale As Double = ValoreNaN(chCse, RigaIniziale)
-                Dim BrgAttuale As Double = ValoreNaN(chCse, Riga)
-                If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                  Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                  Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                  ValoreRiga = DeltaBrg - DeltaTwa
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eCogTwaDelta
-                Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                Dim BrgIniziale As Double = ValoreNaN(chCog, RigaIniziale)
-                Dim BrgAttuale As Double = ValoreNaN(chCog, Riga)
-                If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                  Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                  Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                  ValoreRiga = DeltaBrg - DeltaTwa
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eTwaVariation
-                Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) Then
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                  ValoreRiga = (TwaIniziale - TwaAttuale) * Segno
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eCogVariation
-                Dim CogIniziale As Double = ValoreNaN(chCog, RigaIniziale)
-                Dim CogAttuale As Double = ValoreNaN(chCog, Riga)
-                If Not Double.IsNaN(CogIniziale) AndAlso Not Double.IsNaN(CogAttuale) Then
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                  Dim DeltaBrg As Double = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(CogAttuale, CogIniziale)
-                  Dim Valore As Double = DeltaBrg * Segno
-                  ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-              Case eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
-                Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
-                Dim PavarotTgtAngle = Math.Min(TwaTgt, (180 - TwaTgt)) * 2
-                Dim DeltaCse As Double = Pavarot.PavarotDetails.EntryExitDeltaCse
-                Dim TheoreticalShift As Double = PavarotTgtAngle - DeltaCse ' positivo = lift
-
-                Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaIniziale)
-                Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-                If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                  ' twd variation positiva se twd stbd > twd port
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                  ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-                  ValoreRiga -= TheoreticalShift
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-
-
-
-                'Dim PavarotTws As New clsStatisticheIntervallo(chTwa)
-                'PavarotTws.AggiornaIntervallo(New clsTimeRange(Pavarot.PavarotEntry, Pavarot.TimeRangeStandardPavarot.Finish), clsGroupLines.eLineType.eRawValue)
-                'Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
-
-                Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                Dim BrgIniziale As Double = ValoreNaN(chCse, RigaIniziale)
-                Dim BrgAttuale As Double = ValoreNaN(chCse, Riga)
-                If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                  Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                  Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                  ValoreRiga = DeltaBrg - DeltaTwa
-                Else
-                  ValoreRiga = Double.NaN
-                End If
-
+                ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+              Case Else
+                ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
             End Select
-            If Not Double.IsNaN(ValoreRiga) Then
-              If Double.IsNaN(objDerivata.ValoreRigaPrev) Then objDerivata.ValoreRigaPrev = ValoreRiga
-              If ValoriDerivati Then
-                If Not Double.IsNaN(ValoreRiga) Then
-                  Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                  objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                  If Pavarot.IsStbd Then
-                    ValoriStbd.AggiungiCoppia(ss, objDerivata.MediaMobile.Valore)
-                  Else
-                    ValoriPort.AggiungiCoppia(ss, objDerivata.MediaMobile.Valore)
-                  End If
-                  'DataSeriesTMP.Append(ss, objDerivata.MediaMobile.Valore, New clsPuntoMetadata(False))
-                  objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                End If
-              Else
-                If Not Double.IsNaN(ValoreRiga) Then
-                  If Pavarot.IsStbd Then
-                    ValoriStbd.AggiungiCoppia(ss, ValoreRiga)
-                  Else
-                    ValoriPort.AggiungiCoppia(ss, ValoreRiga)
-                  End If
-                  'DataSeriesTMP.Append(ss, ValoreRiga, New clsPuntoMetadata(False))
-                End If
-              End If
-            End If
+            Serie.Aggiungi(Momento.Subtract(Pavarot.KeyMoment).TotalSeconds, Momento, ValoreRiga)
           End If
         Next
+        AggiungiSerieAiBin(Aggregati, Serie, ElaboraSerie(Serie), 1)
       End If
     Next
 
@@ -3605,11 +3435,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     LineaPort.Stroke = Colors.Red
     LineaPort.StrokeThickness = 2
     LineaPort.Tag = -1
-    'DataSeriesPort.AcceptsUnsortedData = True
     For Each Valore In ValoriPort.Dizionario.OrderBy(Function(x) x.Key)
-      Dim SS As Double = Valore.Key
-      Dim Y As Double = Valore.Value.ValoriY.Where(Function(x) Not Double.IsNaN(x)).Average
-      DataSeriesPort.Append(SS, Y, New clsPuntoMetadata(False))
+      DataSeriesPort.Append(Valore.Key, Valore.Value.ValoriY.Average, New clsPuntoMetadata(False))
     Next
     LineaPort.DataSeries = DataSeriesPort
     Dim CSVMport As New ChartSeriesViewModel(DataSeriesPort, LineaPort)
@@ -3622,11 +3449,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     LineaStbd.Stroke = Colors.Green
     LineaStbd.StrokeThickness = 2
     LineaStbd.Tag = 1
-    'DataSeriesStbd.AcceptsUnsortedData = True
     For Each Valore In ValoriStbd.Dizionario.OrderBy(Function(x) x.Key)
-      Dim SS As Double = Valore.Key
-      Dim Y As Double = Valore.Value.ValoriY.Where(Function(x) Not Double.IsNaN(x)).Average
-      DataSeriesStbd.Append(SS, Y, New clsPuntoMetadata(False))
+      DataSeriesStbd.Append(Valore.Key, Valore.Value.ValoriY.Average, New clsPuntoMetadata(False))
     Next
     LineaStbd.DataSeries = DataSeriesStbd
     Dim CSVMStbd As New ChartSeriesViewModel(DataSeriesStbd, LineaStbd)
@@ -3641,14 +3465,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     Dim GrId As New Dictionary(Of String, Integer)
     Dim contatore As Integer = 0
 
-    Dim chHdg As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eHDG)
-    Dim chCse As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
-    If chCse Is Nothing Then
-      chCse = DataProvider2020.CseFromHdgAndLeeway()
-    End If
-    Dim chCog As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCOG)
-    Dim chTwd As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWD)
-    Dim chTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
+    Dim Ch As clsCanaliDelta = CaricaCanaliDelta()
 
     Dim Moltiplicatore As Integer = 2
 
@@ -3658,8 +3475,6 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       If RigaIniziale = RigaFinale Then Continue For
       'cicla tra le pavarot checkate
       If Pavarot.IsChecked Then
-        'Dim Pavarot As clsPavarot2019 = PeriodsManager.ListaPavarot(i).DettagliPavarot
-        'Dim Period2021 As clsPeriod2021 = DataProvider2020.PeriodsManager2021.Periods.TrovaPeriodo2021(PeriodsManager.ListaPavarot(i).TimeRange)
         Dim Chiave As String = Pavarot.Keys
 
         If Not Chiave.Trim = "" Then
@@ -3680,33 +3495,22 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
             End If
           End If
 
-          Dim ToggleSign As Integer = IIf(Pavarot.IsStbd, 1, -1)
-          Dim ss As Double = Pavarot.TimeRangeStandardPavarot.Start.Subtract(Pavarot.KeyMoment).TotalSeconds
-          Dim Valore As Double = 0
-          Select Case CanaleCustom
-            Case eCanaleCustom.eProgressionLoss, eCanaleCustom.eHdgVariation, eCanaleCustom.eCseVariation, eCanaleCustom.eCogVariation, eCanaleCustom.eTwdVariation, eCanaleCustom.eCogTwaDelta, eCanaleCustom.eCseTwaDelta, eCanaleCustom.eHdgTwaDelta, eCanaleCustom.eTwaVariation, eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
-            Case eCanaleCustom.eEntryTack
-              Valore = IIf(Pavarot.IsStbd, 1, -1)
-          End Select
-          If Gruppi.ContainsKey(Chiave) Then
-            Gruppi(Chiave).AggiungiCoppia(CInt(ss * Moltiplicatore), Valore)
-          Else
-            Gruppi.Add(Chiave, New clsGruppoPeriodi(CInt(ss * Moltiplicatore), Valore, Mure, GrId(Pavarot.Keys), Chiave, ColoreDaOutputType(Pavarot, clsStraightLineVM2020.eOutputType.eColorByKey)))
+          If Not Gruppi.ContainsKey(Chiave) Then
+            Gruppi.Add(Chiave, New clsGruppoPeriodi(Mure, GrId(Pavarot.Keys), Chiave, ColoreDaOutputType(Pavarot, clsStraightLineVM2020.eOutputType.eColorByKey)))
           End If
 
-          'Dim RigaIniziale As Integer = DataProvider2020.TrovaIndice(Pavarot.PavarotEntry)
-          'Dim RigaFinale As Integer = DataProvider2020.TrovaIndice(Pavarot.TimeRangeStandardPavarot.Finish)
-          Dim objDerivata As New clsDerivata(DataProvider2020.Hz, Is360, Pavarot.PavarotEntry)
+          Dim Rif As clsRiferimentoDelta = CalcolaRiferimento(Pavarot, Ch, RigaIniziale)
           Dim VmgTgt As Double = 0
           If Not TgtManager Is Nothing Then
             If Not TgtManager.Tgt Is Nothing Then
               VmgTgt = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Vmg
             End If
           End If
+
+          Dim Serie As New clsSerieManovra
           For Riga As Integer = RigaIniziale To RigaFinale
             Dim Momento As DateTime = DataProvider2020.Momento(Riga)
             If Momento.ToOADate > 0 Then
-              ss = Momento.Subtract(Pavarot.KeyMoment).TotalSeconds '(Riga - Pavarot.IdRigaKeyMoment(clsPavarot2019.eAxisRef.eTWD)) / DataProvider2020.RawFileHz
               Dim ValoreRiga As Double = Double.NaN
 
               Select Case CanaleCustom
@@ -3718,132 +3522,14 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
                     ValoreRiga = Pavarot.PavarotDetails.MetriGhostVmgDaEntry(SecFromEntry, VmgTgt, Pavarot.IdRigaPavarotEntry, Riga)
                   End If
                 Case eCanaleCustom.eEntryTack
-                  Valore = IIf(Pavarot.IsStbd, 1, -1)
-                  ValoreRiga = Valore
-                Case eCanaleCustom.eHdgVariation
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                  Valore = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(chHdg.Valori(Riga), chHdg.Valori(RigaIniziale)) * Segno
-                  If Double.IsNaN(chCse.Valori(Riga)) Then
-                    ValoreRiga = Double.NaN
-                  Else
-                    ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                  End If
-                Case eCanaleCustom.eCseVariation
-                  Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                  Valore = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(chCse.Valori(Riga), chCse.Valori(RigaIniziale)) * Segno
-                  If Double.IsNaN(chCse.Valori(Riga)) Then
-                    ValoreRiga = Double.NaN
-                  Else
-                    ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                  End If
-                Case eCanaleCustom.eTwdVariation
-                  Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaIniziale)
-                  Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-                  If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                    ' twd variation positiva se twd stbd > twd port
-                    Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                    ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eHdgTwaDelta
-                  Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                  Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                  Dim BrgIniziale As Double = ValoreNaN(chHdg, RigaIniziale)
-                  Dim BrgAttuale As Double = ValoreNaN(chHdg, Riga)
-                  If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                    Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                    Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                    ValoreRiga = DeltaBrg - DeltaTwa
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eCseTwaDelta
-                  Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                  Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                  Dim BrgIniziale As Double = ValoreNaN(chCse, RigaIniziale)
-                  Dim BrgAttuale As Double = ValoreNaN(chCse, Riga)
-                  If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                    Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                    Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                    ValoreRiga = DeltaBrg - DeltaTwa
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eCogTwaDelta
-                  Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                  Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                  Dim BrgIniziale As Double = ValoreNaN(chCog, RigaIniziale)
-                  Dim BrgAttuale As Double = ValoreNaN(chCog, Riga)
-                  If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) AndAlso Not Double.IsNaN(BrgIniziale) AndAlso Not Double.IsNaN(BrgAttuale) Then
-                    Dim DeltaTwa As Double = Math.Abs(TwaIniziale - TwaAttuale)
-                    Dim DeltaBrg As Double = DifferenzaAssolutaTraAngoli360(BrgAttuale, BrgIniziale)
-                    ValoreRiga = DeltaBrg - DeltaTwa
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eTwaVariation
-                  Dim TwaIniziale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, RigaIniziale))
-                  Dim TwaAttuale As Double = TwaPoppaPerFunzioneDelta(ValoreNaN(chTwa, Riga))
-                  If Not Double.IsNaN(TwaIniziale) AndAlso Not Double.IsNaN(TwaAttuale) Then
-                    Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                    ValoreRiga = (TwaIniziale - TwaAttuale) * Segno
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eCogVariation
-                  Dim CogIniziale As Double = ValoreNaN(chCog, RigaIniziale)
-                  Dim CogAttuale As Double = ValoreNaN(chCog, Riga)
-                  If Not Double.IsNaN(CogIniziale) AndAlso Not Double.IsNaN(CogAttuale) Then
-                    Dim Segno As Double = IIf(Pavarot.IsStbd, 1, -1)
-                    Valore = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(CogAttuale, CogIniziale) * Segno
-                    ValoreRiga = IIf(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, -1, 1) * Valore
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-                Case eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
-                  Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
-                  Dim PavarotTgtAngle = Math.Min(TwaTgt, (180 - TwaTgt)) * 2
-                  Dim DeltaCse As Double = Pavarot.PavarotDetails.EntryExitDeltaCse
-                  Dim TheoreticalShift As Double = PavarotTgtAngle - DeltaCse ' positivo = lift
-
-                  Dim TwdIniziale As Double = ValoreNaN(chTwd, RigaIniziale)
-                  Dim TwdAttuale As Double = ValoreNaN(chTwd, Riga)
-                  If Not Double.IsNaN(TwdIniziale) AndAlso Not Double.IsNaN(TwdAttuale) Then
-                    ' twd variation positiva se twd stbd > twd port
-                    Dim Segno As Double = IIf(Pavarot.IsStbd, -1, 1)
-                    ValoreRiga = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(TwdIniziale, TwdAttuale) * Segno
-                    ValoreRiga -= TheoreticalShift
-                  Else
-                    ValoreRiga = Double.NaN
-                  End If
-
+                  ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+                Case Else
+                  ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
               End Select
-              If Not ValoreRiga = Double.NaN Then
-                If objDerivata.ValoreRigaPrev = Double.NaN Then objDerivata.ValoreRigaPrev = ValoreRiga
-                If ValoriDerivati Then
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    Dim Derivata As Double = (ValoreRiga - objDerivata.ValoreRigaPrev) / Momento.Subtract(objDerivata.MomentoPrev).TotalSeconds
-                    objDerivata.MediaMobile.AggiornaMedia(Derivata)
-                    If Gruppi.ContainsKey(Chiave) Then
-                      Gruppi(Chiave).AggiungiCoppia(CInt(ss * Moltiplicatore), objDerivata.MediaMobile.Valore)
-                    Else
-                      Gruppi.Add(Chiave, New clsGruppoPeriodi(CInt(ss * Moltiplicatore), objDerivata.MediaMobile.Valore, Mure, GrId(Pavarot.Keys), Chiave, ColoreDaOutputType(Pavarot, clsStraightLineVM2020.eOutputType.eColorByKey)))
-                    End If
-                    objDerivata.AggiornaValoriPrev(ValoreRiga, Momento)
-                  End If
-                Else
-                  If Not Double.IsNaN(ValoreRiga) Then
-                    If Gruppi.ContainsKey(Chiave) Then
-                      Gruppi(Chiave).AggiungiCoppia(CInt(ss * Moltiplicatore), ValoreRiga)
-                    Else
-                      Gruppi.Add(Chiave, New clsGruppoPeriodi(CInt(ss * Moltiplicatore), ValoreRiga, Mure, GrId(Pavarot.Keys), Chiave, ColoreDaOutputType(Pavarot, clsStraightLineVM2020.eOutputType.eColorByKey)))
-                    End If
-                  End If
-                End If
-              End If
+              Serie.Aggiungi(Momento.Subtract(Pavarot.KeyMoment).TotalSeconds, Momento, ValoreRiga)
             End If
           Next
+          AggiungiSerieAiBin(Gruppi(Chiave).ValoriAggregati, Serie, ElaboraSerie(Serie), Moltiplicatore)
         End If
       End If
     Next
@@ -3861,7 +3547,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       End If
       Linea.Tag = Gruppo.Value ' .Key ' Gruppo.Value.IdGruppo + Gruppo.Value.Mure / 10
       For Each Valore In Gruppo.Value.ValoriAggregati.Dizionario.OrderBy(Function(x) x.Key).ToArray
-        DataSeries.Append(Valore.Key / Moltiplicatore, Valore.Value.ValoriY.Where(Function(x) Not Double.IsNaN(x)).Average, New clsPuntoMetadata(False))
+        DataSeries.Append(Valore.Key / Moltiplicatore, Valore.Value.ValoriY.Average, New clsPuntoMetadata(False))
       Next
       Linea.DataSeries = DataSeries
       Dim CSVM As New ChartSeriesViewModel(DataSeries, Linea)
@@ -4014,6 +3700,23 @@ Public MustInherit Class UserControlPavarotPlotViewModel
       _ValoriDerivati = value
       DrawChart()
     End Set
+  End Property
+
+  Dim _Smussa As Boolean = True
+  Public Property Smussa As Boolean ' smussa i canali delta (solo UserControlPavarotPlotViewModelMathPlots)
+    Get
+      Return _Smussa
+    End Get
+    Set(value As Boolean)
+      _Smussa = value
+      DrawChart()
+    End Set
+  End Property
+
+  Public Overridable ReadOnly Property SmussaVisibility As System.Windows.Visibility
+    Get
+      Return System.Windows.Visibility.Collapsed
+    End Get
   End Property
 
   Public Property Canale As clsChannel2020
