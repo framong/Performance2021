@@ -484,3 +484,6 @@ $RECYCLE.BIN/
 # Eccezioni Performance2021: DLL native SQLite
 !/Performance2021/x64/
 !/Performance2021/x86/
+
+# Mappe Navionics (file grandi, oltre il limite di GitHub)
+MappeNavionics/
