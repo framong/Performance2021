@@ -21,7 +21,6 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
     <StackPanel Orientation="Horizontal">
-      <Button Height="20" x:Name="btn_Refresh" Content="Refresh" Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" VerticalAlignment="center"></Button>
       <Menu Height="20" Margin="10,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray" >
         <MenuItem Header="Period Selection">
           <StackPanel Orientation="Horizontal">
@@ -53,64 +52,64 @@
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
-              <CheckBox IsChecked="{Binding PavarotSelectionSettings.ApplyTwsFilter}" Width="100">TWS Range</CheckBox>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Width="50">TWS</CheckBox>
+                <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMin}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
+                <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMin" IsEnabled="{Binding PavarotSelectionSettings.TwsMinEnabled}" Value="{Binding PavarotSelectionSettings.TwsMin}" ToolTip="Tws Min Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
+                <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMax}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Max" Width="50" Margin="10,0,0,0"></CheckBox>
+                <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMax" IsEnabled="{Binding PavarotSelectionSettings.TwsMaxEnabled}" Value="{Binding PavarotSelectionSettings.TwsMax}" ToolTip="Tws Max Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
+              </StackPanel>
             </MenuItem.Header>
-            <MenuItem>
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMin}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
-                  <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMin" IsEnabled="{Binding PavarotSelectionSettings.TwsMinEnabled}" Value="{Binding PavarotSelectionSettings.TwsMin}" ToolTip="Tws Min Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
-            <MenuItem>
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox  IsChecked="{Binding PavarotSelectionSettings.ApplyTwsMax}" IsEnabled="{Binding PavarotSelectionSettings.ApplyTwsFilter}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
-                  <estensioni:DoubleUpDown FormatString="F1" Increment="0.1"  x:Name="UsNud_FilterTwsMax" IsEnabled="{Binding PavarotSelectionSettings.TwsMaxEnabled}" Value="{Binding PavarotSelectionSettings.TwsMax}" ToolTip="Tws Max Value" Width="80" Height="25" Minimum="0" Maximum="50"></estensioni:DoubleUpDown>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button Height="20" x:Name="btn_Refresh" Content="Refresh" Margin="0" Padding="5,0,5,0" MinWidth="80" HorizontalContentAlignment="Left"></Button>
+            </MenuItem.Header>
           </MenuItem>
         </MenuItem>
       </Menu>
 
       <Menu Height="20"  Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" Background="LightGray" BorderThickness="1" BorderBrush="Gray" >
         <MenuItem Header="Settings" ToolTip="Manoueuver Settings" >
-          <MenuItem >
+          <MenuItem Visibility="{Binding MostraImpostazioniVirate}">
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Seconds before the head to wind when the tack's calculation starts" Width="100">Tacks Entry (ss)</Label>
-                <estensioni:IntegerUpDown Value="{Binding PavSettings.TackSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the head to wind when the tack's calculation starts"></estensioni:IntegerUpDown>
+                <estensioni:IntegerUpDown x:Name="UdTackAnte" Value="{Binding PavSettings.TackSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the head to wind when the tack's calculation starts"></estensioni:IntegerUpDown>
                 <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation starts">ss</Label>
               </StackPanel>
             </MenuItem.Header>
           </MenuItem>
-          <MenuItem>
+          <MenuItem Visibility="{Binding MostraImpostazioniVirate}">
             <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                     <Label ToolTip="Seconds after the head to wind when the tack's calculation ends" Width="100">Tacks Exit (ss)</Label>
-                    <estensioni:IntegerUpDown Value="{Binding PavSettings.TackSecPost}" Width="50" Height="25"  ToolTip="Seconds after the head to wind when the tack's calculation ends"></estensioni:IntegerUpDown>
+                    <estensioni:IntegerUpDown x:Name="UdTackPost" Value="{Binding PavSettings.TackSecPost}" Width="50" Height="25"  ToolTip="Seconds after the head to wind when the tack's calculation ends"></estensioni:IntegerUpDown>
                     <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation ends">ss</Label>
                 </StackPanel>
             </MenuItem.Header>
           </MenuItem>
-          <MenuItem >
+          <MenuItem Visibility="{Binding MostraImpostazioniStrambate}">
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Seconds before the dead to wind when the gybe's calculation starts" Width="100">Gybes Entry (ss)</Label>
-                <estensioni:IntegerUpDown Value="{Binding PavSettings.GybeSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the dead to wind when the gybe's calculation starts"></estensioni:IntegerUpDown>
+                <estensioni:IntegerUpDown x:Name="UdGybeAnte" Value="{Binding PavSettings.GybeSecAnte}" Width="50" Height="25"  ToolTip="Seconds before the dead to wind when the gybe's calculation starts"></estensioni:IntegerUpDown>
                 <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation starts">ss</Label>
               </StackPanel>
             </MenuItem.Header>
           </MenuItem>
-          <MenuItem>
+          <MenuItem Visibility="{Binding MostraImpostazioniStrambate}">
             <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                     <Label ToolTip="Seconds after the dead to wind when the gybe's calculation ends" Width="100">Gybes Exit (ss)</Label>
-                    <estensioni:IntegerUpDown Value="{Binding PavSettings.GybeSecPost}" Width="50" Height="25"  ToolTip="Seconds after the dead to wind when the gybe's calculation ends"></estensioni:IntegerUpDown>
+                    <estensioni:IntegerUpDown x:Name="UdGybePost" Value="{Binding PavSettings.GybeSecPost}" Width="50" Height="25"  ToolTip="Seconds after the dead to wind when the gybe's calculation ends"></estensioni:IntegerUpDown>
                     <Label ToolTip="Seconds after the head/dead to wind when the manoeuver's calculation ends">ss</Label>
                 </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button Height="20" x:Name="btn_Recalc" Content="Recalc" Margin="0" Padding="5,0,5,0" MinWidth="80" HorizontalContentAlignment="Left"></Button>
             </MenuItem.Header>
           </MenuItem>
                     <!--<MenuItem >
@@ -151,11 +150,6 @@
               <Button x:Name="btn_Pdf" Content="Pdf Report" ToolTip="Export Pdf Reports" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" Click="btn_Pdf_Click"></Button>
             </MenuItem.Header>
           </MenuItem>
-          <MenuItem>
-            <MenuItem.Header>
-              <Button x:Name="btn_ExportToBazzo" Content="Bazzo's file" Click="Btn_ExportToBazzo_Click" ToolTip="Export Bazzos File" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left" ></Button>
-            </MenuItem.Header>
-          </MenuItem>
           <!--<MenuItem>
             <MenuItem.Header>
               <Button Name="btn_PedestalStats" ToolTip="Export to Clipboard selected manoeuvers pedestals statistics" Click="btn_PedestalStats_Click" Content="PedStats"></Button>
@@ -166,11 +160,18 @@
               <Button Name="btn_UpdateKeys" MinWidth="100" Margin="0,0,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Left"  Click="btn_UpdateKeys_Click" Width="100" Content="Update Keys" ToolTip="update KEYS property of the selected periods"></Button>
             </MenuItem.Header>
           </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <ToggleButton IsChecked="{Binding PavarotSelectionSettings.WheelZoomEnabled}" Content="WheelZoom" ToolTip="Toggle mouse wheel zoom On/Off" MinWidth="80" Margin="0"  Padding="5,0,5,0" ></ToggleButton>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <ToggleButton IsChecked="{Binding PavarotSelectionSettings.MouseModeSelEnabled}" Content="{Binding PavarotSelectionSettings.MouseModeSelDescription}" ToolTip="Mouse Move Mode: Selection/Pan" MinWidth="80"  Margin="0" Padding="5,0,5,0" ></ToggleButton>
+            </MenuItem.Header>
+          </MenuItem>
         </MenuItem>
       </Menu>
-      <ToggleButton IsChecked="{Binding PavarotSelectionSettings.WheelZoomEnabled}" Content="WheelZoom" ToolTip="Toggle mouse wheel zoom On/Off" MinWidth="80" Margin="5,0,5,0"  Padding="5,0,5,0" ></ToggleButton>
-      <ToggleButton IsChecked="{Binding PavarotSelectionSettings.MouseModeSelEnabled}" Content="{Binding PavarotSelectionSettings.MouseModeSelDescription}" ToolTip="Mouse Move Mode: Selection/Pan" MinWidth="80"  Margin="5,0,5,0" Padding="5,0,5,0" ></ToggleButton>
-      <Button Height="20" x:Name="btn_Recalc" Content="Recalc" Margin="5,0,5,0" Padding="5,0,5,0" MinWidth="80" VerticalAlignment="center"></Button>
 
       <Label  ToolTip="Daily/Selection Vmg Percentage (equivalent Tws) @ Tws" MinWidth="100" MinHeight="20" Content="{Binding PeriodsMng.VmgPercentage.Descrizione}"></Label>
 

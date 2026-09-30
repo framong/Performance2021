@@ -377,7 +377,7 @@ Public Class UserControlPavarotViewModel
 
   Public WithEvents PavarotSelectionSettings As New clsPavarotSelectionSettings
   Dim _OutputType As eOutputType = eOutputType.eColorByTack
-  Public Property AutoRefreshGroupBy As Boolean
+  Public Property AutoRefreshGroupBy As Boolean = True
   Public Property PlotTrendLines As Boolean = False
   Public Property PlotTargetsIfAvailable As Boolean = True
   Public Property ListaPeriodiCaricati As List(Of clsPeriod2021)
@@ -400,6 +400,19 @@ Public Class UserControlPavarotViewModel
   End Enum
 
   Public Property FiltroManovre As eFiltroManovre = eFiltroManovre.eTutte
+
+  ' nelle impostazioni si vedono solo i tempi coerenti con il tipo di manovre gestite
+  Public ReadOnly Property MostraImpostazioniVirate As System.Windows.Visibility
+    Get
+      Return If(FiltroManovre = eFiltroManovre.eStrambate, System.Windows.Visibility.Collapsed, System.Windows.Visibility.Visible)
+    End Get
+  End Property
+
+  Public ReadOnly Property MostraImpostazioniStrambate As System.Windows.Visibility
+    Get
+      Return If(FiltroManovre = eFiltroManovre.eVirate, System.Windows.Visibility.Collapsed, System.Windows.Visibility.Visible)
+    End Get
+  End Property
 
   ' i filtri Tacks/Gybes hanno senso solo quando il controllo gestisce entrambi i tipi
   Public ReadOnly Property MostraFiltroTipo As System.Windows.Visibility
@@ -526,8 +539,40 @@ Public Class UserControlPavarotViewModel
     objPdf.StampReportPavarot(Lista, ListaXY, Me.Lista)
   End Sub
 
+  ' confronta la finestra con cui sono stati calcolati i dettagli delle manovre con quella delle impostazioni; restituisce un testo vuoto se coincidono
+  Public Function AvvisoFinestreDiverse() As String
+    Dim Totale As Integer = 0
+    Dim Diverse As Integer = 0
+    For Each p In Lista
+      If p.PavarotDetails Is Nothing Then Continue For
+      Totale += 1
+      Dim Ante As Integer
+      Dim Post As Integer
+      If p.PeriodType = clsPeriod2021.ePeriodType.eGybe Then
+        Ante = PavSettings.GybeSecAnte
+        Post = PavSettings.GybeSecPost
+      Else
+        Ante = PavSettings.TackSecAnte
+        Post = PavSettings.TackSecPost
+      End If
+      If p.PavarotDetails.SecAnteCalc <> Ante OrElse p.PavarotDetails.SecPostCalc <> Post Then Diverse += 1
+    Next
+    If Diverse = 0 Then Return ""
+    Dim Descr As String = ""
+    If FiltroManovre <> eFiltroManovre.eStrambate Then Descr &= "Tacks " & PavSettings.TackSecAnte & "/" & PavSettings.TackSecPost & " s"
+    If FiltroManovre = eFiltroManovre.eTutte Then Descr &= ", "
+    If FiltroManovre <> eFiltroManovre.eVirate Then Descr &= "Gybes " & PavSettings.GybeSecAnte & "/" & PavSettings.GybeSecPost & " s"
+    Return Diverse & " of " & Totale & " manoeuvers have details calculated with a before/after window different from the current settings (" & Descr & ")." & vbCrLf & vbCrLf &
+           "Time plots already use the current settings, the scatter plot values (RotPerc95, BottomSpeed, losses...) do not." & vbCrLf &
+           "Periods saved by older versions do not record their window, so they are always listed here until recalculated." & vbCrLf & vbCrLf &
+           "Recalculate now?"
+  End Function
+
   Public Sub Recalc()
     RicalcolaGraficiPavarot()
+    ' i dettagli sono nel file dei periodi e ante/post nel profilo: senza il salvataggio al prossimo avvio tornano i valori vecchi
+    PeriodsManager.SalvaDettagliPeriodi()
+    AppConfig.Salva()
   End Sub
 
   Public Sub Refresh()
@@ -580,7 +625,11 @@ Public Class UserControlPavarotViewModel
     If Lista Is Nothing Then Exit Sub
 
     For Each p In Lista
-      p.UpdateDetails()
+      Try
+        p.UpdateDetails()
+      Catch ex As Exception
+        ' un periodo che non si riesce a ricalcolare non deve impedire il ricalcolo e il salvataggio degli altri
+      End Try
     Next
 
   End Sub

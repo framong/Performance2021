@@ -32,6 +32,7 @@ Public Class UserControlPavarot
 
 
   Public WithEvents PavarotVM2020 As UserControlPavarotViewModel
+  Public UltimoAvvisoFinestre As String = "" ' ultimo avviso mostrato sulle finestre ante/post, per non ripeterlo a ogni focus del tab
 
   Public Sub New()
     Me.New(UserControlPavarotViewModel.eFiltroManovre.eTutte)
@@ -97,6 +98,20 @@ Public Class UserControlPavarot
   End Sub
 
   Private Sub btn_Recalc_Click(sender As Object, e As RoutedEventArgs) Handles btn_Recalc.Click
+    RicalcolaOra()
+  End Sub
+
+  ' un valore digitato in un campo numerico viene registrato solo quando il campo perde il focus: si forza qui, altrimenti Recalc userebbe il valore precedente
+  Private Sub ConfermaImpostazioniInSospeso()
+    For Each ud In {UdTackAnte, UdTackPost, UdGybeAnte, UdGybePost}
+      ud.CommitInput()
+      Dim be = System.Windows.Data.BindingOperations.GetBindingExpression(ud, Xceed.Wpf.Toolkit.IntegerUpDown.ValueProperty)
+      If Not be Is Nothing Then be.UpdateSource()
+    Next
+  End Sub
+
+  Public Sub RicalcolaOra()
+    ConfermaImpostazioniInSospeso()
     PavarotVM2020.Recalc()
     PavarotVM2020.Refresh()
     RefreshExtents()
@@ -105,12 +120,6 @@ Public Class UserControlPavarot
   Private Sub DataPointSelectionModifier_SelectionChanged(sender As Object, e As EventArgs)
     Dim Selezione As ObjectModel.ObservableCollection(Of SciChart.Charting.ChartModifiers.DataPointInfo) = DirectCast(sender, SciChart.Charting.ChartModifiers.DataPointSelectionModifier).SelectedPointMarkers
     PavarotVM2020.LineaSelezionata(Me, Selezione)
-  End Sub
-
-  Private Sub Btn_ExportToBazzo_Click(sender As Object, e As RoutedEventArgs)
-    Stop
-    'Dim objBazzo As New clsPavarotsBazzosData
-    'objBazzo.EsportaJson()
   End Sub
 
   Private Sub Splitter_DragCompleted(sender As Object, e As Primitives.DragCompletedEventArgs)

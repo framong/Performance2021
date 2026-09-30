@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 09 30 05"
+    Versione = "v02 - 2026 09 30 10"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -352,6 +352,7 @@ Class MainWindow
     ctrlReaching = Nothing : hostReaching.Content = Nothing
     ctrlLineUp = Nothing : hostLineUp.Content = Nothing
     ctrlPavarot = Nothing : hostPavarot.Content = Nothing
+    FirmaFinestreBase = Nothing
     ctrlTacks = Nothing : hostTacks.Content = Nothing
     ctrlGybes = Nothing : hostGybes.Content = Nothing
     ctrlXover = Nothing : hostXover.Content = Nothing
@@ -1336,7 +1337,32 @@ Class MainWindow
     If Not DataProvider2020.ValoriCaricati Then Exit Sub
     If Ctrl Is Nothing OrElse Ctrl.PavarotVM2020 Is Nothing Then Exit Sub
     If Ctrl.PavarotVM2020.ControlliPavarotBasicPlot Is Nothing Then Ctrl.PavarotVM2020.PavarotTabGotFocus()
+
+    ' avvisa se le manovre sono state calcolate con un prima/dopo diverso dalle impostazioni (una volta per ogni stato, non a ogni focus).
+    ' Se l utente ha cambiato ante/post in questa sessione non si propone nulla: il ricalcolo e' lasciato al pulsante Recalc.
+    Dim Firma As String = FirmaFinestreManovre()
+    If FirmaFinestreBase Is Nothing Then FirmaFinestreBase = Firma
+    If Firma <> FirmaFinestreBase Then Exit Sub
+    Dim Avviso As String = Ctrl.PavarotVM2020.AvvisoFinestreDiverse()
+    If Avviso = "" Then
+      Ctrl.UltimoAvvisoFinestre = ""
+    ElseIf Avviso <> Ctrl.UltimoAvvisoFinestre Then
+      Ctrl.UltimoAvvisoFinestre = Avviso
+      Dispatcher.BeginInvoke(Sub()
+                               If MsgBox(Avviso, MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation, "Manoeuvers window") = MsgBoxResult.Yes Then
+                                 Ctrl.RicalcolaOra()
+                               End If
+                             End Sub)
+    End If
   End Sub
+
+  Private FirmaFinestreBase As String = Nothing ' impostazioni ante/post al primo focus di una scheda delle manovre dopo il caricamento del dataset
+
+  Private Function FirmaFinestreManovre() As String
+    Dim s = AppConfig.ActiveProfile.PavarotSettings
+    If s Is Nothing Then Return ""
+    Return s.TackSecAnte & "/" & s.TackSecPost & "/" & s.GybeSecAnte & "/" & s.GybeSecPost
+  End Function
 
   Private Sub TacksAnalysis_GotFocus(sender As Object, e As RoutedEventArgs) Handles TacksAnalysis.GotFocus
     AssicuraCtrlTacks()

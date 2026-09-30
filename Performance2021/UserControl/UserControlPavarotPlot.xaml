@@ -76,7 +76,7 @@
 			<Button Name="btn_Del" Content="Del" Width="25"></Button>
 			<ToggleButton Name="btn_Sign" IsChecked="{Binding ToggleSigned}" Content="Sgn" Width="25" Margin="0,10,0,0"></ToggleButton>
 			<ToggleButton Name="btn_Deriv" IsChecked="{Binding ValoriDerivati}" Content="Der" Width="25" Margin="0,2,0,0"></ToggleButton>
-			<ToggleButton Name="btn_Smussa" IsChecked="{Binding Smussa}" Visibility="{Binding SmussaVisibility}" Content="Smt" ToolTip="Smussa le curve dei canali delta" Width="25" Margin="0,2,0,0"></ToggleButton>
+			<ToggleButton Name="btn_Smussa" IsChecked="{Binding Smussa}" Visibility="{Binding SmussaVisibility}" Content="Smt" ToolTip="Smooth the delta channel curves" Width="25" Margin="0,2,0,0"></ToggleButton>
       
 		</StackPanel>
 	</Grid>

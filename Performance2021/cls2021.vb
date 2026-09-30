@@ -2856,6 +2856,21 @@ Public Class clsPeriodsManager2021
     SpostaJsonOriginali()
   End Sub
 
+  ' salva solo il file dei periodi (senza spostare gli altri json): serve a rendere permanenti i dettagli ricalcolati
+  ' si serializza prima di scrivere: SaveConfigurationGeneric svuota il file all'apertura e, se la serializzazione fallisce, lo lascia vuoto
+  Public Function SalvaDettagliPeriodi() As Boolean
+    If String.IsNullOrEmpty(FileFullName) Then Return False
+    Try
+      Dim Setting As New Newtonsoft.Json.JsonSerializerSettings
+      Setting.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto
+      Dim Json As String = Newtonsoft.Json.JsonConvert.SerializeObject(Periods, Newtonsoft.Json.Formatting.Indented, Setting)
+      System.IO.File.WriteAllText(FileFullName, Json)
+      Return True
+    Catch ex As Exception
+      Return False
+    End Try
+  End Function
+
   Public Sub SpostaJsonOriginali()
     Dim cartella = New System.IO.FileInfo(FileFullName).Directory
     For Each fl In cartella.GetFiles.ToList()
@@ -4582,6 +4597,8 @@ Public Class clsPavarotDetails2021
   Public Property ExitTwa As Double
   Public Property BottomSpeed As Double
   Public Property RotPerc95 As Double
+  Public Property SecAnteCalc As Integer ' finestra (secondi prima/dopo il key moment) usata nell ultimo calcolo dei dettagli; 0/0 nei periodi salvati prima di questo campo
+  Public Property SecPostCalc As Integer
   Public Property EntryBs As Double
   Public Property ExitBs As Double
   Public Property EntryExitDeltaHdg As Double
@@ -4732,6 +4749,8 @@ Public Class clsPavarotDetails2021
 
   Public Sub UpdatePavarotData(SecAnte As Integer, SecPost As Integer, KeyMoment As DateTime, IsTack As Boolean)
 
+    SecAnteCalc = SecAnte
+    SecPostCalc = SecPost
     Try
       Dim chTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
       Dim IdAnte As Integer = DataProvider2020.TrovaIndice(KeyMoment.AddSeconds(-SecAnte))
