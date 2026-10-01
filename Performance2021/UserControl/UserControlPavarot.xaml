@@ -109,6 +109,38 @@
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Exit tack Vmg percentage to reach (and hold for 3 s) to consider the boat recovered" Width="150">Recovery Vmg (%)</Label>
+                <estensioni:DoubleUpDown x:Name="UdRecoveryPerc" Value="{Binding PavSettings.RecoveryVmgPerc}" FormatString="F0" Increment="1" Minimum="50" Maximum="120" Width="60" Height="25"></estensioni:DoubleUpDown>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Maximum speed variation inside the stability window to consider the exit stable" Width="150">Stable speed tol. (kts)</Label>
+                <estensioni:DoubleUpDown x:Name="UdStableBs" Value="{Binding PavSettings.StableBsTolKts}" FormatString="F2" Increment="0.05" Minimum="0.01" Maximum="5" Width="60" Height="25"></estensioni:DoubleUpDown>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Maximum course through water variation inside the stability window to consider the exit stable" Width="150">Stable course tol. (deg)</Label>
+                <estensioni:DoubleUpDown x:Name="UdStableCse" Value="{Binding PavSettings.StableCseTolDeg}" FormatString="F1" Increment="0.5" Minimum="0.5" Maximum="30" Width="60" Height="25"></estensioni:DoubleUpDown>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label ToolTip="Length of the stability window and of the entry/exit averages" Width="150">Stability window (s)</Label>
+                <estensioni:IntegerUpDown x:Name="UdStableWindow" Value="{Binding PavSettings.StableWindowSec}" Minimum="1" Maximum="30" Width="60" Height="25"></estensioni:IntegerUpDown>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
               <Button Height="20" x:Name="btn_Recalc" Content="Recalc" Margin="0" Padding="5,0,5,0" MinWidth="80" HorizontalContentAlignment="Left"></Button>
             </MenuItem.Header>
           </MenuItem>

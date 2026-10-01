@@ -1885,6 +1885,11 @@ Public Class clsPavarotSettings
   Public Property GybeSecPost As Integer = 30
   Public Property TackSecAnte As Integer = 10
   Public Property TackSecPost As Integer = 30
+  ' loss sulla traccia nell'acqua: stabilizzazione dell'uscita e recupero del vmg della mura d'uscita
+  Public Property RecoveryVmgPerc As Double = 95   ' % del vmg di riferimento della mura d'uscita da raggiungere
+  Public Property StableBsTolKts As Double = 0.2   ' variazione massima di velocita' (kts) nella finestra di stabilita'
+  Public Property StableCseTolDeg As Double = 3    ' variazione massima di rotta sull'acqua (gradi) nella finestra di stabilita'
+  Public Property StableWindowSec As Integer = 5   ' durata della finestra di stabilita' e delle medie d'entrata/uscita (s)
 
   Public Sub ImpostazioniDefault()
     'PavarotStandardRange = 30
@@ -1892,6 +1897,18 @@ Public Class clsPavarotSettings
     GybeSecPost = 30
     TackSecAnte = 10
     TackSecPost = 30
+    RecoveryVmgPerc = 95
+    StableBsTolKts = 0.2
+    StableCseTolDeg = 3
+    StableWindowSec = 5
+  End Sub
+
+  ''' <summary>Riempie i parametri del loss assenti o non validi (profili salvati con versioni precedenti).</summary>
+  Public Sub NormalizzaParametriLoss()
+    If RecoveryVmgPerc <= 0 OrElse RecoveryVmgPerc > 200 Then RecoveryVmgPerc = 95
+    If StableBsTolKts <= 0 Then StableBsTolKts = 0.2
+    If StableCseTolDeg <= 0 Then StableCseTolDeg = 3
+    If StableWindowSec <= 0 Then StableWindowSec = 5
   End Sub
 
 End Class
@@ -2326,6 +2343,9 @@ Public Class clsProfile2021
     ' aggiunge i canali math delle pavarot
     Me.PavarotChartSettings.Clear()
     Me.PavarotChartSettings.Add(New clsPavarotChartSettings("", UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eProgressionLoss, False))
+    For Each c In ChartPavarotLossAcqua()
+      Me.PavarotChartSettings.Add(New clsPavarotChartSettings("", c, False))
+    Next
     Me.PavarotChartSettings.Add(New clsPavarotChartSettings("", UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eTwdVariation, False))
     Me.PavarotChartSettings.Add(New clsPavarotChartSettings("", UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta, False))
     Me.PavarotChartSettings.Add(New clsPavarotChartSettings("", UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eTwaVariation, False))
@@ -2336,6 +2356,25 @@ Public Class clsProfile2021
     ' aggiunge i canali standard delle pavarot
     For Each c In ListaHeadersCanali
       Me.PavarotChartSettings.Add(New clsPavarotChartSettings(c, Nothing, ReversedSign(c)))
+    Next
+  End Sub
+
+  Private Shared Function ChartPavarotLossAcqua() As List(Of UserControlPavarotPlotViewModelMathPlots.eCanaleCustom)
+    Return New List(Of UserControlPavarotPlotViewModelMathPlots.eCanaleCustom) From {
+      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaBisettrice,
+      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eVmgRecupero,
+      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaTwd,
+      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossGpsTwd}
+  End Function
+
+  ''' <summary>Aggiunge ai profili salvati con versioni precedenti i grafici del loss sulla traccia, subito dopo Loss Progression.</summary>
+  Public Sub AggiungiChartPavarotMancanti()
+    If PavarotChartSettings Is Nothing Then Exit Sub
+    Dim Posizione As Integer = PavarotChartSettings.FindIndex(Function(x) x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eProgressionLoss) + 1
+    For Each c In ChartPavarotLossAcqua()
+      If PavarotChartSettings.Any(Function(x) x.MathChannel = c) Then Continue For
+      PavarotChartSettings.Insert(Math.Min(Posizione, PavarotChartSettings.Count), New clsPavarotChartSettings("", c, False))
+      Posizione += 1
     Next
   End Sub
 
@@ -4599,6 +4638,20 @@ Public Class clsPavarotDetails2021
   Public Property RotPerc95 As Double
   Public Property SecAnteCalc As Integer ' finestra (secondi prima/dopo il key moment) usata nell ultimo calcolo dei dettagli; 0/0 nei periodi salvati prima di questo campo
   Public Property SecPostCalc As Integer
+  ' loss sulla traccia nell'acqua (vedi CalcolaLossAcqua)
+  Public Const VersioneDettagliCorrente As Integer = 2 ' da incrementare quando cambia il calcolo dei dettagli: le manovre piu' vecchie vanno ricalcolate
+  Public Property VersioneDettagli As Integer           ' 0 nei periodi salvati prima di questo campo
+  Public Property IsTackCalc As Boolean
+  Public Property CseEntrata As Double = Double.NaN      ' rotta sull'acqua media dei primi secondi della finestra
+  Public Property BsEntrata As Double = Double.NaN       ' velocita' media dei primi secondi della finestra (kts)
+  Public Property CseUscita As Double = Double.NaN       ' rotta sull'acqua media dopo la stabilizzazione
+  Public Property AsseBisettrice As Double = Double.NaN  ' bisettrice tra rotta d'entrata e d'uscita: asse su cui si misura il progresso
+  Public Property WaterLossMt As Double = Double.NaN     ' metri persi sull'asse rispetto al ghost alla velocita' d'entrata (positivo = perdita)
+  Public Property StableTimeSec As Double = Double.NaN   ' secondi dal key moment alla stabilizzazione di velocita' e rotta
+  Public Property RecoveryTimeSec As Double = Double.NaN ' secondi dal key moment al recupero del vmg della mura d'uscita
+  Public Property ExitRefVmg As Double = Double.NaN      ' vmg di riferimento della mura d'uscita (kts)
+  Public Property ExitRefFromTarget As Boolean           ' True se il riferimento viene dal target perche' manca un tratto dritto utile
+  Public Property ExitVmgRatio As Double = Double.NaN    ' vmg d'uscita stabilizzato / vmg di riferimento della mura d'uscita (%)
   Public Property EntryBs As Double
   Public Property ExitBs As Double
   Public Property EntryExitDeltaHdg As Double
@@ -4734,6 +4787,327 @@ Public Class clsPavarotDetails2021
 
   End Sub
 
+  ' ================= loss sulla traccia nell'acqua =================
+  ' Il ghost continua alla velocita' d'entrata; il progresso reale e' la traccia nell'acqua (velocita' x rotta sull'acqua)
+  ' proiettata su un asse. Nell'acqua una corrente uniforme sposta allo stesso modo barca e ghost e quindi si annulla.
+
+  Public Enum eVarianteLoss
+    eAcquaBisettrice = 0 ' traccia nell'acqua, asse = bisettrice tra rotta d'entrata e d'uscita
+    eAcquaTwd = 1        ' traccia nell'acqua, asse = twd media della finestra
+    eGpsTwd = 2          ' traccia sul fondo (lat/lon), asse = twd media della finestra
+  End Enum
+
+  Private Const SecRiferimento As Double = 120    ' secondi massimi di tratto dritto usati come riferimento della mura d'uscita
+  Private Const SecRicerca As Double = 600        ' distanza massima a cui cercare il tratto dritto sulla mura d'uscita
+  Private Const SecMinRiferimento As Double = 20  ' secondi minimi validi, altrimenti si usa il target
+  Private Const SecVicinoManovra As Double = 20   ' secondi scartati vicino alle manovre adiacenti
+  Private Const YrtDritto As Double = 3           ' yaw rate massimo (gradi/s) di un campione considerato dritto
+  Private Const SecTenutaRecupero As Double = 3   ' il vmg deve restare sopra soglia per almeno questi secondi
+  Private Const DtMassimo As Double = 5           ' passi di tempo piu' lunghi sono buchi nei dati e non si integrano
+
+  Private Shared Function ImpostazioniLoss() As clsPavarotSettings
+    Dim S As clsPavarotSettings = AppConfig.ActiveProfile.PavarotSettings
+    If S Is Nothing Then
+      S = New clsPavarotSettings
+      AppConfig.ActiveProfile.PavarotSettings = S
+    End If
+    S.NormalizzaParametriLoss()
+    Return S
+  End Function
+
+  Private Shared Function MediaNaN(Canale As clsChannel2020, Da As Integer, A As Integer) As Double
+    If Canale Is Nothing Then Return Double.NaN
+    Dim Somma As Double = 0
+    Dim N As Integer = 0
+    For i As Integer = Math.Max(0, Da) To Math.Min(A, Canale.Valori.Count - 1)
+      Dim v As Double = Canale.Valori(i)
+      If Not Double.IsNaN(v) Then
+        Somma += v
+        N += 1
+      End If
+    Next
+    If N = 0 Then Return Double.NaN
+    Return Somma / N
+  End Function
+
+  Private Shared Function MediaCircolareNaN(Canale As clsChannel2020, Da As Integer, A As Integer) As Double
+    If Canale Is Nothing Then Return Double.NaN
+    Dim Seni As Double = 0
+    Dim Coseni As Double = 0
+    Dim N As Integer = 0
+    For i As Integer = Math.Max(0, Da) To Math.Min(A, Canale.Valori.Count - 1)
+      Dim v As Double = Canale.Valori(i)
+      If Not Double.IsNaN(v) Then
+        Seni += Math.Sin(Radians(v))
+        Coseni += Math.Cos(Radians(v))
+        N += 1
+      End If
+    Next
+    If N = 0 Then Return Double.NaN
+    Dim m As Double = Degrees(Math.Atan2(Seni, Coseni))
+    If m < 0 Then m += 360
+    Return m
+  End Function
+
+  ' escursione (max - min) dei valori; per gli angoli rispetto al primo valore valido
+  Private Shared Function EscursioneNaN(Canale As clsChannel2020, Da As Integer, A As Integer, Circolare As Boolean) As Double
+    If Canale Is Nothing Then Return Double.NaN
+    Dim Rif As Double = Double.NaN
+    Dim MinV As Double = Double.MaxValue
+    Dim MaxV As Double = Double.MinValue
+    For i As Integer = Math.Max(0, Da) To Math.Min(A, Canale.Valori.Count - 1)
+      Dim v As Double = Canale.Valori(i)
+      If Double.IsNaN(v) Then Continue For
+      If Circolare Then
+        If Double.IsNaN(Rif) Then Rif = v
+        v = DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(Rif, v)
+      End If
+      MinV = Math.Min(MinV, v)
+      MaxV = Math.Max(MaxV, v)
+    Next
+    If MaxV < MinV Then Return Double.NaN
+    Return MaxV - MinV
+  End Function
+
+  Private Sub CalcolaLossAcqua(IdAnte As Integer, IdKm As Integer, IdPost As Integer, IsTack As Boolean, chBs As clsChannel2020, chCse As clsChannel2020, chTwa As clsChannel2020, chTws As clsChannel2020)
+    Dim S As clsPavarotSettings = ImpostazioniLoss()
+    IsTackCalc = IsTack
+    Dim Finestra As Double = S.StableWindowSec
+
+    ' entrata: medie dei primi secondi della finestra
+    Dim t0 As DateTime = DataProvider2020.Momento(IdAnte)
+    Dim IdEntrataFine As Integer = DataProvider2020.TrovaIndice(t0.AddSeconds(Finestra))
+    CseEntrata = MediaCircolareNaN(chCse, IdAnte, IdEntrataFine)
+    BsEntrata = MediaNaN(chBs, IdAnte, IdEntrataFine)
+
+    ' stabilizzazione: primo istante dopo il key moment in cui velocita' e rotta restano entro le tolleranze per tutta la finestra
+    Dim tKm As DateTime = DataProvider2020.Momento(IdKm)
+    Dim IdStabile As Integer = -1
+    For i As Integer = IdKm To IdPost
+      Dim iFine As Integer = DataProvider2020.TrovaIndice(DataProvider2020.Momento(i).AddSeconds(Finestra))
+      If iFine > IdPost OrElse iFine <= i Then Exit For
+      If EscursioneNaN(chBs, i, iFine, False) <= S.StableBsTolKts AndAlso EscursioneNaN(chCse, i, iFine, True) <= S.StableCseTolDeg Then
+        IdStabile = i
+        Exit For
+      End If
+    Next
+    Dim IdUscitaIni As Integer
+    Dim IdUscitaFine As Integer
+    If IdStabile >= 0 Then
+      StableTimeSec = DataProvider2020.Momento(IdStabile).Subtract(tKm).TotalSeconds
+      IdUscitaIni = IdStabile
+      IdUscitaFine = DataProvider2020.TrovaIndice(DataProvider2020.Momento(IdStabile).AddSeconds(Finestra))
+    Else
+      ' mai stabile nella finestra: si usa la fine della finestra, il valore resta segnalato da StableTimeSec = NaN
+      StableTimeSec = Double.NaN
+      IdUscitaIni = DataProvider2020.TrovaIndice(DataProvider2020.Momento(IdPost).AddSeconds(-Finestra))
+      IdUscitaFine = IdPost
+    End If
+    CseUscita = MediaCircolareNaN(chCse, IdUscitaIni, IdUscitaFine)
+    If Double.IsNaN(CseEntrata) OrElse Double.IsNaN(CseUscita) Then
+      AsseBisettrice = Double.NaN
+    Else
+      AsseBisettrice = Media360(CseEntrata, CseUscita)
+    End If
+
+    ' loss finale sulla bisettrice (positivo = perdita)
+    Dim Serie As List(Of Double) = SerieLoss(eVarianteLoss.eAcquaBisettrice, IdAnte, IdPost)
+    WaterLossMt = Double.NaN
+    For i As Integer = Serie.Count - 1 To 0 Step -1
+      If Not Double.IsNaN(Serie(i)) Then
+        WaterLossMt = -Serie(i)
+        Exit For
+      End If
+    Next
+
+    ' riferimento della mura d'uscita, rapporto d'uscita e tempo di recupero
+    Dim chVmg As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eVMG)
+    Dim chYrt As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eYRT)
+    Dim UscitaStbd As Boolean = Not (MediaNaN(chTwa, IdAnte, IdEntrataFine) >= 0)
+    ExitRefVmg = VmgRiferimentoMuraUscita(IdAnte, IdPost, IsTack, UscitaStbd, chVmg, chTwa, chYrt)
+    ExitRefFromTarget = Double.IsNaN(ExitRefVmg)
+    If ExitRefFromTarget Then
+      Dim Tws As Double = MediaNaN(chTws, IdAnte, IdPost)
+      If Not TgtManager Is Nothing AndAlso Not TgtManager.Tgt Is Nothing AndAlso Not Double.IsNaN(Tws) Then
+        ExitRefVmg = TgtManager.Tgt.ValoreTgt(IsTack, Tws, "bs").Vmg
+      End If
+    End If
+    Dim VmgUscita As Double = MediaNaN(chVmg, IdUscitaIni, IdUscitaFine)
+    ExitVmgRatio = If(ExitRefVmg > 0, VmgUscita / ExitRefVmg * 100, Double.NaN)
+    RecoveryTimeSec = TempoRecupero(IdKm, IdPost, UscitaStbd, chVmg, chTwa, chYrt, ExitRefVmg * S.RecoveryVmgPerc / 100)
+  End Sub
+
+  ' vmg medio reale sulla mura d'uscita: prima il bordo che segue la manovra, poi l'ultimo bordo su quella mura che la precede
+  Private Function VmgRiferimentoMuraUscita(IdAnte As Integer, IdPost As Integer, IsTack As Boolean, UscitaStbd As Boolean, chVmg As clsChannel2020, chTwa As clsChannel2020, chYrt As clsChannel2020) As Double
+    If chVmg Is Nothing OrElse chTwa Is Nothing Then Return Double.NaN
+    Dim Campioni = CampioniMura(IdPost + 1, 1, IsTack, UscitaStbd, False, chVmg, chTwa, chYrt)
+    If Campioni.Count / Math.Max(1, DataProvider2020.Hz) < SecMinRiferimento Then
+      Campioni = CampioniMura(IdAnte - 1, -1, IsTack, UscitaStbd, True, chVmg, chTwa, chYrt)
+    End If
+    If Campioni.Count / Math.Max(1, DataProvider2020.Hz) < SecMinRiferimento Then Return Double.NaN
+    Return Campioni.Average(Function(c) c.Value)
+  End Function
+
+  ' campioni dritti sulla mura cercata a partire da Da (Passo +1 avanti, -1 indietro), in ordine di distanza dalla manovra.
+  ' Si scartano i secondi vicini alle manovre adiacenti e si tengono al massimo SecRiferimento secondi.
+  Private Function CampioniMura(Da As Integer, Passo As Integer, IsTack As Boolean, MuraStbd As Boolean, SaltaMuraOpposta As Boolean, chVmg As clsChannel2020, chTwa As clsChannel2020, chYrt As clsChannel2020) As List(Of KeyValuePair(Of DateTime, Double))
+    Dim Grezzi As New List(Of KeyValuePair(Of DateTime, Double))
+    Dim n As Integer = chTwa.Valori.Count
+    If Da < 0 OrElse Da >= n Then Return Grezzi
+    Dim tInizio As DateTime = DataProvider2020.Momento(Da)
+    Dim InMura As Boolean = False
+    Dim i As Integer = Da
+    Do While i >= 0 AndAlso i < n
+      Dim m As DateTime = DataProvider2020.Momento(i)
+      If m.ToOADate > 0 Then
+        If Math.Abs(m.Subtract(tInizio).TotalSeconds) > SecRicerca Then Exit Do
+        Dim twa As Double = chTwa.Valori(i)
+        If Not Double.IsNaN(twa) Then
+          If (twa >= 0) = MuraStbd Then
+            InMura = True
+            Dim vmg As Double = chVmg.Valori(i)
+            Dim yrt As Double = If(chYrt Is Nothing, 0, chYrt.Valori(i))
+            Dim AndaturaOk As Boolean = (Math.Abs(twa) < 90) = IsTack
+            If AndaturaOk AndAlso Not Double.IsNaN(vmg) AndAlso (Double.IsNaN(yrt) OrElse Math.Abs(yrt) < YrtDritto) Then
+              Grezzi.Add(New KeyValuePair(Of DateTime, Double)(m, vmg))
+            End If
+          ElseIf InMura OrElse Not SaltaMuraOpposta Then
+            Exit Do ' finito il bordo sulla mura cercata
+          End If
+        End If
+      End If
+      i += Passo
+    Loop
+    If Grezzi.Count = 0 Then Return Grezzi
+    ' avanti il bordo finisce con la manovra successiva; indietro e' compreso tra due manovre
+    Dim tPrimo As DateTime = Grezzi.First.Key
+    Dim tUltimo As DateTime = Grezzi.Last.Key
+    Dim Ris As New List(Of KeyValuePair(Of DateTime, Double))
+    For Each c In Grezzi
+      If Math.Abs(c.Key.Subtract(tUltimo).TotalSeconds) < SecVicinoManovra Then Continue For
+      If SaltaMuraOpposta AndAlso Math.Abs(c.Key.Subtract(tPrimo).TotalSeconds) < SecVicinoManovra Then Continue For
+      Ris.Add(c)
+    Next
+    If Ris.Count = 0 Then Return Ris
+    Dim tVicino As DateTime = Ris.First.Key
+    Return Ris.Where(Function(c) Math.Abs(c.Key.Subtract(tVicino).TotalSeconds) <= SecRiferimento).ToList
+  End Function
+
+  ' secondi dal key moment al primo istante in cui, sulla mura d'uscita e senza ruotare, il vmg (media di +-1 s) resta sopra soglia per SecTenutaRecupero
+  Private Function TempoRecupero(IdKm As Integer, IdPost As Integer, UscitaStbd As Boolean, chVmg As clsChannel2020, chTwa As clsChannel2020, chYrt As clsChannel2020, Soglia As Double) As Double
+    If Double.IsNaN(Soglia) OrElse chVmg Is Nothing OrElse chTwa Is Nothing Then Return Double.NaN
+    Dim tKm As DateTime = DataProvider2020.Momento(IdKm)
+    Dim Meta As Integer = Math.Max(1, DataProvider2020.Hz)
+    Dim tTenuta As DateTime = Nothing
+    Dim InTenuta As Boolean = False
+    For i As Integer = IdKm To IdPost
+      Dim m As DateTime = DataProvider2020.Momento(i)
+      If m.ToOADate <= 0 Then Continue For
+      Dim twa As Double = chTwa.Valori(i)
+      Dim yrt As Double = If(chYrt Is Nothing, 0, chYrt.Valori(i))
+      Dim vmg As Double = MediaNaN(chVmg, i - Meta, i + Meta)
+      Dim Ok As Boolean = Not Double.IsNaN(twa) AndAlso (twa >= 0) = UscitaStbd AndAlso (Double.IsNaN(yrt) OrElse Math.Abs(yrt) < YrtDritto) AndAlso vmg >= Soglia
+      If Ok Then
+        If Not InTenuta Then
+          InTenuta = True
+          tTenuta = m
+        End If
+        If m.Subtract(tTenuta).TotalSeconds >= SecTenutaRecupero Then Return tTenuta.Subtract(tKm).TotalSeconds
+      Else
+        InTenuta = False
+      End If
+    Next
+    Return Double.NaN
+  End Function
+
+  ' progresso sull'asse meno quello del ghost (positivo = guadagno), una voce per ogni riga da IdIniziale a IdFinale
+  Public Function SerieLoss(Variante As eVarianteLoss, IdIniziale As Integer, IdFinale As Integer) As List(Of Double)
+    Dim Ris As New List(Of Double)
+    For i As Integer = IdIniziale To IdFinale
+      Ris.Add(Double.NaN)
+    Next
+    If IdFinale <= IdIniziale Then Return Ris
+    Dim Asse As Double
+    If Variante = eVarianteLoss.eAcquaBisettrice Then
+      Asse = AsseBisettrice
+    ElseIf IsTackCalc Then
+      Asse = TwdAxis
+    Else
+      Asse = SommaAngolo180adAngolo360(180, TwdAxis) ' in poppa si avanza sottovento
+    End If
+    If Double.IsNaN(Asse) Then Return Ris
+    Dim S As clsPavarotSettings = ImpostazioniLoss()
+    Dim t0 As DateTime = DataProvider2020.Momento(IdIniziale)
+
+    If Variante = eVarianteLoss.eGpsTwd Then
+      Dim chLat As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLat)
+      Dim chLng As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eLng)
+      If chLat Is Nothing OrElse chLng Is Nothing Then Return Ris
+      Dim P0 As New clsGeographicPosition(chLat.PrimoValoreNotNan(IdIniziale), chLng.PrimoValoreNotNan(IdIniziale))
+      Dim IdE As Integer = DataProvider2020.TrovaIndice(t0.AddSeconds(S.StableWindowSec))
+      Dim dtE As Double = DataProvider2020.Momento(IdE).Subtract(t0).TotalSeconds
+      If dtE <= 0 Then Return Ris
+      Dim PE As New clsGeographicPosition(chLat.PrimoValoreNotNan(IdE), chLng.PrimoValoreNotNan(IdE))
+      Dim VGhost As Double = ProiezioneSuAsse(P0, PE, Asse) / dtE
+      For i As Integer = IdIniziale To IdFinale
+        Dim m As DateTime = DataProvider2020.Momento(i)
+        If m.ToOADate <= 0 Then Continue For
+        Dim lat As Double = chLat.Valori(i)
+        Dim lng As Double = chLng.Valori(i)
+        If Double.IsNaN(lat) OrElse Double.IsNaN(lng) Then Continue For
+        Ris(i - IdIniziale) = ProiezioneSuAsse(P0, New clsGeographicPosition(lat, lng), Asse) - VGhost * m.Subtract(t0).TotalSeconds
+      Next
+    Else
+      Dim chBs As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
+      Dim chCse As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
+      If chCse Is Nothing Then chCse = DataProvider2020.CseFromHdgAndLeeway()
+      If chBs Is Nothing OrElse chCse Is Nothing Then Return Ris
+      Dim VGhost As Double = KtsToMS(BsEntrata) * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(CseEntrata, Asse)))
+      If Double.IsNaN(VGhost) Then Return Ris
+      Dim Progresso As Double = 0
+      Dim iPrec As Integer = -1
+      Dim mPrec As DateTime
+      For i As Integer = IdIniziale To IdFinale
+        Dim m As DateTime = DataProvider2020.Momento(i)
+        If m.ToOADate <= 0 Then Continue For
+        If iPrec >= 0 Then
+          Dim dt As Double = m.Subtract(mPrec).TotalSeconds
+          Dim bs As Double = chBs.Valori(iPrec)
+          Dim cse As Double = chCse.Valori(iPrec)
+          If dt > 0 AndAlso dt <= DtMassimo AndAlso Not Double.IsNaN(bs) AndAlso Not Double.IsNaN(cse) Then
+            Progresso += KtsToMS(bs) * dt * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(cse, Asse)))
+          End If
+        End If
+        Ris(i - IdIniziale) = Progresso - VGhost * m.Subtract(t0).TotalSeconds
+        iPrec = i
+        mPrec = m
+      Next
+    End If
+    Return Ris
+  End Function
+
+  Private Shared Function ProiezioneSuAsse(Da As clsGeographicPosition, A As clsGeographicPosition, Asse As Double) As Double
+    Dim d As Double = clsGeoCalculations.DistanceMeters(Da, A)
+    If Double.IsNaN(d) OrElse d = 0 Then Return 0
+    Dim brg As Double = clsGeoCalculations.BearingDegrees(Da, A)
+    Return d * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(brg, Asse)))
+  End Function
+
+  ' vmg (media di +-1 s) in percentuale del riferimento della mura d'uscita, una voce per riga
+  Public Function SerieVmgRecupero(IdIniziale As Integer, IdFinale As Integer) As List(Of Double)
+    Dim Ris As New List(Of Double)
+    Dim chVmg As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eVMG)
+    Dim Meta As Integer = Math.Max(1, DataProvider2020.Hz)
+    For i As Integer = IdIniziale To IdFinale
+      If chVmg Is Nothing OrElse Not ExitRefVmg > 0 Then
+        Ris.Add(Double.NaN)
+      Else
+        Ris.Add(MediaNaN(chVmg, i - Meta, i + Meta) / ExitRefVmg * 100)
+      End If
+    Next
+    Return Ris
+  End Function
+
   Public Sub New(SecAnte As Integer, SecPost As Integer, KeyMoment As DateTime, IsTack As Boolean)
     UpdatePavarotData(SecAnte, SecPost, KeyMoment, IsTack)
   End Sub
@@ -4751,6 +5125,7 @@ Public Class clsPavarotDetails2021
 
     SecAnteCalc = SecAnte
     SecPostCalc = SecPost
+    VersioneDettagli = VersioneDettagliCorrente
     Try
       Dim chTwa As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
       Dim IdAnte As Integer = DataProvider2020.TrovaIndice(KeyMoment.AddSeconds(-SecAnte))
@@ -4876,6 +5251,12 @@ Public Class clsPavarotDetails2021
       'LatLonXY.CalcolaXYzeroFromHdg(KeyMoment, cRate, cDir, axis, SecPost, SecPost, 1)
       'LatLonXY.CalcolaXYzeroFromPosition(KeyMoment, cRate, cDir, TwdAxis, SecPost, SecPost, 1, Not IsTack)
       'LatLonXY.CalcolaXYzeroFromHdg(KeyMoment, cRate, cDir, axis, SecAnte, SecPost, 1)
+
+      Try
+        CalcolaLossAcqua(IdAnte, IdKm, IdPost, IsTack, chBs, chCse, chTwa, chTws)
+      Catch ex As Exception
+        ' i valori restano NaN: non deve impedire il resto del calcolo
+      End Try
 
       CalcolaVmgLoss(IdAnte, IdPost, SecAnte + SecPost, 5)
       IsValid = True

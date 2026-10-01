@@ -103,9 +103,14 @@ Public Class UserControlPavarot
 
   ' un valore digitato in un campo numerico viene registrato solo quando il campo perde il focus: si forza qui, altrimenti Recalc userebbe il valore precedente
   Private Sub ConfermaImpostazioniInSospeso()
-    For Each ud In {UdTackAnte, UdTackPost, UdGybeAnte, UdGybePost}
+    For Each ud In {UdTackAnte, UdTackPost, UdGybeAnte, UdGybePost, UdStableWindow}
       ud.CommitInput()
       Dim be = System.Windows.Data.BindingOperations.GetBindingExpression(ud, Xceed.Wpf.Toolkit.IntegerUpDown.ValueProperty)
+      If Not be Is Nothing Then be.UpdateSource()
+    Next
+    For Each ud In {UdRecoveryPerc, UdStableBs, UdStableCse}
+      ud.CommitInput()
+      Dim be = System.Windows.Data.BindingOperations.GetBindingExpression(ud, Xceed.Wpf.Toolkit.DoubleUpDown.ValueProperty)
       If Not be Is Nothing Then be.UpdateSource()
     Next
   End Sub

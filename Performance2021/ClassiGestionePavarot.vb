@@ -555,14 +555,14 @@ Public Class UserControlPavarotViewModel
         Ante = PavSettings.TackSecAnte
         Post = PavSettings.TackSecPost
       End If
-      If p.PavarotDetails.SecAnteCalc <> Ante OrElse p.PavarotDetails.SecPostCalc <> Post Then Diverse += 1
+      If p.PavarotDetails.SecAnteCalc <> Ante OrElse p.PavarotDetails.SecPostCalc <> Post OrElse p.PavarotDetails.VersioneDettagli < clsPavarotDetails2021.VersioneDettagliCorrente Then Diverse += 1
     Next
     If Diverse = 0 Then Return ""
     Dim Descr As String = ""
     If FiltroManovre <> eFiltroManovre.eStrambate Then Descr &= "Tacks " & PavSettings.TackSecAnte & "/" & PavSettings.TackSecPost & " s"
     If FiltroManovre = eFiltroManovre.eTutte Then Descr &= ", "
     If FiltroManovre <> eFiltroManovre.eVirate Then Descr &= "Gybes " & PavSettings.GybeSecAnte & "/" & PavSettings.GybeSecPost & " s"
-    Return Diverse & " of " & Totale & " manoeuvers have details calculated with a before/after window different from the current settings (" & Descr & ")." & vbCrLf & vbCrLf &
+    Return Diverse & " of " & Totale & " manoeuvers have details calculated with a before/after window different from the current settings (" & Descr & ") or by an older version of the calculation." & vbCrLf & vbCrLf &
            "Time plots already use the current settings, the scatter plot values (RotPerc95, BottomSpeed, losses...) do not." & vbCrLf &
            "Periods saved by older versions do not record their window, so they are always listed here until recalculated." & vbCrLf & vbCrLf &
            "Recalculate now?"
@@ -3099,6 +3099,14 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
         Titolo = "Cog Twa delta"
       Case eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
         Titolo = "Twd Variation minus theoretical shift"
+      Case eCanaleCustom.eLossAcquaBisettrice
+        Titolo = "Loss vs entry speed - water track, mid-course axis (m)"
+      Case eCanaleCustom.eVmgRecupero
+        Titolo = "Vmg % of exit tack reference"
+      Case eCanaleCustom.eLossAcquaTwd
+        Titolo = "Loss vs entry speed - water track, TWD axis (m)"
+      Case eCanaleCustom.eLossGpsTwd
+        Titolo = "Loss vs entry speed - GPS track, TWD axis (m)"
     End Select
 
   End Sub
@@ -3157,6 +3165,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       Dim RigaRef As Integer = DataProvider2020.TrovaIndice(RefTime)
       Dim Rif As clsRiferimentoDelta = CalcolaRiferimento(Pavarot, Ch, RigaRef)
 
+      Dim SerieSpeciale As List(Of Double) = SerieSpecialeManovra(Pavarot, RigaIniziale, RigaFinale)
       Dim Serie As New clsSerieManovra
       For Riga As Integer = RigaIniziale To RigaFinale
         Dim Momento As DateTime = DataProvider2020.Momento(Riga)
@@ -3172,6 +3181,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
               ValoreRiga = Pavarot.PavarotDetails.MetriGhostVmgDaPosizione(SecFromEntry, Riga, RefPos, Pavarot.PeriodType = clsPeriod2021.ePeriodType.eGybe, Pavarot.PeriodTgt.Vmg)
             Case eCanaleCustom.eEntryTack
               ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+            Case eCanaleCustom.eLossAcquaBisettrice, eCanaleCustom.eVmgRecupero, eCanaleCustom.eLossAcquaTwd, eCanaleCustom.eLossGpsTwd
+              ValoreRiga = ValoreSerieSpeciale(SerieSpeciale, Riga - RigaIniziale)
             Case Else
               ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
           End Select
@@ -3188,6 +3199,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
 
       Dim CSVMtmp As New ChartSeriesViewModel(DataSeriesTMP, LineaTmp)
       SeriesSource.Add(CSVMtmp)
+      AggiungiMarcatori(Pavarot, Serie, Ys, Colore)
     Next
   End Sub
 
@@ -3195,6 +3207,64 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
     If Canale Is Nothing Then Return Double.NaN
     Return Canale.Valori(Indice)
   End Function
+
+  ' ---- canali calcolati sull'intera manovra dai dettagli (loss sulla traccia, vmg di recupero) ----
+
+  ' serie gia' calcolata dai dettagli della manovra, una voce per riga da RigaIniziale a RigaFinale; Nothing per gli altri canali
+  Private Function SerieSpecialeManovra(Pavarot As clsPeriod2021, RigaIniziale As Integer, RigaFinale As Integer) As List(Of Double)
+    If Pavarot.PavarotDetails Is Nothing Then Return Nothing
+    Select Case CanaleCustom
+      Case eCanaleCustom.eLossAcquaBisettrice
+        Return Pavarot.PavarotDetails.SerieLoss(clsPavarotDetails2021.eVarianteLoss.eAcquaBisettrice, RigaIniziale, RigaFinale)
+      Case eCanaleCustom.eLossAcquaTwd
+        Return Pavarot.PavarotDetails.SerieLoss(clsPavarotDetails2021.eVarianteLoss.eAcquaTwd, RigaIniziale, RigaFinale)
+      Case eCanaleCustom.eLossGpsTwd
+        Return Pavarot.PavarotDetails.SerieLoss(clsPavarotDetails2021.eVarianteLoss.eGpsTwd, RigaIniziale, RigaFinale)
+      Case eCanaleCustom.eVmgRecupero
+        Return Pavarot.PavarotDetails.SerieVmgRecupero(RigaIniziale, RigaFinale)
+    End Select
+    Return Nothing
+  End Function
+
+  Private Function ValoreSerieSpeciale(Serie As List(Of Double), Indice As Integer) As Double
+    If Serie Is Nothing OrElse Indice < 0 OrElse Indice >= Serie.Count Then Return Double.NaN
+    Return Serie(Indice)
+  End Function
+
+  ' sulle curve di loss (bisettrice) e di recupero segna il momento di stabilizzazione (quadrato) e di recupero (cerchio)
+  Private Sub AggiungiMarcatori(Pavarot As clsPeriod2021, Serie As clsSerieManovra, Ys As List(Of Double), Colore As System.Windows.Media.Color)
+    If CanaleCustom <> eCanaleCustom.eLossAcquaBisettrice AndAlso CanaleCustom <> eCanaleCustom.eVmgRecupero Then Exit Sub
+    If Pavarot.PavarotDetails Is Nothing OrElse ValoriDerivati Then Exit Sub
+    AggiungiMarcatore(Pavarot.PavarotDetails.StableTimeSec, Serie, Ys, Colore, True, Pavarot.IsChecked)
+    AggiungiMarcatore(Pavarot.PavarotDetails.RecoveryTimeSec, Serie, Ys, Colore, False, Pavarot.IsChecked)
+  End Sub
+
+  Private Sub AggiungiMarcatore(X As Double, Serie As clsSerieManovra, Ys As List(Of Double), Colore As System.Windows.Media.Color, Quadrato As Boolean, Visibile As Boolean)
+    If Double.IsNaN(X) OrElse Serie.Xs.Count = 0 Then Exit Sub
+    Dim Migliore As Integer = -1
+    For i As Integer = 0 To Serie.Xs.Count - 1
+      If Double.IsNaN(Ys(i)) Then Continue For
+      If Migliore < 0 OrElse Math.Abs(Serie.Xs(i) - X) < Math.Abs(Serie.Xs(Migliore) - X) Then Migliore = i
+    Next
+    If Migliore < 0 Then Exit Sub
+    Dim DataSeriesM As New XyDataSeries(Of Double, Double)
+    DataSeriesM.Append(Serie.Xs(Migliore), Ys(Migliore), New clsPuntoMetadata(False))
+    Dim Marcatore As New XyScatterRenderableSeries
+    Marcatore.XAxisId = "DefaultAxisId"
+    Marcatore.YAxisId = "DefaultAxisId"
+    If Quadrato Then
+      Marcatore.PointMarker = New SquarePointMarker
+    Else
+      Marcatore.PointMarker = New EllipsePointMarker
+    End If
+    Marcatore.PointMarker.Width = 9
+    Marcatore.PointMarker.Height = 9
+    Marcatore.PointMarker.Stroke = Colore
+    Marcatore.PointMarker.Fill = Colore
+    Marcatore.IsVisible = Visibile
+    Marcatore.DataSeries = DataSeriesM
+    SeriesSource.Add(New ChartSeriesViewModel(DataSeriesM, Marcatore))
+  End Sub
 
   ' ---- elaborazione comune dei canali delta (percorso normale, raggruppato per mure e per chiave) ----
 
@@ -3377,7 +3447,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
   ' smoothing (media mobile centrata di 2 secondi per lato, simmetrica ai bordi) e derivata; restituisce i Y allineati a Serie
   Private Function ElaboraSerie(Serie As clsSerieManovra) As List(Of Double)
     Dim Valori As List(Of Double) = Serie.Valori
-    Dim Smussabile As Boolean = (CanaleCustom <> eCanaleCustom.eProgressionLoss AndAlso CanaleCustom <> eCanaleCustom.eEntryTack)
+    Dim Smussabile As Boolean = Not {eCanaleCustom.eProgressionLoss, eCanaleCustom.eEntryTack, eCanaleCustom.eLossAcquaBisettrice, eCanaleCustom.eLossAcquaTwd, eCanaleCustom.eLossGpsTwd}.Contains(CanaleCustom)
     If Smussabile Then Valori = ColmaBuchi(Valori, Serie.Xs)
     If Smussa AndAlso Smussabile Then
       Dim Meta As Integer = Math.Max(1, 2 * DataProvider2020.Hz)
@@ -3476,6 +3546,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
           End If
         End If
 
+        Dim SerieSpeciale As List(Of Double) = SerieSpecialeManovra(Pavarot, RigaIniziale, RigaFinale)
         Dim Serie As New clsSerieManovra
         For Riga As Integer = RigaIniziale To RigaFinale 'Pavarot.IdUltimaRigaTabella
           Dim Momento As DateTime = DataProvider2020.Momento(Riga)
@@ -3492,6 +3563,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
                 End If
               Case eCanaleCustom.eEntryTack
                 ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+              Case eCanaleCustom.eLossAcquaBisettrice, eCanaleCustom.eVmgRecupero, eCanaleCustom.eLossAcquaTwd, eCanaleCustom.eLossGpsTwd
+                ValoreRiga = ValoreSerieSpeciale(SerieSpeciale, Riga - RigaIniziale)
               Case Else
                 ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
             End Select
@@ -3584,6 +3657,7 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
             End If
           End If
 
+          Dim SerieSpeciale As List(Of Double) = SerieSpecialeManovra(Pavarot, RigaIniziale, RigaFinale)
           Dim Serie As New clsSerieManovra
           For Riga As Integer = RigaIniziale To RigaFinale
             Dim Momento As DateTime = DataProvider2020.Momento(Riga)
@@ -3600,6 +3674,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
                   End If
                 Case eCanaleCustom.eEntryTack
                   ValoreRiga = IIf(Pavarot.IsStbd, 1, -1)
+                Case eCanaleCustom.eLossAcquaBisettrice, eCanaleCustom.eVmgRecupero, eCanaleCustom.eLossAcquaTwd, eCanaleCustom.eLossGpsTwd
+                  ValoreRiga = ValoreSerieSpeciale(SerieSpeciale, Riga - RigaIniziale)
                 Case Else
                   ValoreRiga = ValoreRigaDelta(Pavarot, Ch, Rif, Riga)
               End Select
@@ -3812,6 +3888,10 @@ Public MustInherit Class UserControlPavarotPlotViewModel
     eCogTwaDelta = 8
     eTwaVariation = 9
     eTwdDeltaMinusTwaToTgtDelta = 10
+    eLossAcquaBisettrice = 12 ' loss sulla traccia nell'acqua, asse bisettrice tra rotta d'entrata e d'uscita
+    eVmgRecupero = 13         ' vmg in % del riferimento della mura d'uscita
+    eLossAcquaTwd = 14        ' loss sulla traccia nell'acqua, asse twd media
+    eLossGpsTwd = 15          ' loss sulla traccia sul fondo (gps), asse twd media
   End Enum
 
   Public Sub New(objParentVM As UserControlPavarotViewModel, Canale As clsChannel2020)
@@ -4386,6 +4466,12 @@ Public Class clsPavarotAdvancedPlotViewModel
         Return Pavarot.PavarotDetails.EntryExitDeltaTwd
       Case clsPavarotAdvancedPlotContainerViewModel.eGraphics.eBasicTwsGainLoss
         Return Pavarot.PavarotDetails.VmgTgtLossMt
+      Case clsPavarotAdvancedPlotContainerViewModel.eGraphics.e2026WaterLoss
+        Return Pavarot.PavarotDetails.WaterLossMt
+      Case clsPavarotAdvancedPlotContainerViewModel.eGraphics.e2026RecoveryTime
+        Return Pavarot.PavarotDetails.RecoveryTimeSec
+      Case clsPavarotAdvancedPlotContainerViewModel.eGraphics.e2026ExitVmgRatio
+        Return Pavarot.PavarotDetails.ExitVmgRatio
       Case clsPavarotAdvancedPlotContainerViewModel.eGraphics.e2022CseVsTgtDelta
         Dim TwaTgt As Double = TgtManager.Tgt.ValoreTgt(Pavarot.PeriodType = clsPeriod2021.ePeriodType.eTack, Pavarot.TwsDetails.AvgVal, "bs").Twa
         Dim PavarotTgtAngle = Math.Min(TwaTgt, (180 - TwaTgt)) * 2
@@ -5542,6 +5628,10 @@ Public Class clsPavarotAdvancedPlotContainerViewModel
     e2024TwaHdgDelta = 95
     e2024TwaTgtDelta = 96
 
+    e2026WaterLoss = 97        ' loss sulla traccia nell'acqua, asse bisettrice (m, positivo = perdita)
+    e2026RecoveryTime = 98     ' secondi dal key moment al recupero del vmg della mura d'uscita
+    e2026ExitVmgRatio = 99     ' vmg d'uscita stabilizzato in % del riferimento della mura d'uscita
+
 
   End Enum
 
@@ -5599,6 +5689,9 @@ Public Class clsPavarotAdvancedPlotContainerViewModel
         'GraficiDaStampare.Add(eGraphics.eBasicTrackFromKeyMoment)
         'GraficiDaStampare.Add(eGraphics.eBasicTrackFromEntry)
         GraficiDaStampare.Add(eGraphics.eBasicTwsGainLoss)
+        GraficiDaStampare.Add(eGraphics.e2026WaterLoss)
+        GraficiDaStampare.Add(eGraphics.e2026RecoveryTime)
+        GraficiDaStampare.Add(eGraphics.e2026ExitVmgRatio)
         GraficiDaStampare.Add(eGraphics.e2021BottomSpeed)
         GraficiDaStampare.Add(eGraphics.e2021RotPerc95)
         GraficiDaStampare.Add(eGraphics.e2021TwsDelta)
@@ -5797,6 +5890,7 @@ Public Class clsPavarotControls
   Public Sub CaricaControlliDaJson()
 
 
+    AppConfig.ActiveProfile.AggiungiChartPavarotMancanti()
     ParentVM.ListaControlliCustom.Clear()
     For Each PavarotChart In AppConfig.ActiveProfile.PavarotChartSettings.Where(Function(x) Not x.MathChannel = Nothing)
       ParentVM.ListaControlliCustom.Add(PavarotChart.MathChannel)
