@@ -279,7 +279,7 @@
 							      </ItemsControl.ItemContainerStyle>
 							      <ItemsControl.ItemTemplate>
 								      <DataTemplate>
-									      <Grid Margin="2,1,0,0">
+									      <Grid Margin="2,1,0,0" ToolTip="Single click to view, double click to select, right click to delete">
 										      <Grid.ColumnDefinitions>
 										        <ColumnDefinition Width="20" />
 										        <ColumnDefinition Width="25" />
