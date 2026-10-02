@@ -142,7 +142,7 @@ Public Class clsChartSyncManager
       If Vm.Surface.YAxes Is Nothing Then Continue For
       If Vm.Surface.YAxes.Count = 0 Then Continue For
       If Vm.Surface.YAxes.First Is Nothing Then Continue For
-      Vm.Surface.ZoomExtentsY()
+      Vm.ZoomExtentsYConRange()
     Next
   End Sub
 

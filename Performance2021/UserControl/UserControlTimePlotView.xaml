@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SPwpf"
-             mc:Ignorable="d" 
+             xmlns:estensioni="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d"
              d:DesignHeight="250" d:DesignWidth="800" >
 
   <UserControl.Resources>
@@ -186,6 +187,20 @@
           <MenuItem>
             <MenuItem.Header>
               <ToggleButton IsChecked="{Binding CommonYaxis}" Name="btn_ToggleYaxes"  ToolTip="Use a common axis for all channels" Content="Single Y Axis"  Width="100" Click="btn_ToggleYaxes_Click" HorizontalContentAlignment="Left"/>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <StackPanel Width="100" ToolTip="Y axis limits of this plot (first channel axis), kept on zoom extents; panning by hand is not limited. Unchecked = automatic">
+                <DockPanel>
+                  <CheckBox IsChecked="{Binding YMinEnabled, Mode=TwoWay}" Content="Min" Width="45" VerticalAlignment="Center"></CheckBox>
+                  <estensioni:DoubleUpDown Value="{Binding YMin, Mode=TwoWay}" FormatString="F2" Increment="1" IsEnabled="{Binding YMinEnabled}"></estensioni:DoubleUpDown>
+                </DockPanel>
+                <DockPanel Margin="0,2,0,0">
+                  <CheckBox IsChecked="{Binding YMaxEnabled, Mode=TwoWay}" Content="Max" Width="45" VerticalAlignment="Center"></CheckBox>
+                  <estensioni:DoubleUpDown Value="{Binding YMax, Mode=TwoWay}" FormatString="F2" Increment="1" IsEnabled="{Binding YMaxEnabled}"></estensioni:DoubleUpDown>
+                </DockPanel>
+              </StackPanel>
             </MenuItem.Header>
           </MenuItem>
           <MenuItem>

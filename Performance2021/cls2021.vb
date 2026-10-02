@@ -641,6 +641,10 @@ Public Class clsBasicChartSettings
   Public Property CommonYAxis As Boolean
   Public Property ShowPortStbdBackground As Boolean
   Public Property ShowTargetIfAvailable As Boolean
+  Public Property YMinEnabled As Boolean = False ' se attivo il minimo dell'asse Y e' vincolato a YMin dopo gli zoom automatici
+  Public Property YMin As Double = 0
+  Public Property YMaxEnabled As Boolean = False ' idem per il massimo
+  Public Property YMax As Double = 0
 
   Public Sub New()
 

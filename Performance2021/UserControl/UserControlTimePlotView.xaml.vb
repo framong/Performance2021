@@ -148,7 +148,7 @@ Public Class UserControlTimePlotView
     If SCsurface.YAxes Is Nothing Then Exit Sub
     If SCsurface.YAxes.Count = 0 Then Exit Sub
     If SCsurface.YAxes.First Is Nothing Then Exit Sub
-    SCsurface.ZoomExtentsY()
+    VM.ZoomExtentsYConRange()
   End Sub
 
   ''' <summary>ZoomExtents protetto, stessa logica di ZoomYSicuro.</summary>
@@ -161,6 +161,7 @@ Public Class UserControlTimePlotView
     If SCsurface.XAxes Is Nothing Then Exit Sub
     If SCsurface.XAxes.Count = 0 Then Exit Sub
     SCsurface.ZoomExtents()
+    If VM.HaVincoloY Then VM.ApplicaRangeY()
   End Sub
 
   Public Enum eTipoOperazione
@@ -455,6 +456,128 @@ Public Class clsTimePlotViewModel
       End If
     End Set
   End Property
+
+  ' ---- vincoli sull'asse Y: minimo e massimo indipendenti ----
+  ' Si applicano al caricamento e dopo gli zoom automatici (ZoomExtentsY); spostando o zoomando a mano non vengono imposti.
+
+  Public ReadOnly Property HaVincoloY As Boolean
+    Get
+      Return Settings.YMinEnabled OrElse Settings.YMaxEnabled
+    End Get
+  End Property
+
+  Private Function RangeVisibileCorrente() As DoubleRange
+    If YassiOrg Is Nothing OrElse YassiOrg.Count = 0 Then Return Nothing
+    Return TryCast(YassiOrg.First.VisibleRange, DoubleRange)
+  End Function
+
+  Public Property YMinEnabled As Boolean
+    Get
+      Return Settings.YMinEnabled
+    End Get
+    Set(value As Boolean)
+      If Not value = Settings.YMinEnabled Then
+        Settings.YMinEnabled = value
+        ' all'attivazione si parte dal minimo visibile in questo momento
+        Dim R As DoubleRange = RangeVisibileCorrente()
+        If value AndAlso Not R Is Nothing Then YMin = Math.Round(CDbl(R.Min), 2)
+        ApplicaRangeY()
+        AppConfig.Salva()
+      End If
+    End Set
+  End Property
+
+  Public Property YMaxEnabled As Boolean
+    Get
+      Return Settings.YMaxEnabled
+    End Get
+    Set(value As Boolean)
+      If Not value = Settings.YMaxEnabled Then
+        Settings.YMaxEnabled = value
+        Dim R As DoubleRange = RangeVisibileCorrente()
+        If value AndAlso Not R Is Nothing Then YMax = Math.Round(CDbl(R.Max), 2)
+        ApplicaRangeY()
+        AppConfig.Salva()
+      End If
+    End Set
+  End Property
+
+  Public Property YMin As Double
+    Get
+      Return Settings.YMin
+    End Get
+    Set(value As Double)
+      If Not value = Settings.YMin Then
+        Settings.YMin = value
+        If Settings.YMinEnabled Then ApplicaRangeY()
+        AppConfig.Salva()
+      End If
+    End Set
+  End Property
+
+  Public Property YMax As Double
+    Get
+      Return Settings.YMax
+    End Get
+    Set(value As Double)
+      If Not value = Settings.YMax Then
+        Settings.YMax = value
+        If Settings.YMaxEnabled Then ApplicaRangeY()
+        AppConfig.Salva()
+      End If
+    End Set
+  End Property
+
+  ''' <summary>
+  ''' Dopo uno zoom automatico sostituisce il minimo e/o il massimo vincolati sul primo asse del plot
+  ''' (con asse unico e' l'unico); il lato non vincolato resta quello dello zoom automatico.
+  ''' Senza vincoli l'asse torna in autorange.
+  ''' </summary>
+  Public Sub ApplicaRangeY()
+    If YassiOrg Is Nothing OrElse YassiOrg.Count = 0 Then Exit Sub
+    Dim Asse As SciChart.Charting.Visuals.Axes.IAxis = YassiOrg.First
+    If Not Surface Is Nothing Then Surface.ZoomExtentsY()
+    If HaVincoloY Then ImponiVincoloY()
+  End Sub
+
+  Private _InImposizioneY As Boolean = False
+  Private _SpanYPrecedente As Double = Double.NaN
+
+  Private Sub ImponiVincoloY()
+    Dim R As DoubleRange = RangeVisibileCorrente()
+    If R Is Nothing Then Exit Sub
+    Dim Mn As Double = If(Settings.YMinEnabled, Settings.YMin, CDbl(R.Min))
+    Dim Mx As Double = If(Settings.YMaxEnabled, Settings.YMax, CDbl(R.Max))
+    If Not Mn < Mx Then Exit Sub
+    _InImposizioneY = True
+    Try
+      YassiOrg.First.VisibleRange = New DoubleRange(Mn, Mx)
+      _SpanYPrecedente = Mx - Mn
+    Finally
+      _InImposizioneY = False
+    End Try
+  End Sub
+
+  ''' <summary>
+  ''' Qualunque cambio del range Y che modifica l'ampiezza (zoom con il tasto destro, rotella, zoom extents)
+  ''' rispetta i vincoli; uno spostamento a mano (ampiezza invariata) non viene toccato.
+  ''' </summary>
+  Private Sub AsseY_VisibleRangeChanged(sender As Object, e As SciChart.Charting.Visuals.Events.VisibleRangeChangedEventArgs)
+    If _InImposizioneY Then Exit Sub
+    Dim R As DoubleRange = RangeVisibileCorrente()
+    If R Is Nothing Then Exit Sub
+    Dim Span As Double = CDbl(R.Max) - CDbl(R.Min)
+    Dim Zoom As Boolean = Double.IsNaN(_SpanYPrecedente) OrElse Math.Abs(Span - _SpanYPrecedente) > 0.000001 * Math.Max(1, Math.Abs(Span))
+    _SpanYPrecedente = Span
+    If Zoom AndAlso HaVincoloY Then ImponiVincoloY()
+  End Sub
+
+  ''' <summary>ZoomExtentsY che mantiene i vincoli impostati.</summary>
+  Public Sub ZoomExtentsYConRange()
+    If Surface Is Nothing Then Exit Sub
+    Surface.ZoomExtentsY()
+    If HaVincoloY Then ImponiVincoloY()
+  End Sub
 
   Public Property SelectedLineType As clsLineType
     Get
@@ -1662,6 +1785,8 @@ Public Class clsTimePlotViewModel
           Xassi.Add(Xasse)
           Yasse.Id = NomeAsse(Yassi, "DefaultAxisId")
           YasseTitle = Yasse.AxisTitle
+          _SpanYPrecedente = Double.NaN
+          AddHandler Yasse.VisibleRangeChanged, AddressOf AsseY_VisibleRangeChanged
         Else
           Yasse.Id = NomeAsse(Yassi, "Channel" & CanaleOrdinataLoaded.ChannelId)
         End If
@@ -1741,6 +1866,11 @@ Public Class clsTimePlotViewModel
 
       ImpostaAnnotazioni(False)
       UpdateSeriesSource()
+      If HaVincoloY Then
+        ' i dati sono nella superficie solo dopo il binding: il vincolo si applica a layout concluso
+        Dim S = Surface
+        If Not S Is Nothing Then S.Dispatcher.BeginInvoke(DispatcherPriority.Background, New Action(AddressOf ApplicaRangeY))
+      End If
 
     Catch ex As Exception
       Stop
