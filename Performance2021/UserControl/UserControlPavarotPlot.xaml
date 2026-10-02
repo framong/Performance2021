@@ -34,6 +34,7 @@
 			</sc:SciChartSurface.YAxes>
 			<sc:SciChartSurface.Annotations>
 				<sc:TextAnnotation Text="{Binding Titolo}" X1="0.0" Y1="-0.05" FontSize="20" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+          <sc:TextAnnotation Text="{Binding Sottotitolo}" X1="0.3" Y1="-0.02" FontSize="12" AnnotationCanvas="BelowChart" Foreground="#FF666666" CoordinateMode="Relative"></sc:TextAnnotation>
         <sc:VerticalLineAnnotation Stroke="red" StrokeThickness="3" X1="{Binding ParentVM.PavarotSyncViewModel.CurrentPosition}"
                                     CoordinateMode="RelativeY" Y1="0" Y2="0"></sc:VerticalLineAnnotation>
 				<sc:HorizontalLineAnnotation Stroke="Gray" StrokeThickness="2" StrokeDashArray="2,2" X1="0" X2="1"

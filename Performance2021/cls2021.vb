@@ -2361,16 +2361,18 @@ Public Class clsProfile2021
 
   Private Shared Function ChartPavarotLossAcqua() As List(Of UserControlPavarotPlotViewModelMathPlots.eCanaleCustom)
     Return New List(Of UserControlPavarotPlotViewModelMathPlots.eCanaleCustom) From {
-      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaBisettrice,
-      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eVmgRecupero,
-      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaTwd,
-      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossGpsTwd}
+      UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaBisettrice}
   End Function
 
-  ''' <summary>Aggiunge ai profili salvati con versioni precedenti i grafici del loss sulla traccia, subito dopo Loss Progression.</summary>
+  ''' <summary>Aggiunge ai profili salvati con versioni precedenti il grafico del loss sulla traccia, subito dopo Loss Progression, e toglie quelli non piu' previsti.</summary>
   Public Sub AggiungiChartPavarotMancanti()
     If PavarotChartSettings Is Nothing Then Exit Sub
+    PavarotChartSettings.RemoveAll(Function(x) x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eVmgRecupero OrElse x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossAcquaTwd OrElse x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eLossGpsTwd)
     Dim Posizione As Integer = PavarotChartSettings.FindIndex(Function(x) x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eProgressionLoss) + 1
+    If Not PavarotChartSettings.Any(Function(x) x.MathChannel = UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eProgressionLoss) Then
+      PavarotChartSettings.Insert(0, New clsPavarotChartSettings("", UserControlPavarotPlotViewModelMathPlots.eCanaleCustom.eProgressionLoss, False))
+      Posizione = 1
+    End If
     For Each c In ChartPavarotLossAcqua()
       If PavarotChartSettings.Any(Function(x) x.MathChannel = c) Then Continue For
       PavarotChartSettings.Insert(Math.Min(Posizione, PavarotChartSettings.Count), New clsPavarotChartSettings("", c, False))
@@ -4639,12 +4641,15 @@ Public Class clsPavarotDetails2021
   Public Property SecAnteCalc As Integer ' finestra (secondi prima/dopo il key moment) usata nell ultimo calcolo dei dettagli; 0/0 nei periodi salvati prima di questo campo
   Public Property SecPostCalc As Integer
   ' loss sulla traccia nell'acqua (vedi CalcolaLossAcqua)
-  Public Const VersioneDettagliCorrente As Integer = 2 ' da incrementare quando cambia il calcolo dei dettagli: le manovre piu' vecchie vanno ricalcolate
+  Public Const VersioneDettagliCorrente As Integer = 4 ' da incrementare quando cambia il calcolo dei dettagli: le manovre piu' vecchie vanno ricalcolate
   Public Property VersioneDettagli As Integer           ' 0 nei periodi salvati prima di questo campo
   Public Property IsTackCalc As Boolean
   Public Property CseEntrata As Double = Double.NaN      ' rotta sull'acqua media dei primi secondi della finestra
   Public Property BsEntrata As Double = Double.NaN       ' velocita' media dei primi secondi della finestra (kts)
   Public Property CseUscita As Double = Double.NaN       ' rotta sull'acqua media dopo la stabilizzazione
+  Public Property BsUscita As Double = Double.NaN        ' velocita' media degli ultimi secondi della finestra (kts): velocita' di regime d'uscita del ghost
+  Public Property CseUscitaFine As Double = Double.NaN   ' rotta sull'acqua media degli ultimi secondi della finestra: rotta di regime d'uscita del ghost
+  Public Property KeyMomentLoss As DateTime              ' key moment usato nel calcolo del loss (istante in cui il ghost vira)
   Public Property AsseBisettrice As Double = Double.NaN  ' bisettrice tra rotta d'entrata e d'uscita: asse su cui si misura il progresso
   Public Property WaterLossMt As Double = Double.NaN     ' metri persi sull'asse rispetto al ghost alla velocita' d'entrata (positivo = perdita)
   Public Property StableTimeSec As Double = Double.NaN   ' secondi dal key moment alla stabilizzazione di velocita' e rotta
@@ -4904,6 +4909,11 @@ Public Class clsPavarotDetails2021
       IdUscitaFine = IdPost
     End If
     CseUscita = MediaCircolareNaN(chCse, IdUscitaIni, IdUscitaFine)
+    ' regime d'uscita del ghost: ultimi secondi della finestra, quando la barca ha finito di accelerare (subito dopo la stabilizzazione e' ancora troppo presto)
+    Dim IdRegimeIni As Integer = DataProvider2020.TrovaIndice(DataProvider2020.Momento(IdPost).AddSeconds(-Finestra))
+    BsUscita = MediaNaN(chBs, IdRegimeIni, IdPost)
+    CseUscitaFine = MediaCircolareNaN(chCse, IdRegimeIni, IdPost)
+    KeyMomentLoss = tKm
     If Double.IsNaN(CseEntrata) OrElse Double.IsNaN(CseUscita) Then
       AsseBisettrice = Double.NaN
     Else
@@ -5062,8 +5072,12 @@ Public Class clsPavarotDetails2021
       Dim chCse As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eCSE)
       If chCse Is Nothing Then chCse = DataProvider2020.CseFromHdgAndLeeway()
       If chBs Is Nothing OrElse chCse Is Nothing Then Return Ris
+      ' ghost sulla bisettrice: vira istantaneamente al key moment, prima rotta e velocita' d'entrata, poi quelle d'uscita
       Dim VGhost As Double = KtsToMS(BsEntrata) * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(CseEntrata, Asse)))
       If Double.IsNaN(VGhost) Then Return Ris
+      Dim VGhostUscita As Double = VGhost
+      Dim DoppioGhost As Boolean = Variante = eVarianteLoss.eAcquaBisettrice AndAlso Not Double.IsNaN(BsUscita) AndAlso Not Double.IsNaN(CseUscitaFine) AndAlso KeyMomentLoss.ToOADate > 0
+      If DoppioGhost Then VGhostUscita = KtsToMS(BsUscita) * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(CseUscitaFine, Asse)))
       Dim Progresso As Double = 0
       Dim iPrec As Integer = -1
       Dim mPrec As DateTime
@@ -5078,7 +5092,13 @@ Public Class clsPavarotDetails2021
             Progresso += KtsToMS(bs) * dt * Math.Cos(Radians(DifferenzaAssolutaTraAngoli360(cse, Asse)))
           End If
         End If
-        Ris(i - IdIniziale) = Progresso - VGhost * m.Subtract(t0).TotalSeconds
+        Dim Ghost As Double
+        If DoppioGhost AndAlso m > KeyMomentLoss Then
+          Ghost = VGhost * KeyMomentLoss.Subtract(t0).TotalSeconds + VGhostUscita * m.Subtract(KeyMomentLoss).TotalSeconds
+        Else
+          Ghost = VGhost * m.Subtract(t0).TotalSeconds
+        End If
+        Ris(i - IdIniziale) = Progresso - Ghost
         iPrec = i
         mPrec = m
       Next

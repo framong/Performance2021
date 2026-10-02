@@ -583,6 +583,14 @@ Public Class UserControlPavarotViewModel
     AggiornaGraficiPavarot(False)
   End Sub
 
+  Private ListaUltimoDisegno As List(Of clsPeriod2021) = Nothing ' manovre presenti in lista all'ultimo disegno dei grafici
+
+  ''' <summary>True se le manovre in lista non sono quelle dell'ultimo disegno (es. eliminate o aggiunte da un altro tab).</summary>
+  Public Function ListaCambiataDaUltimoDisegno() As Boolean
+    If ListaUltimoDisegno Is Nothing OrElse Lista Is Nothing Then Return False
+    Return Not ListaUltimoDisegno.SequenceEqual(Lista)
+  End Function
+
   Public Sub AggiornaGraficiPavarot(ForzaRefresh As Boolean)
     Dim TmrPV As DateTime = Now
     If DataProvider2020 Is Nothing Then Exit Sub
@@ -615,6 +623,7 @@ Public Class UserControlPavarotViewModel
         If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " PV.4 - AggiornaPeriodiVisibili " & Now.Subtract(TmrPV).TotalMilliseconds.ToString("F0") & " ms")
       Case clsLastPavarotPlot.eResult.eRefreshNotNeeded
     End Select
+    If Not Lista Is Nothing Then ListaUltimoDisegno = Lista.ToList
 
   End Sub
 
@@ -3078,7 +3087,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
 
     Select Case CanaleCustom
       Case eCanaleCustom.eProgressionLoss
-        Titolo = "Loss Progression"
+        Titolo = "Gain / loss along wind axis (m)"
+        Sottotitolo = "Flat after the maneuver = target VMG held  |  falling = VMG below target"
       Case eCanaleCustom.eEntryTack
         Titolo = "1:Stbd -1:Port"
       Case eCanaleCustom.eHdgVariation
@@ -3100,7 +3110,8 @@ Public Class UserControlPavarotPlotViewModelMathPlots ' canali custom calcolati 
       Case eCanaleCustom.eTwdDeltaMinusTwaToTgtDelta
         Titolo = "Twd Variation minus theoretical shift"
       Case eCanaleCustom.eLossAcquaBisettrice
-        Titolo = "Loss vs entry speed - water track, mid-course axis (m)"
+        Titolo = "Gain / loss along maneuver axis (m)"
+        Sottotitolo = "Flat after the maneuver = steady exit VMG held  |  falling = VMG lost"
       Case eCanaleCustom.eVmgRecupero
         Titolo = "Vmg % of exit tack reference"
       Case eCanaleCustom.eLossAcquaTwd
@@ -3832,6 +3843,7 @@ Public MustInherit Class UserControlPavarotPlotViewModel
   Public Property ParentVM As UserControlPavarotViewModel
   Public Property SeriesSource As New ObservableCollection(Of IChartSeriesViewModel)
   Public Property Titolo As String
+  Public Property Sottotitolo As String = "" ' nota piccola accanto al titolo che spiega come leggere il grafico
 
   Dim _ToggleSigned As Boolean
   Public Property ToggleSigned As Boolean

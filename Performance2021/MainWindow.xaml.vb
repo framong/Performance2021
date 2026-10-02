@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 01 01"
+    Versione = "v02 - 2026 10 02 03"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1336,7 +1336,12 @@ Class MainWindow
     If DataProvider2020 Is Nothing Then Exit Sub
     If Not DataProvider2020.ValoriCaricati Then Exit Sub
     If Ctrl Is Nothing OrElse Ctrl.PavarotVM2020 Is Nothing Then Exit Sub
-    If Ctrl.PavarotVM2020.ControlliPavarotBasicPlot Is Nothing Then Ctrl.PavarotVM2020.PavarotTabGotFocus()
+    If Ctrl.PavarotVM2020.ControlliPavarotBasicPlot Is Nothing Then
+      Ctrl.PavarotVM2020.PavarotTabGotFocus()
+    ElseIf Ctrl.PavarotVM2020.ListaCambiataDaUltimoDisegno() Then
+      ' manovre eliminate/aggiunte da un altro tab: la lista e' aggiornata, i grafici vanno ridisegnati
+      Ctrl.PavarotVM2020.Refresh()
+    End If
 
     ' avvisa se le manovre sono state calcolate con un prima/dopo diverso dalle impostazioni (una volta per ogni stato, non a ogni focus).
     ' Se l utente ha cambiato ante/post in questa sessione non si propone nulla: il ricalcolo e' lasciato al pulsante Recalc.
