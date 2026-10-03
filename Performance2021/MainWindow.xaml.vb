@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 02 07"
+    Versione = "v02 - 2026 10 03 02"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1677,6 +1677,17 @@ Class MainWindow
     f.Owner = Me
     If f.ShowDialog() <> True Then Exit Sub
     If f.RichiestoRefresh Then RicalcolaCanaliQualita()
+  End Sub
+
+  ''' <summary>Apre la finestra del modello teorico del leeway; con "Save and Refresh" ricalcola il canale Leeway Model.</summary>
+  Private Sub btn_LeewayModel_Click(sender As Object, e As RoutedEventArgs)
+    Dim f As New LeewayModelForm
+    f.Owner = Me
+    If f.ShowDialog() <> True Then Exit Sub
+    If Not f.RichiestoRefresh Then Exit Sub
+    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
+    clsDataCorrections.ClearChannelValues(clsChannels2020.eCanaliChiave.eLeewayModel)
+    RidisegnaPlot(False)
   End Sub
 
   ''' <summary>Forza la ricostruzione delle serie dei grafici dai valori correnti dei canali.</summary>

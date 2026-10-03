@@ -2019,6 +2019,8 @@ Public Class clsProfile2021
   Public Property CrossoverSettings As clsCrossoverSettings
   Public Property DataQualitySettings As clsQualitySettings
   Public Property MySongLeewaySettings As clsMySongLeewaySettings
+  ''' <summary>Coefficienti e impostazioni del modello teorico del leeway (vedi LeewayModel.vb). Nothing nei profili precedenti: si usano i default.</summary>
+  Public Property LeewayModel As clsLeewayModelSettings
   Public Property BoatLenghtInMeters As Double
   Public Property InertialSowSeconds As Double = 5
   Public Property WindGradientAlpha As Double = 0.1

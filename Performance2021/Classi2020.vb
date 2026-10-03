@@ -3987,6 +3987,9 @@ Public Class clsDataProvider2020
             wasStbd = isStbd
           Next
         End If
+      Case clsChannels2020.eCanaliChiave.eLeewayModel
+        ' leeway teorico: coefficienti nel profilo (AppConfig.ActiveProfile.LeewayModel), vedi LeewayModel.vb
+        Canale.Valori = clsLeewayModel.CalcolaSerie(Me)
       Case clsChannels2020.eCanaliChiave.eHeelDelta, clsChannels2020.eCanaliChiave.eTrimDelta, clsChannels2020.eCanaliChiave.eRudderDelta
         If Not TgtManager.Tgt Is Nothing Then
           Dim chVal As clsChannel2020 = Nothing
@@ -5864,6 +5867,8 @@ Public Class clsChannels2020
     eVmgShear = 157
     eVmgShearPerc = 158
 
+    eLeewayModel = 159 ' leeway teorico dal modello a coefficienti (clsLeewayModel)
+
 
   End Enum
 
@@ -6570,6 +6575,11 @@ Public Class clsChannels2020
           pIsMath = True
           pPolarHeader = "Vmg"
           pBenchmarkHeader = "Vmg"
+        Case eCanaliChiave.eLeewayModel
+          pShortName = "LwyMdl"
+          pLongName = "Leeway Model"
+          pIsMath = True
+          pPolarHeader = "Leeway"
         Case eCanaliChiave.eVmgShearPerc
           pShortName = "VmgShP"
           pLongName = "Vmg Shear Perc"

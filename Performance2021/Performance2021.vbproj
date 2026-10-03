@@ -153,6 +153,11 @@
     <Compile Include="LoadingForm.xaml.vb">
       <DependentUpon>LoadingForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LeewayModel.vb" />
+    <Compile Include="LeewayModelForm.xaml.vb">
+      <DependentUpon>LeewayModelForm.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ManeuverCurrentAnalyzer.vb" />
     <Compile Include="ManeuverCurrentWindow.xaml.vb">
       <DependentUpon>ManeuverCurrentWindow.xaml</DependentUpon>
@@ -295,6 +300,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="QualitySettingsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LeewayModelForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

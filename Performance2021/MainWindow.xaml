@@ -235,6 +235,11 @@
                 </MenuItem>
                 <MenuItem>
                   <MenuItem.Header>
+                    <Button Name="btn_LeewayModel" Margin="5,0,0,0" Click="btn_LeewayModel_Click" Width="150" HorizontalContentAlignment="Left" Content="Leeway Model" ToolTip="Coefficients of the theoretical leeway model (Leeway Model channel) and their automatic fit to a reference leeway"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem>
+                  <MenuItem.Header>
                     <Button Name="btn_ImportTest" Margin="5,0,0,0" Click="btn_ImportTest_Click" Width="150" HorizontalContentAlignment="Left" Content="Import Test" ToolTip="Import Test"/>
                   </MenuItem.Header>
                 </MenuItem>
