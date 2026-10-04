@@ -9,7 +9,7 @@ Imports SciChart.Charting.Visuals
 '''   CreaReportStatistiche  come sopra ma senza grafici (veloce, 1-3 pagine)
 ''' Ogni pagina ha numero di pagina e nome del file; l'altezza delle righe di grafici e' uguale su tutte le pagine.
 ''' </summary>
-Public Class clsStraightLineReport
+Partial Public Class clsStraightLineReport
 
   Private Const Margine As Double = 28
   Private Const BandaPiePagina As Double = 26
@@ -241,13 +241,18 @@ Public Class clsStraightLineReport
 
 #Region "Pagine, intestazione, piè di pagina"
 
-  Private Shared Sub NuovaPagina(C As clsCtx, ConIntestazione As Boolean)
+  Private Shared Sub NuovaPagina(C As clsCtx, ConIntestazione As Boolean, Optional Orizzontale As Boolean = False)
     ' PdfSharp scrive il contenuto alla chiusura e non ammette due XGraphics aperti sulla stessa pagina
     If Not C.Gfx Is Nothing Then
       C.Gfx.Dispose()
       C.Gfx = Nothing
     End If
     C.Pagina = C.Doc.AddPage
+    If Orizzontale AndAlso C.Pagina.Width.Point < C.Pagina.Height.Point Then
+      Dim Largo As XUnit = C.Pagina.Height
+      C.Pagina.Height = C.Pagina.Width
+      C.Pagina.Width = Largo
+    End If
     C.Gfx = XGraphics.FromPdfPage(C.Pagina)
     C.W = C.Pagina.Width.Point
     C.H = C.Pagina.Height.Point
@@ -356,7 +361,7 @@ Public Class clsStraightLineReport
     Do
       Dim Suffisso As String = If(Numero = 0, "", "_" & Numero)
       ' si controllano entrambe le estensioni cosi' pdf e csv hanno lo stesso numero
-      If Not System.IO.File.Exists(Base & Suffisso & ".pdf") AndAlso Not System.IO.File.Exists(Base & Suffisso & ".csv") Then
+      If Not System.IO.File.Exists(Base & Suffisso & ".pdf") AndAlso Not System.IO.File.Exists(Base & Suffisso & ".csv") AndAlso Not System.IO.File.Exists(Base & Suffisso & ".html") Then
         Return Base & Suffisso & Estensione
       End If
       Numero += 1
@@ -743,12 +748,29 @@ Public Class clsStraightLineReport
     Dim Primo As Integer = T.Primo
     Dim NumBin As Integer = T.Ultimo - T.Primo + 1
     Dim Hz As Integer = T.Hz
-    Dim Fh As New XFont("Tahoma", 7.5, XFontStyle.Bold)
-    Dim F As New XFont("Tahoma", 7)
-    Dim Fb As New XFont("Tahoma", 7.5, XFontStyle.Bold)
-    Dim Hr As Double = 10
-    Dim Col1 As Double = 124
-    Dim Lb As Double = Math.Min(48, (C.W - 2 * Margine - Col1) / NumBin)
+    ' pagine orizzontali: piu' larghezza per colonna di TWS, quindi caratteri leggibili
+    Dim Fh As New XFont("Tahoma", 8, XFontStyle.Bold)
+    Dim F As New XFont("Tahoma", 7.5)
+    Dim Fb As New XFont("Tahoma", 8, XFontStyle.Bold)
+    Dim Hr As Double = 11
+    Dim Col1 As Double = 118
+    Dim LargPagina As Double = Math.Max(C.W, C.H)
+    Dim Lb As Double = Math.Min(48, (LargPagina - 2 * Margine - Col1) / NumBin)
+
+    ' la durata (dd HH:mm:ss) e' il testo piu' largo: riduce il carattere solo se non entra nella colonna
+    Dim Durate As New List(Of String)
+    For b As Integer = 0 To NumBin - 1
+      Dim N As Integer = T.Voci.First.Coppia.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
+      If N > 0 Then Durate.Add(FormatoDurata(N / Hz))
+    Next
+    Dim DimDurata As Double = 8
+    Dim Fd As New XFont("Tahoma", DimDurata, XFontStyle.Bold)
+    Using Gm As XGraphics = XGraphics.CreateMeasureContext(New XSize(100, 100), XGraphicsUnit.Point, XPageDirection.Downwards)
+      While DimDurata > 5 AndAlso Durate.Any(Function(d) Gm.MeasureString(d, Fd).Width > Lb - 4)
+        DimDurata -= 0.5
+        Fd = New XFont("Tahoma", DimDurata, XFontStyle.Bold)
+      End While
+    End Using
 
     Dim Intestazione As Action =
       Sub()
@@ -759,8 +781,8 @@ Public Class clsStraightLineReport
         C.Y += Hr + 2
       End Sub
 
-    NuovaPagina(C, True)
-    C.Gfx.DrawString("Data Table", New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
+    NuovaPagina(C, True, True)
+    C.Gfx.DrawString("Data Table",New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
     C.Y += 16
     Intestazione()
 
@@ -769,7 +791,7 @@ Public Class clsStraightLineReport
     Cella(C.Gfx, "Duration", Fb, Margine, C.Y, Col1, Hr, XColors.LightCyan, XStringFormats.CenterLeft)
     For b As Integer = 0 To NumBin - 1
       Dim N As Integer = Prima.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
-      Cella(C.Gfx, If(N = 0, "", FormatoDurata(N / Hz)), Fb, Margine + Col1 + b * Lb, C.Y, Lb, Hr, XColors.LightCyan, XStringFormats.CenterRight)
+      Cella(C.Gfx, If(N = 0, "", FormatoDurata(N / Hz)), Fd, Margine + Col1 + b * Lb, C.Y, Lb, Hr, XColors.LightCyan, XStringFormats.CenterRight)
     Next
     C.Y += Hr + 3
 
@@ -777,7 +799,7 @@ Public Class clsStraightLineReport
     For Each Voce In T.Voci
       Dim Necessario As Double = Hr * 4 + 3 + If(Voce.Gruppo <> GruppoCorrente, Hr + 3, 0)
       If C.Y + Necessario > C.H - BandaPiePagina Then
-        NuovaPagina(C, True)
+        NuovaPagina(C, True, True)
         Intestazione()
         GruppoCorrente = -1
         Necessario = Hr * 4 + 3 + Hr + 3

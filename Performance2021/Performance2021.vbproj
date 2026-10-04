@@ -154,6 +154,8 @@
       <DependentUpon>LoadingForm.xaml</DependentUpon>
     </Compile>
     <Compile Include="GestioneReportStraightLine.vb" />
+    <Compile Include="GestioneReportStraightLineHtml.vb" />
+    <Compile Include="FinestraCanaliReport.vb" />
     <Compile Include="LeewayModel.vb" />
     <Compile Include="LeewayModelForm.xaml.vb">
       <DependentUpon>LeewayModelForm.xaml</DependentUpon>

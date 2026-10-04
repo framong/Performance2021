@@ -681,6 +681,7 @@ End Class
 
 
 ''' <summary>Sezioni del report PDF delle straight line e creazione del csv della tabella dati.</summary>
+<AddINotifyPropertyChangedInterface>
 Public Class clsStraightLineReportOptions
   Public Property PrintCharts As Boolean = True
   Public Property PrintTable As Boolean = True
@@ -690,11 +691,15 @@ Public Class clsStraightLineReportOptions
   Public Property CreateTableCsv As Boolean = False
   ''' <summary>Ampiezza in gradi delle fasce di TWA della tabella per TWS e TWA (solo reaching).</summary>
   Public Property TwaBinDegrees As Integer = 20
+  ''' <summary>True: a ogni pdf/html si apre l'elenco con le caselle per scegliere quali canali stampare (proprieta' Export).</summary>
+  Public Property AskChannels As Boolean = False
 End Class
 
 <AddINotifyPropertyChangedInterface>
 Public Class clsStraightLineChartSettings
   Public Property ChannelName As String
+  ''' <summary>Se il canale va nel report pdf/html. Ogni andatura ha la sua lista, quindi la scelta e' per andatura.</summary>
+  Public Property Export As Boolean = True
 
   Public Sub New()
 
@@ -2309,9 +2314,11 @@ Public Class clsProfile2021
   End Sub
 
   Public Sub ImpostaStraightLineChartSettings(ByRef Lista As List(Of clsStraightLineChartSettings), ListaHeadersCanali As List(Of String))
+    ' chi era escluso dal report resta escluso se il canale e' ancora in elenco
+    Dim Esclusi As New HashSet(Of String)(Lista.Where(Function(x) Not x.Export).Select(Function(x) x.ChannelName))
     Lista.Clear()
     For Each c In ListaHeadersCanali
-      Lista.Add(New clsStraightLineChartSettings(c))
+      Lista.Add(New clsStraightLineChartSettings(c) With {.Export = Not Esclusi.Contains(c)})
     Next
   End Sub
 
@@ -3351,6 +3358,14 @@ Public Class clsPeriodsManager2021
     'tutte quelle nel time range
     Dim Key As String = InputBox("Keys text", "Keys")
     AssignKeysToPeriodsInTimeRange(TimeRange, Nothing, Key)
+  End Sub
+
+  ''' <summary>Assegna Keys ai periodi indicati e salva il file dei periodi.</summary>
+  Public Sub AssegnaKeys(ListaPeriodi As IEnumerable(Of clsPeriod2021), Keys As String)
+    For Each P In ListaPeriodi
+      P.Keys = Keys
+    Next
+    SalvaPeriodiJsonFile()
   End Sub
 
   Public Sub AssignKeysToPeriodsInTimeRange(TimeRange As clsTimeRange, PeriodsType As clsPeriod2021.ePeriodType, Keys As String)

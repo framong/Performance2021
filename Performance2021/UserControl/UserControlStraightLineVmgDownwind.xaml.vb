@@ -84,8 +84,8 @@ Public Class UserControlStraightLineVmgDownwind
     End If
   End Sub
 
-  Private Sub btn_SelectExportChannels_Click(sender As Object, e As RoutedEventArgs) Handles btn_SelectExportChannels.Click
-    Stop
+  Private Async Sub btn_PrintHtml_Click(sender As Object, e As RoutedEventArgs)
+    Await StraightLineVM2020.CreaReportHtml(AppConfig.ActiveProfile.StraightLineChartSettingsVmgDn, "")
   End Sub
 
   Private Sub SeriesSelectionModifier_SelectionChanged(sender As Object, e As EventArgs)
@@ -181,6 +181,14 @@ Public Class UserControlStraightLineVmgDownwind
 
   Private Sub ItemChkBx_Click(sender As Object, e As RoutedEventArgs)
     StraightLineVM2020.VerificaAggiornaGrafici()
+  End Sub
+
+  Private Sub btn_SetKeySelected_Click(sender As Object, e As RoutedEventArgs)
+    StraightLineVM2020.ImpostaKeysPeriodiSelezionati()
+  End Sub
+
+  Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
+    StraightLineVM2020.EliminaPeriodiSelezionati()
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)

@@ -122,6 +122,16 @@
               <Button HorizontalContentAlignment="Left" Name="btn_UpdateKeys" Click="btn_UpdateKeys_Click" Content="Update Keys" ToolTip="update KEYS property of the selected periods" Width="120"></Button>
             </MenuItem.Header>
           </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Name="btn_SetKeySelected" Click="btn_SetKeySelected_Click" Content="Set Key (selected)" ToolTip="assign a value to the KEY property of the periods selected on the charts (yellow in the list)" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Name="btn_DeleteSelected" Click="btn_DeleteSelected_Click" Content="Delete selected" ToolTip="delete all the periods selected on the charts (yellow in the list)" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
         </MenuItem>
       </Menu>
       <Menu Margin="0,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray">
@@ -153,12 +163,12 @@
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
-              <Button HorizontalContentAlignment="Left" x:Name="btn_Export" Content="HTML Report"  ToolTip="HTML Report" Width="120"></Button>
+              <Button HorizontalContentAlignment="Left" Name="btn_PrintHtml" Content="Make html report" Click="btn_PrintHtml_Click" ToolTip="Same sections as the pdf, in a single html file with the charts embedded" Width="120"></Button>
             </MenuItem.Header>
           </MenuItem>
-          <MenuItem>
+          <MenuItem StaysOpenOnClick="True">
             <MenuItem.Header>
-              <Button HorizontalContentAlignment="Left" x:Name="btn_SelectExportChannels" Content="HTML Rep. Channels" ToolTip="HTML Report Channels Selection" Width="120" ></Button>
+              <CheckBox Margin="14,0,0,0" Content="Choose pdf/html reports channels" IsChecked="{Binding ReportOptions.AskChannels, Mode=TwoWay}" ToolTip="Ticked: a list of the channels on screen opens when you make a pdf or html report, to choose which ones to print (the choice is saved)" Click="ReportOption_Click"></CheckBox>
             </MenuItem.Header>
           </MenuItem>
         </MenuItem>

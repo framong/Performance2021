@@ -70,8 +70,8 @@ Public Class UserControlStraightLine
     End If
   End Sub
 
-  Private Sub btn_SelectExportChannels_Click(sender As Object, e As RoutedEventArgs) Handles btn_SelectExportChannels.Click
-    Stop
+  Private Async Sub btn_PrintHtml_Click(sender As Object, e As RoutedEventArgs)
+    Await StraightLineVM2020.CreaReportHtml(AppConfig.ActiveProfile.StraightLineChartSettingsAll, "")
   End Sub
 
   Private Sub SeriesSelectionModifier_SelectionChanged(sender As Object, e As EventArgs)
@@ -143,6 +143,14 @@ Public Class UserControlStraightLine
 
   Private Async Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
     Await StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsAll, "")
+  End Sub
+
+  Private Sub btn_SetKeySelected_Click(sender As Object, e As RoutedEventArgs)
+    StraightLineVM2020.ImpostaKeysPeriodiSelezionati()
+  End Sub
+
+  Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
+    StraightLineVM2020.EliminaPeriodiSelezionati()
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
@@ -1047,63 +1055,204 @@ Public Class clsStraightLineVM2020
     End Get
   End Property
 
-  ''' <summary>True se ogni grafico del report (medie per Tws e distribuzioni) contiene dati.</summary>
-  Public Function GraficiPronti() As Boolean
-    If Not Lista.Any(Function(p) p.IsChecked) Then Return True
+  ''' <summary>
+  ''' Conta i grafici del report (medie per Tws e distribuzioni) e quanti contengono dati.
+  ''' False se la struttura non e' ancora completa (contenitori vuoti o plot non ancora creati).
+  ''' </summary>
+  Private Function ContaGrafici(ByRef Totali As Integer, ByRef Popolati As Integer, Ammessi As HashSet(Of String)) As Boolean
+    Totali = 0
+    Popolati = 0
     For Each Contenitore In {ContenitoreTwsVsChannels, ContenitoreDistributions}
       If Contenitore Is Nothing OrElse Contenitore.ListaControlli Is Nothing OrElse Contenitore.ListaControlli.Count = 0 Then Return False
-      For Each c In Contenitore.ListaControlli
+      For i As Integer = 0 To Contenitore.ListaControlli.Count - 1
+        Dim c = Contenitore.ListaControlli(i)
         If c.Plots Is Nothing Then Return False
         Dim Vm = TryCast(c.Plots.DataContext, clsStraightLineStandardPlotViewModel)
-        If Vm Is Nothing OrElse Vm.SeriesSource Is Nothing OrElse Vm.SeriesSource.Count = 0 Then Return False
+        If Vm Is Nothing Then Return False
+        ' i canali esclusi dal report non devono essere caricati: contano solo gli altri (stesso indice nei due contenitori)
+        If Not Ammessi Is Nothing AndAlso Not CanaleAmmesso(i, Ammessi) Then Continue For
+        Totali += 1
+        ' popolato = serie nel view model E gia' passate al grafico (SciChart le riceve nel passaggio di layout, dopo il binding):
+        ' esportare prima darebbe un grafico vuoto
+        If Not Vm.SeriesSource Is Nothing AndAlso Vm.SeriesSource.Count > 0 AndAlso c.Plots.RenderableSeries.Count > 0 Then Popolati += 1
       Next
     Next
     Return True
   End Function
 
-  ''' <summary>Attende, lasciando lavorare la UI, che i grafici siano popolati. False se scade il tempo.</summary>
-  Public Async Function AttendiGraficiPronti(TimeoutSecondi As Integer) As System.Threading.Tasks.Task(Of Boolean)
-    Dim Limite As DateTime = Now.AddSeconds(TimeoutSecondi)
-    Do While Not GraficiPronti()
-      If Now > Limite Then Return False
-      Await System.Threading.Tasks.Task.Delay(250)
-    Loop
-    Return True
+  ''' <summary>True se il grafico di indice i (contenitore delle medie) e' di un canale ammesso nel report.</summary>
+  Private Function CanaleAmmesso(Indice As Integer, Ammessi As HashSet(Of String)) As Boolean
+    If Indice >= ContenitoreTwsVsChannels.ListaControlli.Count Then Return False
+    Dim Plots = ContenitoreTwsVsChannels.ListaControlli(Indice).Plots
+    If Plots Is Nothing Then Return False
+    Dim Vm = TryCast(Plots.DataContext, clsStraightLineStandardPlotViewModel)
+    If Vm Is Nothing Then Return False
+    Dim Ch As clsChannel2020 = If(Vm.CanaleOrdinata, Vm.CanaleAscissa)
+    Return Not Ch Is Nothing AndAlso Ammessi.Contains(Ch.ChannelId)
+  End Function
+
+  Private Shared Function IdCanali(Canali As List(Of clsStraightLineChartSettings)) As HashSet(Of String)
+    Dim Ammessi As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    For Each cs In Canali
+      Dim Ch = DataProvider2020.Channels.Canale(cs.ChannelName)
+      If Not Ch Is Nothing Then Ammessi.Add(Ch.ChannelId)
+    Next
+    Return Ammessi
+  End Function
+
+  ''' <summary>True se i grafici (dei canali ammessi) sono pronti: tutti popolati.</summary>
+  Public Function GraficiPronti(Ammessi As HashSet(Of String)) As Boolean
+    If Not Lista.Any(Function(p) p.IsChecked) Then Return True
+    Dim Totali, Popolati As Integer
+    Return ContaGrafici(Totali, Popolati, Ammessi) AndAlso Popolati = Totali
   End Function
 
   ''' <summary>
-  ''' Crea il report (pdf e/o csv) secondo ReportOptions. Se servono i grafici e non sono ancora tutti popolati
-  ''' (per esempio subito dopo l'apertura del tab) aspetta che lo siano prima di stampare.
+  ''' Attende, lasciando lavorare la UI, che i grafici siano popolati. Un grafico senza dati e' normale (canale vuoto nei periodi):
+  ''' il set e' pronto quando almeno uno e' popolato e il numero di popolati non cambia da 2 secondi.
+  ''' False se scade il tempo con la struttura incompleta o con tutti i grafici vuoti.
   ''' </summary>
+  Public Async Function AttendiGraficiPronti(TimeoutSecondi As Integer, Ammessi As HashSet(Of String)) As System.Threading.Tasks.Task(Of Boolean)
+    Dim Limite As DateTime = Now.AddSeconds(TimeoutSecondi)
+    Dim UltimiPopolati As Integer = -1
+    Dim DaQuando As DateTime = Now
+    Do
+      Dim Totali, Popolati As Integer
+      Dim Completa As Boolean = ContaGrafici(Totali, Popolati, Ammessi)
+      If Not Lista.Any(Function(p) p.IsChecked) Then Return True
+      If Completa Then
+        If Popolati = Totali Then Return True
+        If Popolati <> UltimiPopolati Then
+          UltimiPopolati = Popolati
+          DaQuando = Now
+        ElseIf Popolati > 0 AndAlso (Now - DaQuando).TotalSeconds >= 6 Then
+          Return True
+        End If
+      Else
+        UltimiPopolati = -1
+        DaQuando = Now
+      End If
+      If Now > Limite Then Return Completa AndAlso Popolati > 0
+      Await System.Threading.Tasks.Task.Delay(250)
+    Loop
+  End Function
+
+  ''' <summary>Grafici del report (medie e distribuzioni, allineati), ristretti ai canali con Export attivo.</summary>
+  Private Sub RaccogliGrafici(Canali As List(Of clsStraightLineChartSettings), ListaAvg As List(Of SciChart.Charting.Visuals.SciChartSurface), ListaDistr As List(Of SciChart.Charting.Visuals.SciChartSurface))
+    If ContenitoreTwsVsChannels Is Nothing OrElse ContenitoreTwsVsChannels.ListaControlli Is Nothing Then Exit Sub
+    Dim Ammessi As HashSet(Of String) = IdCanali(Canali)
+    For i As Integer = 0 To ContenitoreTwsVsChannels.ListaControlli.Count - 1
+      Dim c = ContenitoreTwsVsChannels.ListaControlli(i)
+      Dim Vm = TryCast(c.Plots.DataContext, clsStraightLineStandardPlotViewModel)
+      Dim Ch As clsChannel2020 = Nothing
+      If Not Vm Is Nothing Then Ch = If(Vm.CanaleOrdinata, Vm.CanaleAscissa)
+      If Ch Is Nothing OrElse Not Ammessi.Contains(Ch.ChannelId) Then Continue For
+      ListaAvg.Add(c.Plots)
+      If Not ContenitoreDistributions Is Nothing AndAlso i < ContenitoreDistributions.ListaControlli.Count Then ListaDistr.Add(ContenitoreDistributions.ListaControlli(i).Plots)
+    Next
+  End Sub
+
+  ''' <summary>Crea il report in pdf (e csv se richiesto) secondo ReportOptions.</summary>
   Public Async Function CreaReportPdf(ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String) As System.Threading.Tasks.Task
+    Await CreaReport(ListaCanali, Filtro, False)
+  End Function
+
+  ''' <summary>Crea il report html (un solo file con grafici incorporati) secondo ReportOptions.</summary>
+  Public Async Function CreaReportHtml(ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String) As System.Threading.Tasks.Task
+    Await CreaReport(ListaCanali, Filtro, True)
+  End Function
+
+  ''' <summary>
+  ''' Se servono i grafici e non sono ancora tutti popolati (per esempio subito dopo l'apertura del tab) aspetta che lo siano
+  ''' prima di creare il report. La domanda compare solo se nessun grafico ha dati.
+  ''' </summary>
+  Private Async Function CreaReport(ListaCanaliVideo As List(Of clsStraightLineChartSettings), Filtro As String, Html As Boolean) As System.Threading.Tasks.Task
     Dim Opzioni As clsStraightLineReportOptions = ReportOptions
-    If Opzioni.PrintCharts AndAlso Not GraficiPronti() Then
+    ' con la casella attiva l'elenco si apre a ogni stampa; la scelta resta salvata nella proprieta' Export dei canali
+    If Opzioni.AskChannels Then
+      Dim Finestra As New FinestraCanaliReport(ListaCanaliVideo)
+      If Finestra.ShowDialog() <> True Then Exit Function
+      Finestra.Applica()
+      AppConfig.Salva()
+    End If
+    Dim ListaCanali As List(Of clsStraightLineChartSettings) = ListaCanaliVideo.Where(Function(x) x.Export).ToList
+    If ListaCanali.Count = 0 Then
+      MsgBox("No channel is enabled for the report: tick 'Choose channels' and select at least one.", MsgBoxStyle.Exclamation, "Straight Line report")
+      Exit Function
+    End If
+
+    Dim IdAmmessi As HashSet(Of String) = IdCanali(ListaCanali)
+    If Opzioni.PrintCharts AndAlso Not GraficiPronti(IdAmmessi) Then
       Dim Pronti As Boolean = False
       System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait
       Try
-        Pronti = Await AttendiGraficiPronti(15)
+        Pronti = Await AttendiGraficiPronti(20, IdAmmessi)
       Finally
         System.Windows.Input.Mouse.OverrideCursor = Nothing
       End Try
       If Not Pronti Then
-        If MsgBox("Some charts are still empty. Create the report anyway?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
+        If MsgBox("The charts are still empty. Create the report anyway?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
       End If
     End If
 
     Dim ListaAvg As New List(Of SciChart.Charting.Visuals.SciChartSurface)
     Dim ListaDistr As New List(Of SciChart.Charting.Visuals.SciChartSurface)
-    If Opzioni.PrintCharts AndAlso Not ContenitoreTwsVsChannels Is Nothing AndAlso Not ContenitoreTwsVsChannels.ListaControlli Is Nothing Then
-      For Each c In ContenitoreTwsVsChannels.ListaControlli
-        ListaAvg.Add(c.Plots)
-      Next
-      For Each c In ContenitoreDistributions.ListaControlli
-        ListaDistr.Add(c.Plots)
-      Next
+    If Opzioni.PrintCharts Then
+      RaccogliGrafici(ListaCanali, ListaAvg, ListaDistr)
+      ' prima di esportare, fa completare a SciChart layout e disegno di tutti i grafici (anche se la lista era gia' popolata)
+      Dim Tutti As List(Of SciChart.Charting.Visuals.SciChartSurface) = ListaAvg.Concat(ListaDistr).ToList
+      Await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+        Sub()
+          For Each Sup In Tutti
+            Sup.UpdateLayout()
+          Next
+        End Sub, System.Windows.Threading.DispatcherPriority.ApplicationIdle).Task
+      Await System.Threading.Tasks.Task.Delay(500)
     End If
 
-    Dim objPdf As New clsPdf
-    objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
+    If Html Then
+      Dim Report As New clsStraightLineReport
+      Report.CreaReportHtml(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
+    Else
+      Dim objPdf As New clsPdf
+      objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
+    End If
   End Function
+
+  ''' <summary>Periodi selezionati dai grafici: quelli evidenziati in giallo nella lista (AggiornaControlli imposta ColoreSfondo).</summary>
+  Public Function PeriodiSelezionati() As List(Of clsPeriod2021)
+    Return Lista.Where(Function(p) p.ColoreSfondo = Colors.Yellow).ToList
+  End Function
+
+  ''' <summary>Elimina tutti i periodi selezionati (evidenziati in giallo), dopo conferma.</summary>
+  Public Sub EliminaPeriodiSelezionati()
+    Dim Sel = PeriodiSelezionati()
+    If Sel.Count = 0 Then
+      MsgBox("No period is selected: click on the charts to select periods (highlighted in yellow in the list).", MsgBoxStyle.Information, "Delete selected periods")
+      Exit Sub
+    End If
+    If MsgBox("Do you really want to delete the " & Sel.Count & " selected periods?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Delete selected periods") <> MsgBoxResult.Yes Then Exit Sub
+    For i As Integer = 0 To Sel.Count - 1
+      Sel(i).IsChecked = False
+      PeriodsManager.Elimina(Sel(i), i = Sel.Count - 1)
+    Next
+    ' ridisegna tutti i grafici sui periodi rimasti (la selezione gialla viene azzerata)
+    AggiornaGrafici()
+  End Sub
+
+  ''' <summary>Assegna lo stesso valore della proprieta' Keys a tutti i periodi selezionati (evidenziati in giallo).</summary>
+  Public Sub ImpostaKeysPeriodiSelezionati()
+    Dim Sel = PeriodiSelezionati()
+    If Sel.Count = 0 Then
+      MsgBox("No period is selected: click on the charts to select periods (highlighted in yellow in the list).", MsgBoxStyle.Information, "Set key")
+      Exit Sub
+    End If
+    Dim Key As String = InputBox("Key for the " & Sel.Count & " selected periods", "Set key")
+    If Key = "" Then Exit Sub
+    PeriodsManager.AssegnaKeys(Sel, Key)
+    ' i colori e i gruppi per key vanno ricalcolati; negli altri output la key non compare nei grafici
+    If OutputType = eOutputType.eColorByKey OrElse OutputType = eOutputType.eGroupByKey Then AggiornaGrafici()
+  End Sub
 
   Public Sub FontSizeSmaller()
     PeriodDetailsFontSize -= 1
