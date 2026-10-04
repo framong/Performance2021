@@ -146,11 +146,11 @@ Public Class UserControlStraightLine
   End Sub
 
   Private Sub btn_SetKeySelected_Click(sender As Object, e As RoutedEventArgs)
-    StraightLineVM2020.ImpostaKeysPeriodiSelezionati()
+    If StraightLineVM2020.ImpostaKeysPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
   End Sub
 
   Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
-    StraightLineVM2020.EliminaPeriodiSelezionati()
+    If StraightLineVM2020.EliminaPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
@@ -1225,34 +1225,34 @@ Public Class clsStraightLineVM2020
   End Function
 
   ''' <summary>Elimina tutti i periodi selezionati (evidenziati in giallo), dopo conferma.</summary>
-  Public Sub EliminaPeriodiSelezionati()
+  ''' <summary>True se ha eliminato dei periodi: il chiamante deve fare il refresh completo (come il pulsante Refresh).</summary>
+  Public Function EliminaPeriodiSelezionati() As Boolean
     Dim Sel = PeriodiSelezionati()
     If Sel.Count = 0 Then
       MsgBox("No period is selected: click on the charts to select periods (highlighted in yellow in the list).", MsgBoxStyle.Information, "Delete selected periods")
-      Exit Sub
+      Return False
     End If
-    If MsgBox("Do you really want to delete the " & Sel.Count & " selected periods?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Delete selected periods") <> MsgBoxResult.Yes Then Exit Sub
+    If MsgBox("Do you really want to delete the " & Sel.Count & " selected periods?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Delete selected periods") <> MsgBoxResult.Yes Then Return False
     For i As Integer = 0 To Sel.Count - 1
       Sel(i).IsChecked = False
       PeriodsManager.Elimina(Sel(i), i = Sel.Count - 1)
     Next
-    ' ridisegna tutti i grafici sui periodi rimasti (la selezione gialla viene azzerata)
-    AggiornaGrafici()
-  End Sub
+    Return True
+  End Function
 
   ''' <summary>Assegna lo stesso valore della proprieta' Keys a tutti i periodi selezionati (evidenziati in giallo).</summary>
-  Public Sub ImpostaKeysPeriodiSelezionati()
+  ''' <summary>True se serve il refresh completo: i colori e i gruppi per key vanno ricalcolati (negli altri output la key non compare nei grafici).</summary>
+  Public Function ImpostaKeysPeriodiSelezionati() As Boolean
     Dim Sel = PeriodiSelezionati()
     If Sel.Count = 0 Then
       MsgBox("No period is selected: click on the charts to select periods (highlighted in yellow in the list).", MsgBoxStyle.Information, "Set key")
-      Exit Sub
+      Return False
     End If
     Dim Key As String = InputBox("Key for the " & Sel.Count & " selected periods", "Set key")
-    If Key = "" Then Exit Sub
+    If Key = "" Then Return False
     PeriodsManager.AssegnaKeys(Sel, Key)
-    ' i colori e i gruppi per key vanno ricalcolati; negli altri output la key non compare nei grafici
-    If OutputType = eOutputType.eColorByKey OrElse OutputType = eOutputType.eGroupByKey Then AggiornaGrafici()
-  End Sub
+    Return OutputType = eOutputType.eColorByKey OrElse OutputType = eOutputType.eGroupByKey
+  End Function
 
   Public Sub FontSizeSmaller()
     PeriodDetailsFontSize -= 1

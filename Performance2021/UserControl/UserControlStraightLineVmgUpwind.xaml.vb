@@ -177,11 +177,11 @@ Public Class UserControlStraightLineVmgUpwind
   End Sub
 
   Private Sub btn_SetKeySelected_Click(sender As Object, e As RoutedEventArgs)
-    StraightLineVM2020.ImpostaKeysPeriodiSelezionati()
+    If StraightLineVM2020.ImpostaKeysPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
   End Sub
 
   Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
-    StraightLineVM2020.EliminaPeriodiSelezionati()
+    If StraightLineVM2020.EliminaPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
