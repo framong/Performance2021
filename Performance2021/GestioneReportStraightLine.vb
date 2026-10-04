@@ -389,13 +389,13 @@ Public Class clsStraightLineReport
     Dim F As New XFont("Verdana", 7.5)
     Dim Fb As New XFont("Verdana", 7.5, XFontStyle.Bold)
     Dim Hr As Double = 12
-    Dim Larghezze As Double() = {70, 70, 60, 70, 110, 60, 60}
+    Dim Larghezze As Double() = {70, 70, 110, 60, 60, 70, 90}
     Dim Totale As Double = Larghezze.Sum
     Dim Scala As Double = (C.W - 2 * Margine) / Totale
     For i As Integer = 0 To Larghezze.Length - 1
       Larghezze(i) *= Scala
     Next
-    Dim Titoli As String() = {"TWS", "Periods P/S", "Minutes", Perf & " avg", Perf & " min - max", "Bs (kn)", "TWA (deg)"}
+    Dim Titoli As String() = {"TWS", Perf & " avg", Perf & " min - max", "Bs (kn)", "TWA (deg)", "Port/Stbd", "Duration"}
 
     AssicuraSpazio(C, 18 + Hr * 4)
     C.Gfx.DrawString("Summary by TWS", New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
@@ -417,16 +417,25 @@ Public Class clsStraightLineReport
   End Sub
 
   Private Shared Function RigaRiepilogo(Etichetta As String, Stat As List(Of clsStatPeriodo)) As String()
-    If Stat.Count = 0 Then Return {Etichetta, "0", "-", "-", "-", "-", "-"}
+    If Stat.Count = 0 Then Return {Etichetta, "-", "-", "-", "-", "0/0", FormatoDurata(0)}
     Dim Porta As Integer = Stat.Where(Function(s) Not s.IsStbd).Count
     Dim Dritta As Integer = Stat.Where(Function(s) s.IsStbd).Count
     Dim Minuti As Double = Stat.Sum(Function(s) s.Minuti)
     Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.Perf)).ToList
     Dim Intervallo As String = "-"
     If Valide.Count > 0 Then Intervallo = Valide.Min(Function(s) s.Perf).ToString("F1") & " - " & Valide.Max(Function(s) s.Perf).ToString("F1")
-    Return {Etichetta, Porta & "/" & Dritta, Minuti.ToString("F1"),
+    Return {Etichetta,
             Formato(MediaPesata(Stat, Function(s) s.Perf), 1), Intervallo,
-            Formato(MediaPesata(Stat, Function(s) s.Sow), 2), Formato(MediaPesata(Stat, Function(s) Math.Abs(s.Twa)), 1)}
+            Formato(MediaPesata(Stat, Function(s) s.Sow), 2), Formato(MediaPesata(Stat, Function(s) Math.Abs(s.Twa)), 1),
+            Porta & "/" & Dritta, FormatoDurata(Minuti * 60)}
+  End Function
+
+  ''' <summary>Durata come dd HH:mm:ss: giorni e ore compaiono solo se servono, mm:ss sempre.</summary>
+  Private Shared Function FormatoDurata(Secondi As Double) As String
+    Dim T As TimeSpan = TimeSpan.FromSeconds(Math.Round(Secondi))
+    If T.Days > 0 Then Return T.Days.ToString("00") & " " & T.Hours.ToString("00") & ":" & T.Minutes.ToString("00") & ":" & T.Seconds.ToString("00")
+    If T.Hours > 0 Then Return T.Hours.ToString("00") & ":" & T.Minutes.ToString("00") & ":" & T.Seconds.ToString("00")
+    Return T.Minutes.ToString("00") & ":" & T.Seconds.ToString("00")
   End Function
 
   Private Shared Sub DisegnaRigaRiepilogo(C As clsCtx, Valori As String(), Larghezze As Double(), F As XFont, H As Double, Riempimento As XColor, Allineamento As XStringFormat)
@@ -649,10 +658,10 @@ Public Class clsStraightLineReport
 
     ' minuti di navigazione per fascia
     Dim Prima = T.Voci.First.Coppia
-    Cella(C.Gfx, "Time (min)", Fb, Margine, C.Y, Col1, Hr, XColors.LightCyan, XStringFormats.CenterLeft)
+    Cella(C.Gfx, "Duration", Fb, Margine, C.Y, Col1, Hr, XColors.LightCyan, XStringFormats.CenterLeft)
     For b As Integer = 0 To NumBin - 1
       Dim N As Integer = Prima.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
-      Cella(C.Gfx, If(N = 0, "", (N / Hz / 60.0).ToString("F1")), Fb, Margine + Col1 + b * Lb, C.Y, Lb, Hr, XColors.LightCyan, XStringFormats.CenterRight)
+      Cella(C.Gfx, If(N = 0, "", FormatoDurata(N / Hz)), Fb, Margine + Col1 + b * Lb, C.Y, Lb, Hr, XColors.LightCyan, XStringFormats.CenterRight)
     Next
     C.Y += Hr + 3
 
