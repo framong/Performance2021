@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SPwpf"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
               xmlns:estucsl="http://schemas.xceed.com/wpf/xaml/toolkit" 
              mc:Ignorable="d" 
@@ -160,6 +161,20 @@
           <MenuItem StaysOpenOnClick="True">
             <MenuItem.Header>
               <CheckBox Margin="14,0,0,0" Content="Create table csv" IsChecked="{Binding ReportOptions.CreateTableCsv, Mode=TwoWay}" ToolTip="Also create a csv file with the full data table, next to the pdf" Click="ReportOption_Click"></CheckBox>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal" Margin="14,0,0,0" ToolTip="Width of the TWA ranges in the Polar % table by TWS and TWA (one table per tack, printed only if it has data)">
+                <TextBlock Text="TWA range (deg)" VerticalAlignment="Center" Margin="0,0,6,0"></TextBlock>
+                <ComboBox Width="50" SelectedItem="{Binding ReportOptions.TwaBinDegrees, Mode=TwoWay}" SelectionChanged="ReportOption_SelectionChanged">
+                  <sys:Int32>10</sys:Int32>
+                  <sys:Int32>15</sys:Int32>
+                  <sys:Int32>20</sys:Int32>
+                  <sys:Int32>30</sys:Int32>
+                  <sys:Int32>45</sys:Int32>
+                </ComboBox>
+              </StackPanel>
             </MenuItem.Header>
           </MenuItem>
           <MenuItem>

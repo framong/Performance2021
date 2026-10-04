@@ -48,6 +48,9 @@ Public Class clsStraightLineReport
     Public Twa As Double = Double.NaN
     Public Sow As Double = Double.NaN
     Public Perf As Double = Double.NaN
+    ''' <summary>Minimo e massimo dei campioni del canale di performance nel periodo (NaN se non disponibili).</summary>
+    Public PerfMin As Double = Double.NaN
+    Public PerfMax As Double = Double.NaN
     Public Minuti As Double
     Public IsStbd As Boolean
   End Class
@@ -78,6 +81,7 @@ Public Class clsStraightLineReport
       NuovaPagina(C, False)
       DisegnaIntestazione(C, Info, OutputType)
       DisegnaRiepilogo(C, Info)
+      If Info.IsReaching Then DisegnaRiepilogoPerTwa(C, Info, Opzioni.TwaBinDegrees)
       If Opzioni.PrintCharts AndAlso Not ControlliAvg Is Nothing AndAlso ControlliAvg.Count > 0 Then DisegnaGrafici(C, ControlliAvg, ControlliDistr)
       If Opzioni.PrintTable AndAlso Not Tabella Is Nothing Then DisegnaTabellaDati(C, Tabella)
       If Opzioni.PrintPeriods Then DisegnaElencoPeriodi(C, Info, OutputType)
@@ -147,11 +151,17 @@ Public Class clsStraightLineReport
 
   ''' <summary>Media del canale nel periodo, con lo stesso calcolo dei punti dei grafici.</summary>
   Private Shared Function MediaCanale(Canale As clsChannel2020, p As clsPeriod2021) As Double
-    If Canale Is Nothing OrElse Canale.Valori Is Nothing OrElse Canale.Valori.Count = 0 Then Return Double.NaN
+    Dim M = ValoriCanale(Canale, p)
+    Return If(M Is Nothing, Double.NaN, M.Avg)
+  End Function
+
+  ''' <summary>Statistiche (avg, min, max) del canale nel periodo; Nothing se il canale non ha dati.</summary>
+  Private Shared Function ValoriCanale(Canale As clsChannel2020, p As clsPeriod2021) As clsValoriPeriodoCanale2020
+    If Canale Is Nothing OrElse Canale.Valori Is Nothing OrElse Canale.Valori.Count = 0 Then Return Nothing
     Dim Assoluto As Boolean = Canale.DataType = clsChannel2020.eDataType.e180
     Dim M As New clsValoriPeriodoCanale2020(Canale, p.TR, Assoluto)
     M.AggiornaValori(Assoluto)
-    Return M.Avg
+    Return M
   End Function
 
   ''' <summary>
@@ -168,7 +178,12 @@ Public Class clsStraightLineReport
       S.Tws = MediaCanale(chTws, p)
       S.Twa = MediaCanale(chTwa, p)
       S.Sow = MediaCanale(chSow, p)
-      S.Perf = MediaCanale(chPerf, p)
+      Dim Vp = ValoriCanale(chPerf, p)
+      If Not Vp Is Nothing Then
+        S.Perf = Vp.Avg
+        S.PerfMin = Vp.Min
+        S.PerfMax = Vp.Max
+      End If
       Return S
     End If
     ' canali non disponibili: ripiego sui dettagli salvati
@@ -445,6 +460,99 @@ Public Class clsStraightLineReport
       X += Larghezze(i)
     Next
     C.Y += H
+  End Sub
+
+#End Region
+
+#Region "Riepilogo per TWS e TWA (reaching)"
+
+  ''' <summary>
+  ''' Solo reaching: Polar % medio e durata per TWS (righe) e fasce di TWA (colonne), una tabella per mura.
+  ''' Una tabella senza dati non viene stampata.
+  ''' </summary>
+  Private Sub DisegnaRiepilogoPerTwa(C As clsCtx, Info As clsInfo, AmpiezzaTwa As Integer)
+    Dim Passo As Integer = If(AmpiezzaTwa <= 0, 20, Math.Max(5, Math.Min(90, AmpiezzaTwa)))
+    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, True)).
+      Where(Function(s) Not Double.IsNaN(s.Tws) AndAlso Not Double.IsNaN(s.Twa)).ToList
+    DisegnaTabellaTwa(C, "Port", Stat.Where(Function(s) Not s.IsStbd).ToList, Passo, XColors.MistyRose)
+    DisegnaTabellaTwa(C, "Stbd", Stat.Where(Function(s) s.IsStbd).ToList, Passo, XColors.Honeydew)
+  End Sub
+
+  Private Shared Sub DisegnaTabellaTwa(C As clsCtx, Mura As String, Stat As List(Of clsStatPeriodo), Passo As Integer, ColoreMura As XColor)
+    If Stat.Count = 0 Then Exit Sub
+    Dim Fascia As Func(Of clsStatPeriodo, Integer) = Function(s) CInt(Math.Floor(Math.Abs(s.Twa) / Passo))
+    Dim Primo As Integer = Stat.Min(Fascia)
+    Dim Ultimo As Integer = Stat.Max(Fascia)
+    Dim NumBin As Integer = Ultimo - Primo + 1
+    Dim Fh As New XFont("Verdana", 7.5, XFontStyle.Bold)
+    Dim F As New XFont("Verdana", 7.5)
+    Dim Fs As New XFont("Verdana", 6.5)
+    Dim Fd As New XFont("Verdana", 5.5)
+    Dim Hr As Double = 24
+    Dim Col1 As Double = 50
+    Dim ColAll As Double = 54
+    Dim Lb As Double = Math.Min(64, (C.W - 2 * Margine - Col1 - ColAll) / NumBin)
+
+    Dim Intestazione As Action =
+      Sub()
+        Cella(C.Gfx, "TWS \ TWA", Fh, Margine, C.Y, Col1, 14, XColors.LightGray, XStringFormats.CenterLeft)
+        For b As Integer = 0 To NumBin - 1
+          Cella(C.Gfx, ((Primo + b) * Passo) & "-" & ((Primo + b + 1) * Passo), Fh, Margine + Col1 + b * Lb, C.Y, Lb, 14, XColors.LightGray, XStringFormats.Center)
+        Next
+        Cella(C.Gfx, "All", Fh, Margine + Col1 + NumBin * Lb, C.Y, ColAll, 14, XColors.LightGray, XStringFormats.Center)
+        C.Y += 14
+      End Sub
+
+    Dim Riga As Action(Of String, List(Of clsStatPeriodo), XFont, XColor) =
+      Sub(Etichetta, Gruppo, Fnt, Sfondo)
+        Cella(C.Gfx, Etichetta, Fnt, Margine, C.Y, Col1, Hr, Sfondo, XStringFormats.CenterLeft)
+        For b As Integer = 0 To NumBin - 1
+          Dim Sub1 = Gruppo.Where(Function(s) Fascia(s) = Primo + b).ToList
+          CellaPerf(C, Sub1, Fnt, Fs, Fd, Margine + Col1 + b * Lb, Lb, Hr, Sfondo)
+        Next
+        CellaPerf(C, Gruppo, Fnt, Fs, Fd,Margine + Col1 + NumBin * Lb, ColAll, Hr, Sfondo)
+        C.Y += Hr
+      End Sub
+
+    AssicuraSpazio(C, 16 + 14 + Hr * 3)
+    C.Gfx.DrawString("Polar % by TWS and TWA - " & Mura & " tack (avg (duration), min - max below)", New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
+    C.Y += 16
+    Intestazione()
+    Dim Alt As Boolean = False
+    For Each G In Stat.GroupBy(Function(s) CInt(Math.Round(s.Tws))).OrderBy(Function(g2) g2.Key)
+      If C.Y + Hr > C.H - BandaPiePagina Then
+        NuovaPagina(C, True)
+        Intestazione()
+      End If
+      Riga(G.Key.ToString, G.ToList, F, If(Alt, XColors.WhiteSmoke, XColors.White))
+      Alt = Not Alt
+    Next
+    If C.Y + Hr > C.H - BandaPiePagina Then
+      NuovaPagina(C, True)
+      Intestazione()
+    End If
+    Riga("All", Stat, Fh, ColoreMura)
+    C.Y += 8
+  End Sub
+
+  ''' <summary>Cella con Polar % medio (pesato sui minuti) e, sotto, la durata. Vuota se non ci sono periodi.</summary>
+  Private Shared Sub CellaPerf(C As clsCtx, Stat As List(Of clsStatPeriodo), F As XFont, Fs As XFont, Fd As XFont, X As Double, L As Double, H As Double, Sfondo As XColor)
+    Cella(C.Gfx, "", F, X, C.Y, L, H, Sfondo, XStringFormats.Center)
+    If Stat.Count = 0 Then Exit Sub
+    ' prima riga: avg e, accanto, la durata tra parentesi in carattere piccolo (gruppo centrato)
+    Dim Avg As String = Formato(MediaPesata(Stat, Function(s) s.Perf), 1)
+    Dim Durata As String = " (" & FormatoDurata(Stat.Sum(Function(s) s.Minuti) * 60) & ")"
+    Dim La As Double = C.Gfx.MeasureString(Avg, F).Width
+    Dim Ld As Double = C.Gfx.MeasureString(Durata, Fd).Width
+    Dim X0 As Double = X + (L - La - Ld) / 2
+    Dim Yr As Double = C.Y + H * 0.28
+    C.Gfx.DrawString(Avg, F, XBrushes.Black, X0, Yr + 4)
+    C.Gfx.DrawString(Durata, Fd, XBrushes.Gray, X0 + La, Yr + 4)
+    ' min e max sono quelli dei campioni dentro i periodi, non delle medie dei periodi
+    Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.PerfMin) AndAlso Not Double.IsNaN(s.PerfMax)).ToList
+    If Valide.Count > 0 Then
+      C.Gfx.DrawString(Valide.Min(Function(s) s.PerfMin).ToString("F1") & " - " & Valide.Max(Function(s) s.PerfMax).ToString("F1"), Fs, XBrushes.DimGray, New XRect(X, C.Y + H * 0.5, L, H * 0.45), XStringFormats.Center)
+    End If
   End Sub
 
 #End Region

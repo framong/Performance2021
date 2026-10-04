@@ -201,5 +201,11 @@ Public Class UserControlStraightLineReaching
     AppConfig.Salva()
   End Sub
 
+  Private Sub ReportOption_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+    ' ignora la selezione iniziale del binding: salva solo se l'utente ha cambiato valore
+    If e.RemovedItems.Count = 0 Then Exit Sub
+    AppConfig.Salva()
+  End Sub
+
 End Class
 

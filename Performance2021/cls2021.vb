@@ -688,6 +688,8 @@ Public Class clsStraightLineReportOptions
   Public Property PrintPeriods As Boolean = True
   ''' <summary>Crea anche un csv con la tabella dati completa, accanto al pdf.</summary>
   Public Property CreateTableCsv As Boolean = False
+  ''' <summary>Ampiezza in gradi delle fasce di TWA della tabella per TWS e TWA (solo reaching).</summary>
+  Public Property TwaBinDegrees As Integer = 20
 End Class
 
 <AddINotifyPropertyChangedInterface>
