@@ -114,12 +114,41 @@
         <MenuItem Header="Tools">
           <MenuItem>
             <MenuItem.Header>
-              <Button HorizontalContentAlignment="Left" Name="btn_PrintPdf" Content="Make a pdf" Click="btn_PrintPdf_Click" Width="120"></Button>
+              <Button HorizontalContentAlignment="Left" x:Name="btn_SelectChannels" Content="Channels Manager" ToolTip="Select Channels To Show" Width="120" ></Button>
             </MenuItem.Header>
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
-              <Button HorizontalContentAlignment="Left" x:Name="btn_SelectChannels" Content="Channels Manager" ToolTip="Select Channels To Show" Width="120" ></Button>
+              <Button HorizontalContentAlignment="Left" Name="btn_UpdateKeys" Click="btn_UpdateKeys_Click" Content="Update Keys" ToolTip="update KEYS property of the selected periods" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+        </MenuItem>
+      </Menu>
+      <Menu Margin="0,0,10,0" Padding="5,0,5,0" Background="LightGray" BorderThickness="1" BorderBrush="Gray">
+        <MenuItem Header="Reports">
+          <MenuItem>
+            <MenuItem.Header>
+              <Button HorizontalContentAlignment="Left" Name="btn_PrintPdf" Content="Make a pdf" Click="btn_PrintPdf_Click" Width="120"></Button>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <CheckBox Margin="14,0,0,0" Content="Print charts" IsChecked="{Binding ReportOptions.PrintCharts, Mode=TwoWay}" ToolTip="Include the charts (waits until they are drawn)" Click="ReportOption_Click"></CheckBox>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <CheckBox Margin="14,0,0,0" Content="Print table" IsChecked="{Binding ReportOptions.PrintTable, Mode=TwoWay}" ToolTip="Include the data table by TWS" Click="ReportOption_Click"></CheckBox>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <CheckBox Margin="14,0,0,0" Content="Print periods list" IsChecked="{Binding ReportOptions.PrintPeriods, Mode=TwoWay}" ToolTip="Include the list of the periods (always the last section)" Click="ReportOption_Click"></CheckBox>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <CheckBox Margin="14,0,0,0" Content="Create table csv" IsChecked="{Binding ReportOptions.CreateTableCsv, Mode=TwoWay}" ToolTip="Also create a csv file with the full data table, next to the pdf" Click="ReportOption_Click"></CheckBox>
             </MenuItem.Header>
           </MenuItem>
           <MenuItem>
@@ -130,11 +159,6 @@
           <MenuItem>
             <MenuItem.Header>
               <Button HorizontalContentAlignment="Left" x:Name="btn_SelectExportChannels" Content="HTML Rep. Channels" ToolTip="HTML Report Channels Selection" Width="120" ></Button>
-            </MenuItem.Header>
-          </MenuItem>
-          <MenuItem>
-            <MenuItem.Header>
-              <Button HorizontalContentAlignment="Left" Name="btn_UpdateKeys" Click="btn_UpdateKeys_Click" Content="Update Keys" ToolTip="update KEYS property of the selected periods" Width="120"></Button>
             </MenuItem.Header>
           </MenuItem>
         </MenuItem>

@@ -153,6 +153,7 @@
     <Compile Include="LoadingForm.xaml.vb">
       <DependentUpon>LoadingForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GestioneReportStraightLine.vb" />
     <Compile Include="LeewayModel.vb" />
     <Compile Include="LeewayModelForm.xaml.vb">
       <DependentUpon>LeewayModelForm.xaml</DependentUpon>

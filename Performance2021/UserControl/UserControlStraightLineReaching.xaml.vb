@@ -155,7 +155,7 @@ Public Class UserControlStraightLineReaching
 
   End Sub
 
-    Private Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
+    Private Function FiltroTwaPerTitolo() As String
         Dim Filtro As String = ""
         If StraightLineVM2020.StraightLinesSelectionSettings.ApplyTwaFilter Then
             If StraightLineVM2020.StraightLinesSelectionSettings.ApplyTwaMin And StraightLineVM2020.StraightLinesSelectionSettings.ApplyTwaMax Then
@@ -166,8 +166,13 @@ Public Class UserControlStraightLineReaching
                 Filtro = "(Twa < " & StraightLineVM2020.StraightLinesSelectionSettings.TwaMax & ")"
             End If
         End If
-        StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsReaching, Filtro)
+        Return Filtro
+    End Function
+
+    Private Async Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
+        Await StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsReaching, FiltroTwaPerTitolo())
     End Sub
+
 
     Private Sub TextBlock_PreviewMouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
     Dim p As clsPeriod2021 = DirectCast(sender.datacontext, clsPeriod2021)
@@ -190,6 +195,10 @@ Public Class UserControlStraightLineReaching
 
   Private Sub ItemChkBx_Click(sender As Object, e As RoutedEventArgs)
     StraightLineVM2020.VerificaAggiornaGrafici()
+  End Sub
+
+  Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
+    AppConfig.Salva()
   End Sub
 
 End Class

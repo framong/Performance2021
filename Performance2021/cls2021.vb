@@ -680,6 +680,16 @@ End Class
 
 
 
+''' <summary>Sezioni del report PDF delle straight line e creazione del csv della tabella dati.</summary>
+Public Class clsStraightLineReportOptions
+  Public Property PrintCharts As Boolean = True
+  Public Property PrintTable As Boolean = True
+  ''' <summary>L'elenco dei periodi e' sempre l'ultima sezione del report.</summary>
+  Public Property PrintPeriods As Boolean = True
+  ''' <summary>Crea anche un csv con la tabella dati completa, accanto al pdf.</summary>
+  Public Property CreateTableCsv As Boolean = False
+End Class
+
 <AddINotifyPropertyChangedInterface>
 Public Class clsStraightLineChartSettings
   Public Property ChannelName As String
@@ -2021,6 +2031,8 @@ Public Class clsProfile2021
   Public Property MySongLeewaySettings As clsMySongLeewaySettings
   ''' <summary>Coefficienti e impostazioni del modello teorico del leeway (vedi LeewayModel.vb). Nothing nei profili precedenti: si usano i default.</summary>
   Public Property LeewayModel As clsLeewayModelSettings
+  ''' <summary>Cosa includere nel report PDF delle straight line (menu Reports dei tab upwind, downwind, reaching). Nothing = valori di default.</summary>
+  Public Property StraightLineReportOptions As clsStraightLineReportOptions
   Public Property BoatLenghtInMeters As Double
   Public Property InertialSowSeconds As Double = 5
   Public Property WindGradientAlpha As Double = 0.1

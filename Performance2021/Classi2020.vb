@@ -1862,6 +1862,11 @@ Public Class clsCoppieValoriTwsVsCanale
     Return New clsValoriBase(cv.Select(Function(x) x.Y).ToArray, Canale.DataType)
   End Function
 
+  ''' <summary>Numero di campioni validi (uno per riga del file) nella fascia di Tws.</summary>
+  Public Function Conteggio(MinTws As Double, MaxTws As Double) As Integer
+    Return CoppieValori.Where(Function(x) x.X >= MinTws AndAlso x.X < MaxTws).Count
+  End Function
+
 End Class
 
 <AddINotifyPropertyChangedInterface>

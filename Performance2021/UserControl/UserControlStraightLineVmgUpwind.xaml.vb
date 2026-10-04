@@ -149,9 +149,9 @@ Public Class UserControlStraightLineVmgUpwind
 
   End Sub
 
-  Private Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
-        StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsVmgUp, "")
-    End Sub
+  Private Async Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
+    Await StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsVmgUp, "")
+  End Sub
 
   Private Sub TextBlock_PreviewMouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
     Dim p As clsPeriod2021 = DirectCast(sender.datacontext, clsPeriod2021)
@@ -176,10 +176,9 @@ Public Class UserControlStraightLineVmgUpwind
     StraightLineVM2020.VerificaAggiornaGrafici()
   End Sub
 
-  Private Sub Btn_StampaStats_Click(sender As Object, e As RoutedEventArgs)
-    'Dim H As New HighlightViewModel
-    'H.ImpostazioniIniziali()
-    'H.MakeReport(PeriodsManager.ListaStraightLineVmg)
+  Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
+    AppConfig.Salva()
   End Sub
+
 End Class
 

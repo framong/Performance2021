@@ -141,9 +141,14 @@ Public Class UserControlStraightLine
 
   End Sub
 
-  Private Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
-    StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsAll, "")
+  Private Async Sub btn_PrintPdf_Click(sender As Object, e As RoutedEventArgs)
+    Await StraightLineVM2020.CreaReportPdf(AppConfig.ActiveProfile.StraightLineChartSettingsAll, "")
   End Sub
+
+  Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
+    AppConfig.Salva()
+  End Sub
+
 
   Private Sub TextBlock_PreviewMouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
     Dim p As clsPeriod2021 = DirectCast(sender.datacontext, clsPeriod2021)
@@ -1034,23 +1039,71 @@ Public Class clsStraightLineVM2020
   End Property
 
 
-  Public Sub CreaReportPdf(ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String)
-    If ContenitoreTwsVsChannels Is Nothing Then Exit Sub
-    If ContenitoreTwsVsChannels.ListaControlli Is Nothing Then Exit Sub
-    If ContenitoreTwsVsChannels.ListaControlli.Count = 0 Then Exit Sub
-    Dim ListaAvg As New List(Of SciChart.Charting.Visuals.SciChartSurface)
-    For Each c In ContenitoreTwsVsChannels.ListaControlli
-      ListaAvg.Add(c.Plots)
-    Next
+  ''' <summary>Cosa includere nel report: salvato nel profilo e legato ai checkbox del menu Reports.</summary>
+  Public ReadOnly Property ReportOptions As clsStraightLineReportOptions
+    Get
+      If AppConfig.ActiveProfile.StraightLineReportOptions Is Nothing Then AppConfig.ActiveProfile.StraightLineReportOptions = New clsStraightLineReportOptions
+      Return AppConfig.ActiveProfile.StraightLineReportOptions
+    End Get
+  End Property
 
-    Dim ListaDistr As New List(Of SciChart.Charting.Visuals.SciChartSurface)
-    For Each c In ContenitoreDistributions.ListaControlli
-      ListaDistr.Add(c.Plots)
+  ''' <summary>True se ogni grafico del report (medie per Tws e distribuzioni) contiene dati.</summary>
+  Public Function GraficiPronti() As Boolean
+    If Not Lista.Any(Function(p) p.IsChecked) Then Return True
+    For Each Contenitore In {ContenitoreTwsVsChannels, ContenitoreDistributions}
+      If Contenitore Is Nothing OrElse Contenitore.ListaControlli Is Nothing OrElse Contenitore.ListaControlli.Count = 0 Then Return False
+      For Each c In Contenitore.ListaControlli
+        If c.Plots Is Nothing Then Return False
+        Dim Vm = TryCast(c.Plots.DataContext, clsStraightLineStandardPlotViewModel)
+        If Vm Is Nothing OrElse Vm.SeriesSource Is Nothing OrElse Vm.SeriesSource.Count = 0 Then Return False
+      Next
     Next
+    Return True
+  End Function
+
+  ''' <summary>Attende, lasciando lavorare la UI, che i grafici siano popolati. False se scade il tempo.</summary>
+  Public Async Function AttendiGraficiPronti(TimeoutSecondi As Integer) As System.Threading.Tasks.Task(Of Boolean)
+    Dim Limite As DateTime = Now.AddSeconds(TimeoutSecondi)
+    Do While Not GraficiPronti()
+      If Now > Limite Then Return False
+      Await System.Threading.Tasks.Task.Delay(250)
+    Loop
+    Return True
+  End Function
+
+  ''' <summary>
+  ''' Crea il report (pdf e/o csv) secondo ReportOptions. Se servono i grafici e non sono ancora tutti popolati
+  ''' (per esempio subito dopo l'apertura del tab) aspetta che lo siano prima di stampare.
+  ''' </summary>
+  Public Async Function CreaReportPdf(ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String) As System.Threading.Tasks.Task
+    Dim Opzioni As clsStraightLineReportOptions = ReportOptions
+    If Opzioni.PrintCharts AndAlso Not GraficiPronti() Then
+      Dim Pronti As Boolean = False
+      System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait
+      Try
+        Pronti = Await AttendiGraficiPronti(15)
+      Finally
+        System.Windows.Input.Mouse.OverrideCursor = Nothing
+      End Try
+      If Not Pronti Then
+        If MsgBox("Some charts are still empty. Create the report anyway?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
+      End If
+    End If
+
+    Dim ListaAvg As New List(Of SciChart.Charting.Visuals.SciChartSurface)
+    Dim ListaDistr As New List(Of SciChart.Charting.Visuals.SciChartSurface)
+    If Opzioni.PrintCharts AndAlso Not ContenitoreTwsVsChannels Is Nothing AndAlso Not ContenitoreTwsVsChannels.ListaControlli Is Nothing Then
+      For Each c In ContenitoreTwsVsChannels.ListaControlli
+        ListaAvg.Add(c.Plots)
+      Next
+      For Each c In ContenitoreDistributions.ListaControlli
+        ListaDistr.Add(c.Plots)
+      Next
+    End If
 
     Dim objPdf As New clsPdf
-    objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro)
-  End Sub
+    objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
+  End Function
 
   Public Sub FontSizeSmaller()
     PeriodDetailsFontSize -= 1
