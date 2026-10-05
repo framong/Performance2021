@@ -25,6 +25,7 @@ Public Class UserControlStraightLineReaching
   Public Sub New()
     Me.DataContext = StraightLineVM2020
     ' This call is required by the designer.
+    StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.Reaching  ' prima di InitializeComponent: i binding leggono le opzioni del tab giusto
     InitializeComponent()
 
     StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.Reaching ' ShowVmg

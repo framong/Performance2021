@@ -10,17 +10,19 @@ Partial Public Class clsStraightLineReport
 
 #Region "Report html"
 
-  Public Sub CreaReportHtml(ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions)
+  Public Sub CreaReportHtml(ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions, Optional Av As FinestraAvanzamento = Nothing)
     If Not Opzioni.PrintCharts AndAlso Not Opzioni.PrintTable AndAlso Not Opzioni.PrintPeriods Then
       MsgBox("Nothing to create: tick at least one option under Reports.", MsgBoxStyle.Information, "Straight Line report")
       Exit Sub
     End If
+    ImpostaReport(Opzioni, Av)
     Dim Info As clsInfo = CreaInfo(ListaPeriodi, OutputType, Filtro, "")
     If Info Is Nothing Then Exit Sub
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info)
     Dim Tabella As clsTabella = Nothing
     If Opzioni.PrintTable Then Tabella = CostruisciTabella(Info, ListaCanali)
+    If Opzioni.PrintCharts AndAlso Not ControlliAvg Is Nothing Then _ImgTot = ControlliAvg.Count + If(ControlliDistr Is Nothing, 0, ControlliDistr.Count)
 
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, Info.IsReaching)).ToList
     Dim H As New StringBuilder
     H.AppendLine("<!DOCTYPE html>")
     H.AppendLine("<html lang=""en""><head><meta charset=""utf-8"">")
@@ -46,6 +48,7 @@ Partial Public Class clsStraightLineReport
     H.AppendLine("<p class=""foot"">Performance2021" & If(Nome = "", "", "  |  " & Enc(Nome)) & "  |  " & Now.ToString("yyyy-MM-dd HH:mm") & "</p>")
     H.AppendLine("</body></html>")
 
+    Fase("Saving the html", 90, 100)
     Dim Percorso As String = PercorsoLibero(Info, OutputType, ".html")
     System.IO.File.WriteAllText(Percorso, H.ToString, New UTF8Encoding(True))
     If Opzioni.CreateTableCsv AndAlso Not Tabella Is Nothing Then ScriviCsv(Tabella, Percorso.Substring(0, Percorso.Length - 5) & ".csv")
@@ -130,8 +133,13 @@ Partial Public Class clsStraightLineReport
     Sb.AppendLine(RigaHtml(RigaRiepilogo("All", Stat), "all"))
     Sb.AppendLine(RigaHtml(RigaRiepilogo("Port", Stat.Where(Function(s) Not s.IsStbd).ToList), "port"))
     Sb.AppendLine(RigaHtml(RigaRiepilogo("Stbd", Stat.Where(Function(s) s.IsStbd).ToList), "stbd"))
-    Sb.Append("</table></div>")
+    Sb.Append("</table></div>" & NotaHtml())
     Return Sb.ToString
+  End Function
+
+  ''' <summary>Nota sotto una tabella: Min e Max sono percentili.</summary>
+  Private Shared Function NotaHtml() As String
+    Return "<p class=""small"">" & Enc(NotaBanda()) & "</p>"
   End Function
 
   Private Shared Function RigaHtml(Valori As String(), Classe As String) As String
@@ -146,7 +154,7 @@ Partial Public Class clsStraightLineReport
   ''' <summary>Solo reaching: Polar % per TWS e fasce di TWA, una tabella per mura.</summary>
   Private Function RiepilogoTwaHtml(Info As clsInfo, AmpiezzaTwa As Integer) As String
     Dim Passo As Integer = If(AmpiezzaTwa <= 0, 20, Math.Max(5, Math.Min(90, AmpiezzaTwa)))
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, True)).
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info).
       Where(Function(s) Not Double.IsNaN(s.Tws) AndAlso Not Double.IsNaN(s.Twa)).ToList
     Return TabellaTwaHtml("Port", Stat.Where(Function(s) Not s.IsStbd).ToList, Passo, "port") &
            TabellaTwaHtml("Stbd", Stat.Where(Function(s) s.IsStbd).ToList, Passo, "stbd")
@@ -155,8 +163,8 @@ Partial Public Class clsStraightLineReport
   Private Shared Function CellaPerfHtml(Stat As List(Of clsStatPeriodo)) As String
     If Stat.Count = 0 Then Return "<td></td>"
     Dim T As String = Enc(Formato(MediaPesata(Stat, Function(s) s.Perf), 1)) & " <span class=""small"">(" & FormatoDurata(Stat.Sum(Function(s) s.Minuti) * 60) & ")</span>"
-    Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.PerfMin) AndAlso Not Double.IsNaN(s.PerfMax)).ToList
-    If Valide.Count > 0 Then T &= "<br><span class=""small"">" & Valide.Min(Function(s) s.PerfMin).ToString("F1") & " - " & Valide.Max(Function(s) s.PerfMax).ToString("F1") & "</span>"
+    Dim Lo, Hi As Double
+    If IntervalloPerf(Stat, Lo, Hi) Then T &= "<br><span class=""small"">" & Lo.ToString("F1") & " - " & Hi.ToString("F1") & "</span>"
     Return "<td class=""n"">" & T & "</td>"
   End Function
 
@@ -185,11 +193,13 @@ Partial Public Class clsStraightLineReport
       Dim bb As Integer = b
       Sb.Append(CellaPerfHtml(Stat.Where(Function(s) Fascia(s) = bb).ToList))
     Next
-    Sb.AppendLine(CellaPerfHtml(Stat) & "</tr></table></div>")
+    Sb.AppendLine(CellaPerfHtml(Stat) & "</tr></table></div>" & NotaHtml())
     Return Sb.ToString
   End Function
 
   Private Shared Function ImmagineHtml(Surf As SciChartSurface) As String
+    _ImgFatte += 1
+    Passo(_ImgFatte, _ImgTot, NomeGrafico(Surf))
     Try
       Using Flusso = Surf.ExportToStream(SciChart.Core.ExportType.Bmp, False)
         Dim Dec As New System.Windows.Media.Imaging.BmpBitmapDecoder(Flusso, System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat, System.Windows.Media.Imaging.BitmapCacheOption.OnLoad)
@@ -208,6 +218,7 @@ Partial Public Class clsStraightLineReport
   Private Function GraficiHtml(ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface)) As String
     Dim ConDistribuzioni As Boolean = Not ControlliDistr Is Nothing AndAlso ControlliDistr.Count >= ControlliAvg.Count
     Dim Gruppo As Integer() = ControlliAvg.Select(Function(s) GruppoCanale(NomeGrafico(s))).ToArray
+    Fase("Exporting the charts", 60, 90)
     Dim Sb As New StringBuilder("<h2>Charts</h2>")
     For g As Integer = 0 To NomiGruppi.Length - 1
       Dim Indici As List(Of Integer) = Enumerable.Range(0, ControlliAvg.Count).Where(Function(i) Gruppo(i) = g).ToList
@@ -225,7 +236,8 @@ Partial Public Class clsStraightLineReport
 
   Private Function TabellaHtml(T As clsTabella) As String
     Dim NumBin As Integer = T.Ultimo - T.Primo + 1
-    Dim Sb As New StringBuilder("<h2>Data Table</h2><div class=""wrap""><table class=""tbl""><tr><th class=""c1"">Channel / TWS</th>")
+    Fase("Building the data table", 45, 60)
+    Dim Sb As New StringBuilder("<h2>Data Table</h2>" & NotaHtml() & "<div class=""wrap""><table class=""tbl""><tr><th class=""c1"">Channel / TWS</th>")
     For b As Integer = 0 To NumBin - 1
       Sb.Append("<th>" & (T.Primo + b) & "</th>")
     Next
@@ -240,7 +252,10 @@ Partial Public Class clsStraightLineReport
     Sb.AppendLine("</tr>")
 
     Dim GruppoCorrente As Integer = -1
+    Dim NumVoce As Integer = 0
     For Each Voce In T.Voci
+      Passo(NumVoce, T.Voci.Count, Voce.Coppia.Canale.LongName)
+      NumVoce += 1
       If Voce.Gruppo <> GruppoCorrente Then
         GruppoCorrente = Voce.Gruppo
         Sb.AppendLine("<tr class=""grp""><td colspan=""" & (NumBin + 1) & """>" & Enc(NomiGruppi(GruppoCorrente)) & "</td></tr>")
@@ -252,7 +267,7 @@ Partial Public Class clsStraightLineReport
       Dim Valori As New List(Of clsValoriBase)
       For b As Integer = 0 To NumBin - 1
         Dim Tws As Integer = T.Primo + b
-        Valori.Add(If(Voce.Coppia.Conteggio(Tws - 0.5, Tws + 0.5) = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5)))
+        Valori.Add(If(Voce.Coppia.Conteggio(Tws - 0.5, Tws + 0.5) = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5, _Banda)))
       Next
       Dim Righe As String() = {Nome, "Max", "Min", "Sd"}
       For k As Integer = 0 To 3
@@ -273,7 +288,7 @@ Partial Public Class clsStraightLineReport
   End Function
 
   Private Function PeriodiHtml(Info As clsInfo, OutputType As clsStraightLineVM2020.eOutputType) As String
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, Info.IsReaching)).
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info).
       OrderBy(Function(s) If(Double.IsNaN(s.Tws), 0, Math.Round(s.Tws))).ThenBy(Function(s) s.Periodo.TR.Start).ToList
     Dim Perf As String = If(Info.IsReaching, "Polar %", "Vmg %")
     Dim Sb As New StringBuilder("<h2>Periods</h2><div class=""wrap""><table><tr><th></th>")

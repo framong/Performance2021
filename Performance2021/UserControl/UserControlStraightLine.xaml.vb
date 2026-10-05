@@ -25,6 +25,7 @@ Public Class UserControlStraightLine
   Public Sub New()
     Me.DataContext = StraightLineVM2020
     ' This call is required by the designer.
+    StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.Vmg  ' prima di InitializeComponent: i binding leggono le opzioni del tab giusto
     InitializeComponent()
 
     StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.Vmg ' ShowVmg
@@ -151,6 +152,12 @@ Public Class UserControlStraightLine
 
   Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
     If StraightLineVM2020.EliminaPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
+  End Sub
+
+  Private Sub ReportOption_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+    ' ignora la selezione iniziale del binding: salva solo se l'utente ha cambiato valore
+    If e.RemovedItems.Count = 0 Then Exit Sub
+    AppConfig.Salva()
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)
@@ -1047,11 +1054,28 @@ Public Class clsStraightLineVM2020
   End Property
 
 
-  ''' <summary>Cosa includere nel report: salvato nel profilo e legato ai checkbox del menu Reports.</summary>
+  ''' <summary>
+  ''' Cosa includere nel report: salvato nel profilo, legato al menu Reports e separato per tab (upwind, downwind, reaching, all).
+  ''' La prima volta parte da una copia delle vecchie opzioni condivise, cosi' non si perdono le scelte fatte.
+  ''' </summary>
   Public ReadOnly Property ReportOptions As clsStraightLineReportOptions
     Get
-      If AppConfig.ActiveProfile.StraightLineReportOptions Is Nothing Then AppConfig.ActiveProfile.StraightLineReportOptions = New clsStraightLineReportOptions
-      Return AppConfig.ActiveProfile.StraightLineReportOptions
+      Dim P = AppConfig.ActiveProfile
+      Dim Origine As clsStraightLineReportOptions = If(P.StraightLineReportOptions Is Nothing, New clsStraightLineReportOptions, P.StraightLineReportOptions)
+      Select Case Andatura
+        Case eAndatura.UpwindVmg
+          If P.StraightLineReportOptionsVmgUp Is Nothing Then P.StraightLineReportOptionsVmgUp = Origine.Copia
+          Return P.StraightLineReportOptionsVmgUp
+        Case eAndatura.DownwindVmg
+          If P.StraightLineReportOptionsVmgDn Is Nothing Then P.StraightLineReportOptionsVmgDn = Origine.Copia
+          Return P.StraightLineReportOptionsVmgDn
+        Case eAndatura.Reaching
+          If P.StraightLineReportOptionsReaching Is Nothing Then P.StraightLineReportOptionsReaching = Origine.Copia
+          Return P.StraightLineReportOptionsReaching
+        Case Else
+          If P.StraightLineReportOptionsAll Is Nothing Then P.StraightLineReportOptionsAll = Origine.Copia
+          Return P.StraightLineReportOptionsAll
+      End Select
     End Get
   End Property
 
@@ -1112,12 +1136,13 @@ Public Class clsStraightLineVM2020
   ''' il set e' pronto quando almeno uno e' popolato e il numero di popolati non cambia da 2 secondi.
   ''' False se scade il tempo con la struttura incompleta o con tutti i grafici vuoti.
   ''' </summary>
-  Public Async Function AttendiGraficiPronti(TimeoutSecondi As Integer, Ammessi As HashSet(Of String)) As System.Threading.Tasks.Task(Of Boolean)
+  Public Async Function AttendiGraficiPronti(TimeoutSecondi As Integer, Ammessi As HashSet(Of String), Optional Av As FinestraAvanzamento = Nothing) As System.Threading.Tasks.Task(Of Boolean)
     Dim Limite As DateTime = Now.AddSeconds(TimeoutSecondi)
     Dim UltimiPopolati As Integer = -1
     Dim DaQuando As DateTime = Now
     Do
       Dim Totali, Popolati As Integer
+      If Not Av Is Nothing Then Av.Passo(CInt((Now - Limite.AddSeconds(-TimeoutSecondi)).TotalSeconds), TimeoutSecondi, "")
       Dim Completa As Boolean = ContaGrafici(Totali, Popolati, Ammessi)
       If Not Lista.Any(Function(p) p.IsChecked) Then Return True
       If Completa Then
@@ -1177,46 +1202,54 @@ Public Class clsStraightLineVM2020
     End If
     Dim ListaCanali As List(Of clsStraightLineChartSettings) = ListaCanaliVideo.Where(Function(x) x.Export).ToList
     If ListaCanali.Count = 0 Then
-      MsgBox("No channel is enabled for the report: tick 'Choose channels' and select at least one.", MsgBoxStyle.Exclamation, "Straight Line report")
+      MsgBox("No channel is enabled for the report: tick 'Choose pdf/html reports channels' and select at least one.", MsgBoxStyle.Exclamation, "Straight Line report")
       Exit Function
     End If
 
-    Dim IdAmmessi As HashSet(Of String) = IdCanali(ListaCanali)
-    If Opzioni.PrintCharts AndAlso Not GraficiPronti(IdAmmessi) Then
-      Dim Pronti As Boolean = False
-      System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait
-      Try
-        Pronti = Await AttendiGraficiPronti(20, IdAmmessi)
-      Finally
-        System.Windows.Input.Mouse.OverrideCursor = Nothing
-      End Try
-      If Not Pronti Then
-        If MsgBox("The charts are still empty. Create the report anyway?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
+    ' finestra di avanzamento: la creazione gira sul thread UI e puo' durare minuti con molti dati
+    Dim Av As New FinestraAvanzamento(If(Html, "Creating the html report", "Creating the pdf report"))
+    Av.Show()
+    Try
+      Dim IdAmmessi As HashSet(Of String) = IdCanali(ListaCanali)
+      If Opzioni.PrintCharts AndAlso Not GraficiPronti(IdAmmessi) Then
+        Dim Pronti As Boolean = False
+        Av.Fase("Waiting for the charts to be drawn", 0, 5)
+        Av.Passo(0, 0, "")
+        Pronti = Await AttendiGraficiPronti(20, IdAmmessi, Av)
+        If Not Pronti Then
+          If MsgBox("The charts are still empty. Create the report anyway?", MsgBoxStyle.YesNo Or MsgBoxStyle.Question, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
+        End If
       End If
-    End If
 
-    Dim ListaAvg As New List(Of SciChart.Charting.Visuals.SciChartSurface)
-    Dim ListaDistr As New List(Of SciChart.Charting.Visuals.SciChartSurface)
-    If Opzioni.PrintCharts Then
-      RaccogliGrafici(ListaCanali, ListaAvg, ListaDistr)
-      ' prima di esportare, fa completare a SciChart layout e disegno di tutti i grafici (anche se la lista era gia' popolata)
-      Dim Tutti As List(Of SciChart.Charting.Visuals.SciChartSurface) = ListaAvg.Concat(ListaDistr).ToList
-      Await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-        Sub()
-          For Each Sup In Tutti
-            Sup.UpdateLayout()
-          Next
-        End Sub, System.Windows.Threading.DispatcherPriority.ApplicationIdle).Task
-      Await System.Threading.Tasks.Task.Delay(500)
-    End If
+      Dim ListaAvg As New List(Of SciChart.Charting.Visuals.SciChartSurface)
+      Dim ListaDistr As New List(Of SciChart.Charting.Visuals.SciChartSurface)
+      If Opzioni.PrintCharts Then
+        RaccogliGrafici(ListaCanali, ListaAvg, ListaDistr)
+        ' prima di esportare, fa completare a SciChart layout e disegno di tutti i grafici (anche se la lista era gia' popolata)
+        Dim Tutti As List(Of SciChart.Charting.Visuals.SciChartSurface) = ListaAvg.Concat(ListaDistr).ToList
+        Await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+          Sub()
+            For Each Sup In Tutti
+              Sup.UpdateLayout()
+            Next
+          End Sub, System.Windows.Threading.DispatcherPriority.ApplicationIdle).Task
+        Await System.Threading.Tasks.Task.Delay(500)
+      End If
+      Av.Fase("Preparing the report", 5, 5)
+      Av.Passo(0, 0, "")
 
-    If Html Then
-      Dim Report As New clsStraightLineReport
-      Report.CreaReportHtml(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
-    Else
-      Dim objPdf As New clsPdf
-      objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni)
-    End If
+      If Html Then
+        Dim Report As New clsStraightLineReport
+        Report.CreaReportHtml(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni, Av)
+      Else
+        Dim objPdf As New clsPdf
+        objPdf.StampaReportStraightLine(ListaAvg, ListaDistr, OutputType, Lista.ToList, ListaCanali, Filtro, Opzioni, Av)
+      End If
+    Catch ex As OperationCanceledException
+      ' annullato dall'utente: niente file (pdf e html si scrivono solo alla fine)
+    Finally
+      Av.Close()
+    End Try
   End Function
 
   ''' <summary>Periodi selezionati dai grafici: quelli evidenziati in giallo nella lista (AggiornaControlli imposta ColoreSfondo).</summary>

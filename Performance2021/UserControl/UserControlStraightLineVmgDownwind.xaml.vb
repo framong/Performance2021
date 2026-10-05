@@ -25,6 +25,7 @@ Public Class UserControlStraightLineVmgDownwind
   Public Sub New()
     Me.DataContext = StraightLineVM2020
     ' This call is required by the designer.
+    StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.DownwindVmg  ' prima di InitializeComponent: i binding leggono le opzioni del tab giusto
     InitializeComponent()
 
     StraightLineVM2020.Andatura = StraightLineVM2020.eAndatura.DownwindVmg ' ShowVmg
@@ -189,6 +190,12 @@ Public Class UserControlStraightLineVmgDownwind
 
   Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
     If StraightLineVM2020.EliminaPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
+  End Sub
+
+  Private Sub ReportOption_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+    ' ignora la selezione iniziale del binding: salva solo se l'utente ha cambiato valore
+    If e.RemovedItems.Count = 0 Then Exit Sub
+    AppConfig.Salva()
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)

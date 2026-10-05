@@ -40,10 +40,14 @@ Partial Public Class clsStraightLineReport
     Public TwsMin As Double
     Public TwsMax As Double
     Public IsReaching As Boolean
+    ''' <summary>Statistiche dei periodi, calcolate una sola volta (riepilogo, tabelle per TWA ed elenco periodi le riusano).</summary>
+    Public Stat As List(Of clsStatPeriodo)
   End Class
 
   Private Class clsStatPeriodo
     Public Periodo As clsPeriod2021
+    ''' <summary>Campioni del canale di performance nel periodo: servono per i percentili sull'insieme dei periodi.</summary>
+    Public Campioni As Double()
     Public Tws As Double = Double.NaN
     Public Twa As Double = Double.NaN
     Public Sow As Double = Double.NaN
@@ -57,23 +61,96 @@ Partial Public Class clsStraightLineReport
 
   Private ReadOnly NomiGruppi As String() = {"Performance", "Wind & sea", "Attitude, foils & leeway", "Rig & sails"}
 
+  ' impostati all'inizio di ogni report (thread UI, un report alla volta): banda dei percentili per Min e Max dei valori
+  ' e finestra di avanzamento. I grafici mostrano sempre tutti i dati.
+  Private Shared _Banda As Double = 90
+  Private Shared _Av As FinestraAvanzamento = Nothing
+  Private Shared _ImgFatte As Integer = 0
+  Private Shared _ImgTot As Integer = 0
+
+  ''' <summary>Nota da stampare sotto le tabelle con Min e Max: spiega che sono percentili.</summary>
+  Private Shared Function NotaBanda() As String
+    If _Banda >= 100 Then Return "Min and Max are the true minimum and maximum of the samples."
+    Dim Basso As Double = (100 - _Banda) / 2
+    Return "Min and Max are the P" & Basso.ToString("0.##") & " and P" & (100 - Basso).ToString("0.##") & " percentiles of the samples (" & _Banda.ToString("0.##") & "% central band). Charts show all the data."
+  End Function
+
+  Private Shared Sub ImpostaReport(Opzioni As clsStraightLineReportOptions, Av As FinestraAvanzamento)
+    _Banda = If(Opzioni.RangeBandPercent <= 0 OrElse Opzioni.RangeBandPercent > 100, 100, Opzioni.RangeBandPercent)
+    _Av = Av
+    _ImgFatte = 0
+    _ImgTot = 0
+  End Sub
+
+  Private Shared Sub Fase(Titolo As String, Da As Double, A As Double)
+    If Not _Av Is Nothing Then _Av.Fase(Titolo, Da, A)
+  End Sub
+
+  Private Shared Sub Passo(i As Integer, n As Integer, Dettaglio As String)
+    If Not _Av Is Nothing Then _Av.Passo(i, n, Dettaglio)
+  End Sub
+
+  ''' <summary>Statistiche dei periodi: una sola volta per report, con avanzamento (ogni periodo rilegge i canali).</summary>
+  Private Shared Function StatInfo(Info As clsInfo) As List(Of clsStatPeriodo)
+    If Info.Stat Is Nothing Then
+      Fase("Computing the statistics of the periods", 5, 25)
+      Info.Stat = New List(Of clsStatPeriodo)
+      For i As Integer = 0 To Info.Periodi.Count - 1
+        Passo(i, Info.Periodi.Count, "")
+        Info.Stat.Add(StatPeriodo(Info.Periodi(i), Info.IsReaching))
+      Next
+    End If
+    Return Info.Stat
+  End Function
+
+  ''' <summary>
+  ''' Min e Max della performance sull'insieme dei campioni dei periodi indicati (percentili della banda scelta, o minimo e massimo
+  ''' veri con banda 100). Se i campioni non ci sono ripiega sui min e max salvati per periodo. False se non ci sono dati.
+  ''' </summary>
+  Private Shared Function IntervalloPerf(Stat As IEnumerable(Of clsStatPeriodo), ByRef Minimo As Double, ByRef Massimo As Double) As Boolean
+    Dim Tutti As New List(Of Double)
+    For Each s In Stat
+      If Not s.Campioni Is Nothing Then Tutti.AddRange(s.Campioni.Where(Function(x) Not Double.IsNaN(x) AndAlso Not Double.IsInfinity(x)))
+    Next
+    If Tutti.Count > 0 Then
+      If _Banda >= 100 Then
+        Minimo = Tutti.Min
+        Massimo = Tutti.Max
+      Else
+        Dim Ordinati As Double() = Tutti.OrderBy(Function(x) x).ToArray
+        Dim Basso As Double = (100 - _Banda) / 2
+        Minimo = clsValoriBase.Percentile(Ordinati, Basso)
+        Massimo = clsValoriBase.Percentile(Ordinati, 100 - Basso)
+      End If
+      Return True
+    End If
+    Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.PerfMin) AndAlso Not Double.IsNaN(s.PerfMax)).ToList
+    If Valide.Count = 0 Then Return False
+    Minimo = Valide.Min(Function(s) s.PerfMin)
+    Massimo = Valide.Max(Function(s) s.PerfMax)
+    Return True
+  End Function
+
 #Region "Punti di ingresso"
 
   ''' <summary>
   ''' Crea il report secondo le opzioni: pagina 1 con intestazione e riepilogo, poi grafici, tabella dati e,
   ''' ultimo, l'elenco dei periodi. Con la sola opzione csv non crea il pdf.
   ''' </summary>
-  Public Sub CreaReport(ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions)
+  Public Sub CreaReport(ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions, Optional Av As FinestraAvanzamento = Nothing)
     Dim ConPdf As Boolean = Opzioni.PrintCharts OrElse Opzioni.PrintTable OrElse Opzioni.PrintPeriods
     If Not ConPdf AndAlso Not Opzioni.CreateTableCsv Then
       MsgBox("Nothing to create: tick at least one option under Make a pdf.", MsgBoxStyle.Information, "Straight Line report")
       Exit Sub
     End If
+    ImpostaReport(Opzioni, Av)
     Dim Info As clsInfo = CreaInfo(ListaPeriodi, OutputType, Filtro, "")
     If Info Is Nothing Then Exit Sub
 
+    StatInfo(Info)
     Dim Tabella As clsTabella = Nothing
     If Opzioni.PrintTable OrElse Opzioni.CreateTableCsv Then Tabella = CostruisciTabella(Info, ListaCanali)
+    If Opzioni.PrintCharts AndAlso Not ControlliAvg Is Nothing Then _ImgTot = ControlliAvg.Count + If(ControlliDistr Is Nothing, 0, ControlliDistr.Count)
 
     Dim PercorsoPdf As String = PercorsoLibero(Info, OutputType, ".pdf")
     If ConPdf Then
@@ -85,6 +162,7 @@ Partial Public Class clsStraightLineReport
       If Opzioni.PrintCharts AndAlso Not ControlliAvg Is Nothing AndAlso ControlliAvg.Count > 0 Then DisegnaGrafici(C, ControlliAvg, ControlliDistr)
       If Opzioni.PrintTable AndAlso Not Tabella Is Nothing Then DisegnaTabellaDati(C, Tabella)
       If Opzioni.PrintPeriods Then DisegnaElencoPeriodi(C, Info, OutputType)
+      Fase("Saving the pdf", 90, 100)
       Salva(C, PercorsoPdf)
     End If
 
@@ -157,10 +235,17 @@ Partial Public Class clsStraightLineReport
 
   ''' <summary>Statistiche (avg, min, max) del canale nel periodo; Nothing se il canale non ha dati.</summary>
   Private Shared Function ValoriCanale(Canale As clsChannel2020, p As clsPeriod2021) As clsValoriPeriodoCanale2020
+    Dim Campioni As Double() = Nothing
+    Return ValoriCanale(Canale, p, Campioni)
+  End Function
+
+  ''' <summary>Come sopra, restituendo anche i campioni validi del periodo (per i percentili).</summary>
+  Private Shared Function ValoriCanale(Canale As clsChannel2020, p As clsPeriod2021, ByRef Campioni As Double()) As clsValoriPeriodoCanale2020
+    Campioni = Nothing
     If Canale Is Nothing OrElse Canale.Valori Is Nothing OrElse Canale.Valori.Count = 0 Then Return Nothing
     Dim Assoluto As Boolean = Canale.DataType = clsChannel2020.eDataType.e180
     Dim M As New clsValoriPeriodoCanale2020(Canale, p.TR, Assoluto)
-    M.AggiornaValori(Assoluto)
+    Campioni = M.AggiornaValori(Assoluto)
     Return M
   End Function
 
@@ -178,8 +263,10 @@ Partial Public Class clsStraightLineReport
       S.Tws = MediaCanale(chTws, p)
       S.Twa = MediaCanale(chTwa, p)
       S.Sow = MediaCanale(chSow, p)
-      Dim Vp = ValoriCanale(chPerf, p)
+      Dim Campioni As Double() = Nothing
+      Dim Vp = ValoriCanale(chPerf, p, Campioni)
       If Not Vp Is Nothing Then
+        S.Campioni = Campioni
         S.Perf = Vp.Avg
         S.PerfMin = Vp.Min
         S.PerfMax = Vp.Max
@@ -403,7 +490,7 @@ Partial Public Class clsStraightLineReport
   End Sub
 
   Private Sub DisegnaRiepilogo(C As clsCtx, Info As clsInfo)
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, Info.IsReaching)).ToList
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info)
     Dim Perf As String = If(Info.IsReaching, "Polar %", "Vmg %")
     Dim Fh As New XFont("Verdana", 7.5, XFontStyle.Bold)
     Dim F As New XFont("Verdana", 7.5)
@@ -433,7 +520,15 @@ Partial Public Class clsStraightLineReport
     DisegnaRigaRiepilogo(C, RigaRiepilogo("All", Stat), Larghezze, Fb, Hr, XColors.LightYellow, XStringFormats.CenterRight)
     DisegnaRigaRiepilogo(C, RigaRiepilogo("Port", Stat.Where(Function(s) Not s.IsStbd).ToList), Larghezze, F, Hr, XColors.MistyRose, XStringFormats.CenterRight)
     DisegnaRigaRiepilogo(C, RigaRiepilogo("Stbd", Stat.Where(Function(s) s.IsStbd).ToList), Larghezze, F, Hr, XColors.Honeydew, XStringFormats.CenterRight)
+    DisegnaNota(C)
     C.Y += 8
+  End Sub
+
+  ''' <summary>Nota in carattere piccolo sotto una tabella: Min e Max sono percentili.</summary>
+  Private Shared Sub DisegnaNota(C As clsCtx)
+    AssicuraSpazio(C, 12)
+    C.Gfx.DrawString(NotaBanda(), New XFont("Verdana", 6.5), XBrushes.Gray, New XRect(Margine, C.Y + 1, C.W - 2 * Margine, 10), XStringFormats.CenterLeft)
+    C.Y += 11
   End Sub
 
   Private Shared Function RigaRiepilogo(Etichetta As String, Stat As List(Of clsStatPeriodo)) As String()
@@ -443,7 +538,8 @@ Partial Public Class clsStraightLineReport
     Dim Minuti As Double = Stat.Sum(Function(s) s.Minuti)
     Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.Perf)).ToList
     Dim Intervallo As String = "-"
-    If Valide.Count > 0 Then Intervallo = Valide.Min(Function(s) s.Perf).ToString("F1") & " - " & Valide.Max(Function(s) s.Perf).ToString("F1")
+    Dim Lo, Hi As Double
+    If IntervalloPerf(Stat, Lo, Hi) Then Intervallo = Lo.ToString("F1") & " - " & Hi.ToString("F1")
     Return {Etichetta,
             Formato(MediaPesata(Stat, Function(s) s.Perf), 1), Intervallo,
             Formato(MediaPesata(Stat, Function(s) s.Sow), 2), Formato(MediaPesata(Stat, Function(s) Math.Abs(s.Twa)), 1),
@@ -477,7 +573,7 @@ Partial Public Class clsStraightLineReport
   ''' </summary>
   Private Sub DisegnaRiepilogoPerTwa(C As clsCtx, Info As clsInfo, AmpiezzaTwa As Integer)
     Dim Passo As Integer = If(AmpiezzaTwa <= 0, 20, Math.Max(5, Math.Min(90, AmpiezzaTwa)))
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, True)).
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info).
       Where(Function(s) Not Double.IsNaN(s.Tws) AndAlso Not Double.IsNaN(s.Twa)).ToList
     DisegnaTabellaTwa(C, "Port", Stat.Where(Function(s) Not s.IsStbd).ToList, Passo, XColors.MistyRose)
     DisegnaTabellaTwa(C, "Stbd", Stat.Where(Function(s) s.IsStbd).ToList, Passo, XColors.Honeydew)
@@ -537,6 +633,7 @@ Partial Public Class clsStraightLineReport
       Intestazione()
     End If
     Riga("All", Stat, Fh, ColoreMura)
+    DisegnaNota(C)
     C.Y += 8
   End Sub
 
@@ -554,9 +651,9 @@ Partial Public Class clsStraightLineReport
     C.Gfx.DrawString(Avg, F, XBrushes.Black, X0, Yr + 4)
     C.Gfx.DrawString(Durata, Fd, XBrushes.Gray, X0 + La, Yr + 4)
     ' min e max sono quelli dei campioni dentro i periodi, non delle medie dei periodi
-    Dim Valide = Stat.Where(Function(s) Not Double.IsNaN(s.PerfMin) AndAlso Not Double.IsNaN(s.PerfMax)).ToList
-    If Valide.Count > 0 Then
-      C.Gfx.DrawString(Valide.Min(Function(s) s.PerfMin).ToString("F1") & " - " & Valide.Max(Function(s) s.PerfMax).ToString("F1"), Fs, XBrushes.DimGray, New XRect(X, C.Y + H * 0.5, L, H * 0.45), XStringFormats.Center)
+    Dim Lo, Hi As Double
+    If IntervalloPerf(Stat, Lo, Hi) Then
+      C.Gfx.DrawString(Lo.ToString("F1") & " - " & Hi.ToString("F1"), Fs, XBrushes.DimGray, New XRect(X, C.Y + H * 0.5, L, H * 0.45), XStringFormats.Center)
     End If
   End Sub
 
@@ -565,7 +662,7 @@ Partial Public Class clsStraightLineReport
 #Region "Elenco periodi"
 
   Private Sub DisegnaElencoPeriodi(C As clsCtx, Info As clsInfo, OutputType As clsStraightLineVM2020.eOutputType)
-    Dim Stat As List(Of clsStatPeriodo) = Info.Periodi.Select(Function(p) StatPeriodo(p, Info.IsReaching)).
+    Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info).
       OrderBy(Function(s) If(Double.IsNaN(s.Tws), 0, Math.Round(s.Tws))).ThenBy(Function(s) s.Periodo.TR.Start).ToList
     Dim Perf As String = If(Info.IsReaching, "Polar %", "Vmg %")
     Dim Fh As New XFont("Verdana", 7.5, XFontStyle.Bold)
@@ -648,6 +745,7 @@ Partial Public Class clsStraightLineReport
     Dim Utile As Double = C.H - (Margine + BandaIntestazioneRidotta) - BandaPiePagina
     Dim Himg As Double = (Utile - AltezzaGruppo - 4 - 3 * Distanza) / 3
     Dim ConDistribuzioni As Boolean = Not ControlliDistr Is Nothing AndAlso ControlliDistr.Count >= ControlliAvg.Count
+    Fase("Exporting the charts", 60, 90)
     Dim Hg As Double = If(ConDistribuzioni, (Himg / 2) - 2, Himg)
 
     Dim Gruppo As Integer() = ControlliAvg.Select(Function(s) GruppoCanale(NomeGrafico(s))).ToArray
@@ -674,6 +772,8 @@ Partial Public Class clsStraightLineReport
   End Sub
 
   Private Shared Sub DisegnaImmagine(C As clsCtx, Surf As SciChartSurface, X As Double, Y As Double, L As Double, H As Double)
+    _ImgFatte += 1
+    Passo(_ImgFatte, _ImgTot, NomeGrafico(Surf))
     Try
       Dim Flusso = Surf.ExportToStream(SciChart.Core.ExportType.Bmp, False)
       Dim Img = XImage.FromStream(Flusso)
@@ -713,7 +813,11 @@ Partial Public Class clsStraightLineReport
   Private Function CostruisciTabella(Info As clsInfo, ListaCanali As List(Of clsStraightLineChartSettings)) As clsTabella
     If ListaCanali Is Nothing Then Return Nothing
     Dim Coppie As New List(Of clsCoppieValoriTwsVsCanale)
+    Fase("Reading the channels for the table", 25, 45)
+    Dim NumCanale As Integer = 0
     For Each cs In ListaCanali
+      Passo(NumCanale, ListaCanali.Count, cs.ChannelName)
+      NumCanale += 1
       Dim Canale = DataProvider2020.Channels.Canale(cs.ChannelName)
       If Canale Is Nothing OrElse Canale.CanaleChiave = clsChannels2020.eCanaliChiave.eTWS Then Continue For
       Dim Coppia As New clsCoppieValoriTwsVsCanale(Canale)
@@ -748,6 +852,7 @@ Partial Public Class clsStraightLineReport
     Dim Primo As Integer = T.Primo
     Dim NumBin As Integer = T.Ultimo - T.Primo + 1
     Dim Hz As Integer = T.Hz
+    Fase("Building the data table", 45, 60)
     ' pagine orizzontali: piu' larghezza per colonna di TWS, quindi caratteri leggibili
     Dim Fh As New XFont("Tahoma", 8, XFontStyle.Bold)
     Dim F As New XFont("Tahoma", 7.5)
@@ -782,8 +887,10 @@ Partial Public Class clsStraightLineReport
       End Sub
 
     NuovaPagina(C, True, True)
-    C.Gfx.DrawString("Data Table",New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
+    C.Gfx.DrawString("Data Table", New XFont("Verdana", 10, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 14), XStringFormats.CenterLeft)
     C.Y += 16
+    C.Gfx.DrawString(NotaBanda(), New XFont("Verdana", 6.5), XBrushes.Gray, New XRect(Margine, C.Y, C.W - 2 * Margine, 10), XStringFormats.CenterLeft)
+    C.Y += 12
     Intestazione()
 
     ' minuti di navigazione per fascia
@@ -796,7 +903,10 @@ Partial Public Class clsStraightLineReport
     C.Y += Hr + 3
 
     Dim GruppoCorrente As Integer = -1
+    Dim NumVoce As Integer = 0
     For Each Voce In T.Voci
+      Passo(NumVoce, T.Voci.Count, Voce.Coppia.Canale.LongName)
+      NumVoce += 1
       Dim Necessario As Double = Hr * 4 + 3 + If(Voce.Gruppo <> GruppoCorrente, Hr + 3, 0)
       If C.Y + Necessario > C.H - BandaPiePagina Then
         NuovaPagina(C, True, True)
@@ -823,7 +933,7 @@ Partial Public Class clsStraightLineReport
         Dim Tws As Integer = Primo + b
         Dim X As Double = Margine + Col1 + b * Lb
         Dim N As Integer = Voce.Coppia.Conteggio(Tws - 0.5, Tws + 0.5)
-        Dim V As clsValoriBase = If(N = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5))
+        Dim V As clsValoriBase = If(N = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5, _Banda))
         Dim Fmt As String = "F" & Decimali.ToString
         ' fascia senza dati: celle vuote, non zero
         Cella(C.Gfx, If(V Is Nothing, "", V.Avg.ToString(Fmt)), Fb, X, C.Y, Lb, Hr, XColors.LightYellow, XStringFormats.CenterRight)
@@ -868,28 +978,43 @@ Partial Public Class clsStraightLineReport
     Righe.Add(String.Join(";", Campioni))
     Righe.Add(String.Join(";", Minuti))
 
-    Dim Nomi As String() = {"Avg", "Max", "Min", "Sd"}
+    ' con la banda sotto 100 Max e Min sono percentili; si aggiungono due righe con il minimo e il massimo veri
+    Dim ConVeri As Boolean = _Banda < 100
+    Dim Nomi As String() = If(ConVeri, {"Avg", "Max", "Min", "Sd", "Max (true)", "Min (true)"}, {"Avg", "Max", "Min", "Sd"})
     For Each Voce In T.Voci
       Dim Canale = Voce.Coppia.Canale
       Dim Fmt As String = "F" & Canale.Decimals.ToString
       Dim Valori As New List(Of clsValoriBase)
+      Dim Veri As New List(Of clsValoriBase)
       For tws As Integer = T.Primo To T.Ultimo
-        Valori.Add(If(Voce.Coppia.Conteggio(tws - 0.5, tws + 0.5) = 0, Nothing, Voce.Coppia.Valori(tws - 0.5, tws + 0.5)))
+        Dim Presente As Boolean = Voce.Coppia.Conteggio(tws - 0.5, tws + 0.5) > 0
+        Valori.Add(If(Presente, Voce.Coppia.Valori(tws - 0.5, tws + 0.5, _Banda), Nothing))
+        If ConVeri Then Veri.Add(If(Presente, Voce.Coppia.Valori(tws - 0.5, tws + 0.5), Nothing))
       Next
-      Valori.Add(If(Voce.Coppia.Conteggio(-1000, 1000) = 0, Nothing, Voce.Coppia.Valori(-1000, 1000)))
-      For k As Integer = 0 To 3
+      Dim ConDati As Boolean = Voce.Coppia.Conteggio(-1000, 1000) > 0
+      Valori.Add(If(ConDati, Voce.Coppia.Valori(-1000, 1000, _Banda), Nothing))
+      If ConVeri Then Veri.Add(If(ConDati, Voce.Coppia.Valori(-1000, 1000), Nothing))
+      For k As Integer = 0 To Nomi.Length - 1
         Dim Riga As New List(Of String) From {CampoCsv(NomiGruppi(Voce.Gruppo)), CampoCsv(Canale.LongName), CampoCsv(If(Canale.ShortUM, "")), Nomi(k)}
-        For Each v In Valori
+        For i As Integer = 0 To Valori.Count - 1
+          Dim v As clsValoriBase = If(k >= 4, Veri(i), Valori(i))
           If v Is Nothing Then
             Riga.Add("")
           Else
-            Dim x As Double = If(k = 0, v.Avg, If(k = 1, v.Max, If(k = 2, v.Min, v.Ds)))
+            Dim x As Double
+            Select Case k
+              Case 0 : x = v.Avg
+              Case 1, 4 : x = v.Max
+              Case 2, 5 : x = v.Min
+              Case Else : x = v.Ds
+            End Select
             Riga.Add(x.ToString(Fmt))
           End If
         Next
         Righe.Add(String.Join(";", Riga))
       Next
     Next
+    Righe.Add(CampoCsv(NotaBanda()))
     System.IO.File.WriteAllText(Percorso, String.Join(vbCrLf, Righe) & vbCrLf, New System.Text.UTF8Encoding(True))
   End Sub
 

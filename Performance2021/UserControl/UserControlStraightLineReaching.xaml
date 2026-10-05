@@ -189,6 +189,20 @@
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
+              <StackPanel Orientation="Horizontal" Margin="14,0,0,0" ToolTip="Min and Max of the values in the reports (tables) are the percentiles at the ends of this central band: 90 = P5 and P95, 100 = true min and max. The charts always show everything.">
+                <TextBlock Text="Min/Max band (%)" VerticalAlignment="Center" Margin="0,0,6,0"></TextBlock>
+                <ComboBox Width="50" SelectedItem="{Binding ReportOptions.RangeBandPercent, Mode=TwoWay}" SelectionChanged="ReportOption_SelectionChanged">
+                  <sys:Int32>80</sys:Int32>
+                  <sys:Int32>90</sys:Int32>
+                  <sys:Int32>95</sys:Int32>
+                  <sys:Int32>98</sys:Int32>
+                  <sys:Int32>100</sys:Int32>
+                </ComboBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
               <Button HorizontalContentAlignment="Left" Name="btn_PrintHtml" Content="Make html report" Click="btn_PrintHtml_Click" ToolTip="Same sections as the pdf, in a single html file with the charts embedded" Width="120"></Button>
             </MenuItem.Header>
           </MenuItem>

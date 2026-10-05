@@ -358,9 +358,9 @@ Public Class clsPdf
 
 
   ''' <summary>Report completo delle straight line: l'impaginazione e' in clsStraightLineReport (GestioneReportStraightLine.vb).</summary>
-  Public Sub StampaReportStraightLine(ControlliAvg As List(Of SciChart.Charting.Visuals.SciChartSurface), ControlliDistr As List(Of SciChart.Charting.Visuals.SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions)
+  Public Sub StampaReportStraightLine(ControlliAvg As List(Of SciChart.Charting.Visuals.SciChartSurface), ControlliDistr As List(Of SciChart.Charting.Visuals.SciChartSurface), OutputType As clsStraightLineVM2020.eOutputType, ListaPeriodi As List(Of clsPeriod2021), ListaCanali As List(Of clsStraightLineChartSettings), Filtro As String, Opzioni As clsStraightLineReportOptions, Optional Av As FinestraAvanzamento = Nothing)
     Dim Report As New clsStraightLineReport
-    Report.CreaReport(ControlliAvg, ControlliDistr, OutputType, ListaPeriodi, ListaCanali, Filtro, Opzioni)
+    Report.CreaReport(ControlliAvg, ControlliDistr, OutputType, ListaPeriodi, ListaCanali, Filtro, Opzioni, Av)
   End Sub
 
 

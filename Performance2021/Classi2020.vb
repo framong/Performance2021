@@ -1828,7 +1828,37 @@ Public Class clsCoppieValoriTwsVsCanale
     Me.Canale = Canale
   End Sub
 
+  ' campioni per fascia di Tws intera (Tws arrotondato), costruiti alla prima richiesta: i report chiedono migliaia di
+  ' volte la stessa fascia e scorrere ogni volta tutte le coppie diventava lentissimo con molti dati
+  Dim _PerFascia As Dictionary(Of Integer, List(Of Double)) = Nothing
+
+  Private Function PerFascia() As Dictionary(Of Integer, List(Of Double))
+    If _PerFascia Is Nothing Then
+      _PerFascia = New Dictionary(Of Integer, List(Of Double))
+      For Each cv In CoppieValori
+        Dim k As Integer = CInt(Math.Floor(cv.X + 0.5))
+        Dim l As List(Of Double) = Nothing
+        If Not _PerFascia.TryGetValue(k, l) Then
+          l = New List(Of Double)
+          _PerFascia.Add(k, l)
+        End If
+        l.Add(cv.Y)
+      Next
+    End If
+    Return _PerFascia
+  End Function
+
+  ''' <summary>True se l'intervallo [MinTws, MaxTws) e' una fascia intera [t-0.5, t+0.5): in quel caso si usa PerFascia.</summary>
+  Private Shared Function FasciaIntera(MinTws As Double, MaxTws As Double, ByRef Fascia As Integer) As Boolean
+    If Math.Abs((MaxTws - MinTws) - 1) > 0.000001 Then Return False
+    Dim t As Double = MinTws + 0.5
+    If Math.Abs(t - Math.Round(t)) > 0.000001 Then Return False
+    Fascia = CInt(Math.Round(t))
+    Return True
+  End Function
+
   Public Sub AccodaDati(TR As clsTimeRange)
+    _PerFascia = Nothing
     Dim chTws = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
     For i As Integer = TR.IdRigaIniziale To TR.IdRigaFinale
       Dim tws = chTws.Valori(i)
@@ -1856,14 +1886,26 @@ Public Class clsCoppieValoriTwsVsCanale
     End Get
   End Property
 
-  Public Function Valori(MinTws As Double, MaxTws As Double) As clsValoriBase
+  ''' <summary>Statistiche dei campioni nella fascia di Tws. BandaPercentuale &lt; 100: Min e Max sono i percentili della banda centrale.</summary>
+  Public Function Valori(MinTws As Double, MaxTws As Double, Optional BandaPercentuale As Double = 100) As clsValoriBase
+    Dim Fascia As Integer
+    If FasciaIntera(MinTws, MaxTws, Fascia) Then
+      Dim l As List(Of Double) = Nothing
+      If Not PerFascia().TryGetValue(Fascia, l) Then l = New List(Of Double)
+      Return New clsValoriBase(l.ToArray, Canale.DataType, BandaPercentuale)
+    End If
     Dim cv = CoppieValori.Where(Function(x) x.X >= MinTws AndAlso x.X < MaxTws)
     If cv Is Nothing Then Return Nothing
-    Return New clsValoriBase(cv.Select(Function(x) x.Y).ToArray, Canale.DataType)
+    Return New clsValoriBase(cv.Select(Function(x) x.Y).ToArray, Canale.DataType, BandaPercentuale)
   End Function
 
   ''' <summary>Numero di campioni validi (uno per riga del file) nella fascia di Tws.</summary>
   Public Function Conteggio(MinTws As Double, MaxTws As Double) As Integer
+    Dim Fascia As Integer
+    If FasciaIntera(MinTws, MaxTws, Fascia) Then
+      Dim l As List(Of Double) = Nothing
+      Return If(PerFascia().TryGetValue(Fascia, l), l.Count, 0)
+    End If
     Return CoppieValori.Where(Function(x) x.X >= MinTws AndAlso x.X < MaxTws).Count
   End Function
 
@@ -2130,7 +2172,21 @@ Public Class clsValoriBase
     End Get
   End Property
 
-  Public Sub New(Valori As Double(), DataType As clsChannel2020.eDataType)
+  ''' <summary>Percentile P (0-100) con interpolazione lineare su valori gia' ordinati in modo crescente.</summary>
+  Public Shared Function Percentile(Ordinati As Double(), P As Double) As Double
+    If Ordinati Is Nothing OrElse Ordinati.Length = 0 Then Return Double.NaN
+    If Ordinati.Length = 1 Then Return Ordinati(0)
+    Dim Pos As Double = Math.Max(0, Math.Min(100, P)) / 100.0 * (Ordinati.Length - 1)
+    Dim i As Integer = CInt(Math.Floor(Pos))
+    If i >= Ordinati.Length - 1 Then Return Ordinati(Ordinati.Length - 1)
+    Return Ordinati(i) + (Pos - i) * (Ordinati(i + 1) - Ordinati(i))
+  End Function
+
+  ''' <summary>
+  ''' Min e Max della serie. Con BandaPercentuale &lt; 100 sono i percentili agli estremi della banda centrale
+  ''' (90 = P5 e P95); con 100 sono il minimo e il massimo veri.
+  ''' </summary>
+  Public Sub New(Valori As Double(), DataType As clsChannel2020.eDataType, Optional BandaPercentuale As Double = 100)
     If Valori.Count = 0 Then
       pAvg = 0
       pMin = 0
@@ -2148,14 +2204,28 @@ Public Class clsValoriBase
         Dim Cos = VnotNan.Select(Function(x) System.Math.Cos(Radians(x)))
         pAvg = Degrees(System.Math.Atan2(Sin.Sum / Sin.Count, Cos.Sum / Cos.Count))
         If pAvg < 0 Then pAvg += 360
-        Dim Delta = VnotNan.Select(Function(x) DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(pAvg, x))
-        pMax = SommaAngolo180adAngolo360(Delta.Max, pAvg) 'max right
-        pMin = SommaAngolo180adAngolo360(Delta.Min, pAvg) 'max left
+        Dim Delta = VnotNan.Select(Function(x) DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(pAvg, x)).ToArray
+        If BandaPercentuale < 100 Then
+          Dim DeltaOrdinati As Double() = Delta.OrderBy(Function(x) x).ToArray
+          Dim Basso As Double = (100 - BandaPercentuale) / 2
+          pMax = SommaAngolo180adAngolo360(Percentile(DeltaOrdinati, 100 - Basso), pAvg)
+          pMin = SommaAngolo180adAngolo360(Percentile(DeltaOrdinati, Basso), pAvg)
+        Else
+          pMax = SommaAngolo180adAngolo360(Delta.Max, pAvg) 'max right
+          pMin = SommaAngolo180adAngolo360(Delta.Min, pAvg) 'max left
+        End If
         alglib.basestat.sampleadev(Delta.ToArray, Delta.Count, pDs)
       Else
         pAvg = VnotNan.Average
-        pMax = VnotNan.Max
-        pMin = VnotNan.Min
+        If BandaPercentuale < 100 Then
+          Dim Ordinati As Double() = VnotNan.OrderBy(Function(x) x).ToArray
+          Dim Basso As Double = (100 - BandaPercentuale) / 2
+          pMax = Percentile(Ordinati, 100 - Basso)
+          pMin = Percentile(Ordinati, Basso)
+        Else
+          pMax = VnotNan.Max
+          pMin = VnotNan.Min
+        End If
         alglib.basestat.sampleadev(VnotNan.ToArray, VnotNan.Count, pDs)
       End If
     End If

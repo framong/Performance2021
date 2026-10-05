@@ -693,6 +693,13 @@ Public Class clsStraightLineReportOptions
   Public Property TwaBinDegrees As Integer = 20
   ''' <summary>True: a ogni pdf/html si apre l'elenco con le caselle per scegliere quali canali stampare (proprieta' Export).</summary>
   Public Property AskChannels As Boolean = False
+  ''' <summary>Ampiezza in % della banda centrale usata per Min e Max dei valori nei report: 90 = P5 e P95, 100 = minimo e massimo veri. I grafici mostrano sempre tutto.</summary>
+  Public Property RangeBandPercent As Integer = 90
+
+  Public Function Copia() As clsStraightLineReportOptions
+    Return New clsStraightLineReportOptions With {.PrintCharts = PrintCharts, .PrintTable = PrintTable, .PrintPeriods = PrintPeriods,
+      .CreateTableCsv = CreateTableCsv, .TwaBinDegrees = TwaBinDegrees, .AskChannels = AskChannels, .RangeBandPercent = RangeBandPercent}
+  End Function
 End Class
 
 <AddINotifyPropertyChangedInterface>
@@ -2040,6 +2047,11 @@ Public Class clsProfile2021
   Public Property LeewayModel As clsLeewayModelSettings
   ''' <summary>Cosa includere nel report PDF delle straight line (menu Reports dei tab upwind, downwind, reaching). Nothing = valori di default.</summary>
   Public Property StraightLineReportOptions As clsStraightLineReportOptions
+  ''' <summary>Opzioni di report separate per tab (prima erano una sola, condivisa). Nothing = alla prima lettura si parte da una copia di StraightLineReportOptions.</summary>
+  Public Property StraightLineReportOptionsAll As clsStraightLineReportOptions
+  Public Property StraightLineReportOptionsVmgUp As clsStraightLineReportOptions
+  Public Property StraightLineReportOptionsVmgDn As clsStraightLineReportOptions
+  Public Property StraightLineReportOptionsReaching As clsStraightLineReportOptions
   Public Property BoatLenghtInMeters As Double
   Public Property InertialSowSeconds As Double = 5
   Public Property WindGradientAlpha As Double = 0.1
