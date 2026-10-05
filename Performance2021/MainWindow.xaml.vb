@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 05 04"
+    Versione = "v02 - 2026 10 05 05"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")

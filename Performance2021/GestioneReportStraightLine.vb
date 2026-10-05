@@ -487,6 +487,8 @@ Partial Public Class clsStraightLineReport
 
   Private Shared Sub Cella(Gfx As XGraphics, Testo As String, F As XFont, X As Double, Y As Double, L As Double, H As Double, Riempimento As XColor, Allineamento As XStringFormat)
     Gfx.DrawRectangle(New XSolidBrush(Riempimento), X, Y, L, H)
+    ' griglia sottile
+    Gfx.DrawRectangle(New XPen(XColor.FromArgb(205, 205, 205), 0.4), X, Y, L, H)
     If Testo Is Nothing OrElse Testo = "" Then Exit Sub
     Gfx.DrawString(Testo, F, XBrushes.Black, New XRect(X + 2, Y, L - 4, H), Allineamento)
   End Sub
@@ -881,7 +883,15 @@ Partial Public Class clsStraightLineReport
     Dim LargPagina As Double = Math.Max(C.W, C.H)
     Dim Lb As Double = Math.Min(48, (LargPagina - 2 * Margine - Col1) / NumBin)
 
-    Dim Fd As New XFont("Tahoma", 7.5, XFontStyle.Bold)
+    ' durata: carattere piccolo e non bold, ridotto finche' "00:00" e "1d 00h" entrano nella colonna
+    Dim DimDurata As Double = 7
+    Dim Fd As New XFont("Tahoma", DimDurata)
+    Using Gm As XGraphics = XGraphics.CreateMeasureContext(New XSize(100, 100), XGraphicsUnit.Point, XPageDirection.Downwards)
+      While DimDurata > 4 AndAlso Math.Max(Gm.MeasureString("00:00", Fd).Width, Gm.MeasureString("1d 00h", Fd).Width) > Lb - 3
+        DimDurata -= 0.5
+        Fd = New XFont("Tahoma", DimDurata)
+      End While
+    End Using
 
     Dim Intestazione As Action =
       Sub()
@@ -906,7 +916,7 @@ Partial Public Class clsStraightLineReport
     For b As Integer = 0 To NumBin - 1
       Dim N As Integer = Prima.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
       Dim X As Double = Margine + Col1 + b * Lb
-      Cella(C.Gfx, "", Fd, X, C.Y, Lb, Hr * 2, XColors.LightCyan, XStringFormats.CenterRight)
+      Cella(C.Gfx, "", Fd, X, C.Y, Lb, Hr * 2, XColors.LightCyan, XStringFormats.Center)
       If N > 0 Then
         Dim Ts As TimeSpan = TimeSpan.FromSeconds(Math.Round(N / Hz))
         Dim Alto As String = ""
@@ -915,8 +925,8 @@ Partial Public Class clsStraightLineReport
         ElseIf Ts.Hours > 0 Then
           Alto = Ts.Hours & "h"
         End If
-        C.Gfx.DrawString(Alto, Fd, XBrushes.Black, New XRect(X + 2, C.Y, Lb - 4, Hr), XStringFormats.CenterRight)
-        C.Gfx.DrawString(Ts.Minutes.ToString("00") & ":" & Ts.Seconds.ToString("00"), Fd, XBrushes.Black, New XRect(X + 2, C.Y + Hr, Lb - 4, Hr), XStringFormats.CenterRight)
+        C.Gfx.DrawString(Alto, Fd, XBrushes.Black, New XRect(X, C.Y, Lb, Hr), XStringFormats.Center)
+        C.Gfx.DrawString(Ts.Minutes.ToString("00") & ":" & Ts.Seconds.ToString("00"), Fd, XBrushes.Black, New XRect(X, C.Y + Hr, Lb, Hr), XStringFormats.Center)
       End If
     Next
     C.Y += Hr * 2 + 3
