@@ -25,6 +25,7 @@ Partial Public Class clsStraightLineReport
     Public Y As Double
     Public W As Double
     Public H As Double
+    Public Orizzontale As Boolean
     Public TitoloBreve As String
   End Class
 
@@ -335,6 +336,7 @@ Partial Public Class clsStraightLineReport
       C.Gfx = Nothing
     End If
     C.Pagina = C.Doc.AddPage
+    C.Orizzontale = Orizzontale
     If Orizzontale AndAlso C.Pagina.Width.Point < C.Pagina.Height.Point Then
       Dim Largo As XUnit = C.Pagina.Height
       C.Pagina.Height = C.Pagina.Width
@@ -352,7 +354,7 @@ Partial Public Class clsStraightLineReport
   End Sub
 
   Private Shared Sub AssicuraSpazio(C As clsCtx, Altezza As Double)
-    If C.Y + Altezza > C.H - BandaPiePagina Then NuovaPagina(C, True)
+    If C.Y + Altezza > C.H - BandaPiePagina Then NuovaPagina(C, True, C.Orizzontale)
   End Sub
 
   Private Sub DisegnaIntestazione(C As clsCtx, Info As clsInfo, OutputType As clsStraightLineVM2020.eOutputType)
@@ -575,6 +577,9 @@ Partial Public Class clsStraightLineReport
     Dim Passo As Integer = If(AmpiezzaTwa <= 0, 20, Math.Max(5, Math.Min(90, AmpiezzaTwa)))
     Dim Stat As List(Of clsStatPeriodo) = StatInfo(Info).
       Where(Function(s) Not Double.IsNaN(s.Tws) AndAlso Not Double.IsNaN(s.Twa)).ToList
+    If Stat.Count = 0 Then Exit Sub
+    ' molte colonne (fasce di TWA): sezione su pagine orizzontali, a partire da una pagina nuova
+    NuovaPagina(C, True, True)
     DisegnaTabellaTwa(C, "Port", Stat.Where(Function(s) Not s.IsStbd).ToList, Passo, XColors.MistyRose)
     DisegnaTabellaTwa(C, "Stbd", Stat.Where(Function(s) s.IsStbd).ToList, Passo, XColors.Honeydew)
   End Sub
@@ -622,14 +627,14 @@ Partial Public Class clsStraightLineReport
     Dim Alt As Boolean = False
     For Each G In Stat.GroupBy(Function(s) CInt(Math.Round(s.Tws))).OrderBy(Function(g2) g2.Key)
       If C.Y + Hr > C.H - BandaPiePagina Then
-        NuovaPagina(C, True)
+        NuovaPagina(C, True, C.Orizzontale)
         Intestazione()
       End If
       Riga(G.Key.ToString, G.ToList, F, If(Alt, XColors.WhiteSmoke, XColors.White))
       Alt = Not Alt
     Next
     If C.Y + Hr > C.H - BandaPiePagina Then
-      NuovaPagina(C, True)
+      NuovaPagina(C, True, C.Orizzontale)
       Intestazione()
     End If
     Riga("All", Stat, Fh, ColoreMura)
@@ -644,6 +649,19 @@ Partial Public Class clsStraightLineReport
     ' prima riga: avg e, accanto, la durata tra parentesi in carattere piccolo (gruppo centrato)
     Dim Avg As String = Formato(MediaPesata(Stat, Function(s) s.Perf), 1)
     Dim Durata As String = " (" & FormatoDurata(Stat.Sum(Function(s) s.Minuti) * 60) & ")"
+    Dim Lo, Hi As Double
+    Dim ConIntervallo As Boolean = IntervalloPerf(Stat, Lo, Hi)
+    Dim Intervallo As String = If(ConIntervallo, Lo.ToString("F1") & " - " & Hi.ToString("F1"), "")
+    ' cella stretta (molte fasce di TWA): i caratteri si riducono in proporzione finche' avg+durata e min-max entrano
+    Dim Fattore As Double = 1
+    While Fattore > 0.5 AndAlso
+          (C.Gfx.MeasureString(Avg, F).Width + C.Gfx.MeasureString(Durata, Fd).Width > L - 4 OrElse
+           (ConIntervallo AndAlso C.Gfx.MeasureString(Intervallo, Fs).Width > L - 4))
+      Fattore -= 0.05
+      F = New XFont(F.Name, F.Size * 0.95, F.Style)
+      Fs = New XFont(Fs.Name, Fs.Size * 0.95, Fs.Style)
+      Fd = New XFont(Fd.Name, Fd.Size * 0.95, Fd.Style)
+    End While
     Dim La As Double = C.Gfx.MeasureString(Avg, F).Width
     Dim Ld As Double = C.Gfx.MeasureString(Durata, Fd).Width
     Dim X0 As Double = X + (L - La - Ld) / 2
@@ -651,9 +669,8 @@ Partial Public Class clsStraightLineReport
     C.Gfx.DrawString(Avg, F, XBrushes.Black, X0, Yr + 4)
     C.Gfx.DrawString(Durata, Fd, XBrushes.Gray, X0 + La, Yr + 4)
     ' min e max sono quelli dei campioni dentro i periodi, non delle medie dei periodi
-    Dim Lo, Hi As Double
-    If IntervalloPerf(Stat, Lo, Hi) Then
-      C.Gfx.DrawString(Lo.ToString("F1") & " - " & Hi.ToString("F1"), Fs, XBrushes.DimGray, New XRect(X, C.Y + H * 0.5, L, H * 0.45), XStringFormats.Center)
+    If ConIntervallo Then
+      C.Gfx.DrawString(Intervallo, Fs, XBrushes.DimGray, New XRect(X, C.Y + H * 0.5, L, H * 0.45), XStringFormats.Center)
     End If
   End Sub
 
@@ -739,6 +756,8 @@ Partial Public Class clsStraightLineReport
   End Function
 
   Private Sub DisegnaGrafici(C As clsCtx, ControlliAvg As List(Of SciChartSurface), ControlliDistr As List(Of SciChartSurface))
+    ' la sezione grafici parte sempre da una pagina nuova (verticale)
+    NuovaPagina(C, True)
     Dim Hspazio As Double = 8
     Dim L As Double = (C.W - 2 * Margine - Hspazio * (GraficiPerRiga - 1)) / GraficiPerRiga
     ' altezza uguale su tutte le pagine: 3 righe e un'intestazione di gruppo per pagina
@@ -862,20 +881,7 @@ Partial Public Class clsStraightLineReport
     Dim LargPagina As Double = Math.Max(C.W, C.H)
     Dim Lb As Double = Math.Min(48, (LargPagina - 2 * Margine - Col1) / NumBin)
 
-    ' la durata (dd HH:mm:ss) e' il testo piu' largo: riduce il carattere solo se non entra nella colonna
-    Dim Durate As New List(Of String)
-    For b As Integer = 0 To NumBin - 1
-      Dim N As Integer = T.Voci.First.Coppia.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
-      If N > 0 Then Durate.Add(FormatoDurata(N / Hz))
-    Next
-    Dim DimDurata As Double = 8
-    Dim Fd As New XFont("Tahoma", DimDurata, XFontStyle.Bold)
-    Using Gm As XGraphics = XGraphics.CreateMeasureContext(New XSize(100, 100), XGraphicsUnit.Point, XPageDirection.Downwards)
-      While DimDurata > 5 AndAlso Durate.Any(Function(d) Gm.MeasureString(d, Fd).Width > Lb - 4)
-        DimDurata -= 0.5
-        Fd = New XFont("Tahoma", DimDurata, XFontStyle.Bold)
-      End While
-    End Using
+    Dim Fd As New XFont("Tahoma", 7.5, XFontStyle.Bold)
 
     Dim Intestazione As Action =
       Sub()
@@ -895,12 +901,25 @@ Partial Public Class clsStraightLineReport
 
     ' minuti di navigazione per fascia
     Dim Prima = T.Voci.First.Coppia
-    Cella(C.Gfx, "Duration", Fb, Margine, C.Y, Col1, Hr, XColors.LightCyan, XStringFormats.CenterLeft)
+    ' due righe: giorni e ore sopra, minuti e secondi sotto
+    Cella(C.Gfx, "Duration", Fb, Margine, C.Y, Col1, Hr * 2, XColors.LightCyan, XStringFormats.CenterLeft)
     For b As Integer = 0 To NumBin - 1
       Dim N As Integer = Prima.Conteggio(Primo + b - 0.5, Primo + b + 0.5)
-      Cella(C.Gfx, If(N = 0, "", FormatoDurata(N / Hz)), Fd, Margine + Col1 + b * Lb, C.Y, Lb, Hr, XColors.LightCyan, XStringFormats.CenterRight)
+      Dim X As Double = Margine + Col1 + b * Lb
+      Cella(C.Gfx, "", Fd, X, C.Y, Lb, Hr * 2, XColors.LightCyan, XStringFormats.CenterRight)
+      If N > 0 Then
+        Dim Ts As TimeSpan = TimeSpan.FromSeconds(Math.Round(N / Hz))
+        Dim Alto As String = ""
+        If Ts.Days > 0 Then
+          Alto = Ts.Days & "d " & Ts.Hours.ToString("00") & "h"
+        ElseIf Ts.Hours > 0 Then
+          Alto = Ts.Hours & "h"
+        End If
+        C.Gfx.DrawString(Alto, Fd, XBrushes.Black, New XRect(X + 2, C.Y, Lb - 4, Hr), XStringFormats.CenterRight)
+        C.Gfx.DrawString(Ts.Minutes.ToString("00") & ":" & Ts.Seconds.ToString("00"), Fd, XBrushes.Black, New XRect(X + 2, C.Y + Hr, Lb - 4, Hr), XStringFormats.CenterRight)
+      End If
     Next
-    C.Y += Hr + 3
+    C.Y += Hr * 2 + 3
 
     Dim GruppoCorrente As Integer = -1
     Dim NumVoce As Integer = 0
@@ -922,6 +941,28 @@ Partial Public Class clsStraightLineReport
 
       Dim Canale = Voce.Coppia.Canale
       Dim Decimali As Integer = Canale.Decimals
+      Dim Fmt As String = "F" & Decimali.ToString
+      ' valori della voce: il carattere si riduce (stesso per tutta la voce) se un numero, ad esempio 123.45, non entra nella colonna
+      Dim Testi(NumBin - 1)() As String
+      Dim PiuLungo As String = ""
+      For b As Integer = 0 To NumBin - 1
+        Dim Tws As Integer = Primo + b
+        Dim N As Integer = Voce.Coppia.Conteggio(Tws - 0.5, Tws + 0.5)
+        Dim V As clsValoriBase = If(N = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5, _Banda))
+        ' fascia senza dati: celle vuote, non zero
+        Testi(b) = If(V Is Nothing, {"", "", "", ""}, {V.Avg.ToString(Fmt), V.Max.ToString(Fmt), V.Min.ToString(Fmt), V.Ds.ToString(Fmt)})
+        For Each s In Testi(b)
+          If s.Length > PiuLungo.Length Then PiuLungo = s
+        Next
+      Next
+      Dim DimValori As Double = 7.5
+      Using Gm As XGraphics = XGraphics.CreateMeasureContext(New XSize(100, 100), XGraphicsUnit.Point, XPageDirection.Downwards)
+        While DimValori > 4.5 AndAlso Gm.MeasureString(PiuLungo, New XFont("Tahoma", DimValori + 0.5, XFontStyle.Bold)).Width > Lb - 4
+          DimValori -= 0.5
+        End While
+      End Using
+      Dim Fv As New XFont("Tahoma", DimValori)
+      Dim Fvb As New XFont("Tahoma", DimValori + 0.5, XFontStyle.Bold)
       Dim Nome As String = Canale.LongName
       If Not String.IsNullOrWhiteSpace(Canale.ShortUM) Then Nome &= " (" & Canale.ShortUM & ")"
       Nome = Tronca(C.Gfx, Nome, Fb, Col1 - 4)
@@ -932,14 +973,10 @@ Partial Public Class clsStraightLineReport
       For b As Integer = 0 To NumBin - 1
         Dim Tws As Integer = Primo + b
         Dim X As Double = Margine + Col1 + b * Lb
-        Dim N As Integer = Voce.Coppia.Conteggio(Tws - 0.5, Tws + 0.5)
-        Dim V As clsValoriBase = If(N = 0, Nothing, Voce.Coppia.Valori(Tws - 0.5, Tws + 0.5, _Banda))
-        Dim Fmt As String = "F" & Decimali.ToString
-        ' fascia senza dati: celle vuote, non zero
-        Cella(C.Gfx, If(V Is Nothing, "", V.Avg.ToString(Fmt)), Fb, X, C.Y, Lb, Hr, XColors.LightYellow, XStringFormats.CenterRight)
-        Cella(C.Gfx, If(V Is Nothing, "", V.Max.ToString(Fmt)), F, X, C.Y + Hr, Lb, Hr, XColors.White, XStringFormats.CenterRight)
-        Cella(C.Gfx, If(V Is Nothing, "", V.Min.ToString(Fmt)), F, X, C.Y + 2 * Hr, Lb, Hr, XColors.WhiteSmoke, XStringFormats.CenterRight)
-        Cella(C.Gfx, If(V Is Nothing, "", V.Ds.ToString(Fmt)), F, X, C.Y + 3 * Hr, Lb, Hr, XColors.White, XStringFormats.CenterRight)
+        Cella(C.Gfx, Testi(b)(0), Fvb, X, C.Y, Lb, Hr, XColors.LightYellow, XStringFormats.CenterRight)
+        Cella(C.Gfx, Testi(b)(1), Fv, X, C.Y + Hr, Lb, Hr, XColors.White, XStringFormats.CenterRight)
+        Cella(C.Gfx, Testi(b)(2), Fv, X, C.Y + 2 * Hr, Lb, Hr, XColors.WhiteSmoke, XStringFormats.CenterRight)
+        Cella(C.Gfx, Testi(b)(3), Fv, X, C.Y + 3 * Hr, Lb, Hr, XColors.White, XStringFormats.CenterRight)
       Next
       C.Y += Hr * 4 + 3
     Next
