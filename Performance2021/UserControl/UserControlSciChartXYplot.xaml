@@ -13,6 +13,7 @@
              >
   <UserControl.Resources>
     <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+    <local:clsVistaPropriaConverter x:Key="VistaPropria"></local:clsVistaPropriaConverter>
   </UserControl.Resources>
 
   <Grid Name="GrigliaGrafico">
@@ -32,13 +33,13 @@
       <Label HorizontalContentAlignment="Left" MouseDoubleClick="Label_X_MouseDoubleClick" ToolTip="Double click to set True Wind Speed as X channel">X
         <!--<CheckBox FontSize="12" Content=" X Axis" IsChecked="{Binding CurrentPlotSettings.XAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
       </Label>
-      <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" >
+      <ComboBox DisplayMemberPath="LongName" FontSize="12" Loaded="Combo_Canali_Loaded" ToolTip="Type to filter the channels" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels, Converter={StaticResource VistaPropria}}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" >
         <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
       </ComboBox>
       <Label HorizontalContentAlignment="Left">Y
         <!--<CheckBox FontSize="12" Content=" Y Axis" IsChecked="{Binding CurrentPlotSettings.YAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
       </Label >
-      <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.YAxisChannel}" MinWidth="150" Margin="1,0,5,0">
+      <ComboBox DisplayMemberPath="LongName" FontSize="12" Loaded="Combo_Canali_Loaded" ToolTip="Type to filter the channels" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels, Converter={StaticResource VistaPropria}}" SelectedItem="{Binding CurrentPlotSettings.YAxisChannel}" MinWidth="150" Margin="1,0,5,0">
         <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
       </ComboBox>
       <Button Click="Button_Click_SwapAxes" Margin="10,0,10,0">Swap</Button>
@@ -469,10 +470,10 @@
               <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLine1Visibility}" Stroke="Orange" CoordinateMode="RelativeX" X1="0" X2="1" Y1="1" StrokeThickness="3" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
               <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLine100Visibility}" Stroke="DarkGray" CoordinateMode="RelativeX" X1="0" X2="1" Y1="100" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
 
-              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLineCustom1Visibility,Mode=TwoWay}" Stroke="BlueViolet" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom1Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
-              <sc:HorizontalLineAnnotation Visibility="{Binding CurrentPlotSettings.HLineCustom2Visibility,Mode=TwoWay}" Stroke="Red" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom2Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
-              <sc:VerticalLineAnnotation Visibility="{Binding CurrentPlotSettings.VLineCustom1Visibility,Mode=TwoWay}" Stroke="BlueViolet" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom1Value}"></sc:VerticalLineAnnotation>
-              <sc:VerticalLineAnnotation Visibility="{Binding CurrentPlotSettings.VLineCustom2Visibility,Mode=TwoWay}" Stroke="Red" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom2Value}"></sc:VerticalLineAnnotation>
+              <sc:HorizontalLineAnnotation IsHidden="{Binding CurrentPlotSettings.HLineCustom1IsHidden,Mode=OneWay}" Stroke="BlueViolet" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom1Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:HorizontalLineAnnotation IsHidden="{Binding CurrentPlotSettings.HLineCustom2IsHidden,Mode=OneWay}" Stroke="Red" CoordinateMode="RelativeX" X1="0" X2="1" Y1="{Binding CurrentPlotSettings.HLineCustom2Value}" StrokeThickness="4" StrokeDashArray="4,4"></sc:HorizontalLineAnnotation>
+              <sc:VerticalLineAnnotation IsHidden="{Binding CurrentPlotSettings.VLineCustom1IsHidden,Mode=OneWay}" Stroke="BlueViolet" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom1Value}"></sc:VerticalLineAnnotation>
+              <sc:VerticalLineAnnotation IsHidden="{Binding CurrentPlotSettings.VLineCustom2IsHidden,Mode=OneWay}" Stroke="Red" StrokeThickness="4" StrokeDashArray="2,2" Y1="0" Y2="1" CoordinateMode="RelativeY" X1="{Binding CurrentPlotSettings.VLineCustom2Value}"></sc:VerticalLineAnnotation>
 
             </sc:SciChartSurface.Annotations>
 

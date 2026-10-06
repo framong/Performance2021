@@ -3387,7 +3387,15 @@ Public Class clsDataProvider2020
   End Function
 
 
+  ''' <summary>Calcola il canale math se non ancora calcolato; scrive nel log dei tempi quelli che richiedono un calcolo vero.</summary>
   Public Sub VerificaCanaleMathsParquet(Canale As clsChannel2020)
+    If Not Canale.Valori Is Nothing AndAlso Canale.Valori.Count > 1 Then Exit Sub
+    Using clsLogTempi.Misura("calcolo math " & Canale.ChannelId & " (righe " & If(TimeStamps Is Nothing, 0, TimeStamps.Count) & ")")
+      VerificaCanaleMathsParquetInterno(Canale)
+    End Using
+  End Sub
+
+  Private Sub VerificaCanaleMathsParquetInterno(Canale As clsChannel2020)
     Dim adesso As DateTime = Now
     'Console.WriteLine("VerificaCanaleMathsParquet - Loading Math Channel: " & Canale.ChannelId)
     If Canale.Valori Is Nothing Then
@@ -6675,15 +6683,15 @@ Public Class clsChannels2020
           pIsMath = True
           pPolarHeader = "Leeway"
         Case eCanaliChiave.eSeaStateNorm
-          pShortName = "SeaStateNorm_m"
-          pLongName = "Sea State Norm_m"
+          pShortName = "SeaStateNorm"
+          pLongName = "Sea State Norm"
           pShortUM = ""
           pLongUM = ""
           pIsMath = True
           pDecimals = 2
         Case eCanaliChiave.eSeaStateNormDelta
-          pShortName = "SeaStateNormDelta_m"
-          pLongName = "Sea State Norm Delta_m"
+          pShortName = "SeaStateNormDelta"
+          pLongName = "Sea State Norm Delta"
           pShortUM = ""
           pLongUM = ""
           pIsMath = True
@@ -7499,8 +7507,67 @@ Public Class clsChannel2020
   Public Property IdIntestazione As Integer
   Public Property ChannelId As String
   Public Property CanaleChiave As clsChannels2020.eCanaliChiave
+  ' Nomi: quelli memorizzati (e salvati nel json dei canali) restano "puri", senza suffisso.
+  ' ShortName / LongName sono i nomi VISUALIZZATI: per i canali math aggiungono "_m" solo in lettura.
+  Public Const SuffissoMath As String = "_m"
+  Dim _ShortName As String
+  Dim _LongName As String
+
+  ''' <summary>Nome breve memorizzato, senza il suffisso _m. E' quello che finisce nel json (chiave "ShortName", come prima).</summary>
+  <JsonProperty("ShortName")>
+  Public Property ShortNameMemorizzato As String
+    Get
+      Return _ShortName
+    End Get
+    Set(value As String)
+      _ShortName = value
+    End Set
+  End Property
+
+  ''' <summary>Nome lungo memorizzato, senza il suffisso _m. E' quello che finisce nel json (chiave "LongName", come prima).</summary>
+  <JsonProperty("LongName")>
+  Public Property LongNameMemorizzato As String
+    Get
+      Return _LongName
+    End Get
+    Set(value As String)
+      _LongName = value
+    End Set
+  End Property
+
+  ''' <summary>Nome breve visualizzato (con _m se il canale e' math).</summary>
+  <JsonIgnore>
   Public Property ShortName As String
+    Get
+      Return ConSuffissoMath(_ShortName)
+    End Get
+    Set(value As String)
+      _ShortName = SenzaSuffissoMath(value)
+    End Set
+  End Property
+
+  ''' <summary>Nome lungo visualizzato (con _m se il canale e' math).</summary>
+  <JsonIgnore>
   Public Property LongName As String
+    Get
+      Return ConSuffissoMath(_LongName)
+    End Get
+    Set(value As String)
+      _LongName = SenzaSuffissoMath(value)
+    End Set
+  End Property
+
+  Private Function ConSuffissoMath(Nome As String) As String
+    If Nome Is Nothing OrElse Not IsMath OrElse Nome.EndsWith(SuffissoMath) Then Return Nome
+    Return Nome & SuffissoMath
+  End Function
+
+  ' chi modifica il nome a mano parte da quello visualizzato: il suffisso non va memorizzato
+  Private Function SenzaSuffissoMath(Nome As String) As String
+    If Nome Is Nothing OrElse Not IsMath OrElse Not Nome.EndsWith(SuffissoMath) Then Return Nome
+    Return Nome.Substring(0, Nome.Length - SuffissoMath.Length)
+  End Function
+
   Public Property ShortUM As String
   Public Property LongUM As String
   Public Property DataType As eDataType
@@ -7565,8 +7632,9 @@ Public Class clsChannel2020
     Me.ChannelId = ChannelId
     StatisticheIntervallo.ChannelId = ChannelId
     Me.CanaleChiave = CanaleChiave
-    Me.ShortName = ShortName
-    Me.LongName = LongName
+    ' nomi memorizzati puri: il suffisso _m dei canali math si aggiunge solo in lettura (ShortName / LongName)
+    Me._ShortName = ShortName
+    Me._LongName = LongName
     Me.ShortUM = ShortUM
     Me.LongUM = LongUM
     Me.DataType = DataType

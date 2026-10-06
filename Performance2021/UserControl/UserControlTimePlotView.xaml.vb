@@ -758,13 +758,23 @@ Public Class clsTimePlotViewModel
   ''' Versione asincrona di CaricaSeNecessario: il calcolo pesante gira su un thread di
   ''' background, la UI resta reattiva, e al ritorno si costruiscono assi, serie e annotazioni.
   ''' </summary>
+  ''' <summary>
+  ''' False quando il tab Data Plots non e' quello visibile: il caricamento dei plot (che gira per buona parte sul
+  ''' thread UI) viene rinviato, cosi' non rallenta il tab su cui si sta lavorando. Lo imposta MainWindow
+  ''' al cambio di tab e, tornando su Data Plots, rilancia il riempimento dei plot rimasti da caricare.
+  ''' </summary>
+  Public Shared Property CaricamentoConsentito As Boolean = True
+
   Public Async Function CaricaSeNecessarioAsync() As Threading.Tasks.Task(Of Boolean)
     If DatiCaricati Then Return True
+    If Not CaricamentoConsentito Then Return False
     If _CalcoloInCorso Then Return False
     If DataProvider2020 Is Nothing Then Return False
     If Not DataProvider2020.ValoriCaricati Then Return False
 
     _CalcoloInCorso = True
+    Dim SwPlot As Stopwatch = Stopwatch.StartNew()
+    clsLogTempi.Scrivi("  plot dati: inizio caricamento " & TitoloPlotLog())
     Try
       TestoStatoCaricamento = "Loading data..."
 
@@ -802,6 +812,15 @@ Public Class clsTimePlotViewModel
 
     Finally
       _CalcoloInCorso = False
+      clsLogTempi.Scrivi("  plot dati: fine caricamento " & TitoloPlotLog() & " : " & SwPlot.ElapsedMilliseconds & " ms")
+    End Try
+  End Function
+
+  Private Function TitoloPlotLog() As String
+    Try
+      Return If(Settings Is Nothing, "", Convert.ToString(Settings.YaxisChannels.FirstOrDefault))
+    Catch
+      Return ""
     End Try
   End Function
 

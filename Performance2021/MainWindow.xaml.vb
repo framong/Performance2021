@@ -66,6 +66,7 @@ Class MainWindow
     ' This call is required by the designer.
     InitializeComponent()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startE - InitializeComponent")
+    clsLogTempi.Avvia()
 
 
 
@@ -81,7 +82,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 06 01"
+    Versione = "v02 - 2026 10 06 10"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -199,6 +200,7 @@ Class MainWindow
 
   Private Sub CaricaGraficiBase()
     Dim Inizio As DateTime = Now
+    clsLogTempi.Scrivi("CaricaGraficiBase: inizio (poi parte il prefetch dei Data Plots)")
     Dim ChartsName As String = "BasicCharts"
     MatriceControlliBase = New clsMatriceControlliSinglePeriod(ChartsName)
 
@@ -245,10 +247,15 @@ Class MainWindow
   ''' Carica in background (thread UI, priorita' Background) i plot non ancora realizzati,
   ''' uno per ciclo del dispatcher.
   ''' </summary>
+  Private _GenerazionePrefetch As Integer = 0
+
   Private Sub AvviaPrefetchGraficiBase()
     If MatriceControlliBase Is Nothing Then Exit Sub
     Dim Matrice As clsMatriceControlliSinglePeriod = MatriceControlliBase
     Dim Indice As Integer = 0
+    ' un nuovo avvio rende obsoleta la catena precedente (evita due prefetch in parallelo)
+    _GenerazionePrefetch += 1
+    Dim Generazione As Integer = _GenerazionePrefetch
 
     ' Il prefetch e' asincrono: ogni plot calcola le proprie serie su un thread di
     ' background e solo la costruzione dei grafici torna sul thread UI. I passi sono
@@ -258,11 +265,16 @@ Class MainWindow
               While Indice < Matrice.MatriceControlli.Count
                 ' se nel frattempo e' stato ricaricato un altro set di file, si abbandona
                 If Not Matrice Is MatriceControlliBase Then Return
+                ' catena superata da un nuovo avvio, oppure tab Data Plots non visibile: ci si ferma,
+                ' al ritorno sul tab il prefetch riparte (vedi MainTabControl_SelectionChanged)
+                If Generazione <> _GenerazionePrefetch OrElse Not clsTimePlotViewModel.CaricamentoConsentito Then Return
                 Dim Vm As clsTimePlotViewModel = Matrice.MatriceControlli(Indice)
                 Indice += 1
                 If Not Vm.DatiCaricati Then
                   Try
-                    Await Vm.CaricaSeNecessarioAsync()
+                    Using clsLogTempi.Misura("prefetch plot " & Indice & "/" & Matrice.MatriceControlli.Count)
+                      Await Vm.CaricaSeNecessarioAsync()
+                    End Using
                   Catch ex As Exception
                     Console.WriteLine("Prefetch plot fallito: " & ex.Message)
                   End Try
@@ -625,7 +637,16 @@ Class MainWindow
   End Sub
 
   Private Sub MainTabControl_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles MainTabControl.SelectionChanged
+    If Not e.OriginalSource Is MainTabControl Then Exit Sub
+    Dim Tab As TabItem = TryCast(MainTabControl.SelectedItem, TabItem)
+    clsLogTempi.Scrivi("TAB selezionato: " & If(Tab Is Nothing, "?", Convert.ToString(Tab.Header)))
 
+    ' il caricamento dei plot di Data Plots e' consentito solo mentre quel tab e' visibile:
+    ' altrimenti rallenterebbe gli altri tab (es. XY Plots). Tornando su Data Plots riparte il riempimento.
+    Dim DataPlotsVisibile As Boolean = (Tab Is BasicCharts)
+    If DataPlotsVisibile = clsTimePlotViewModel.CaricamentoConsentito Then Exit Sub
+    clsTimePlotViewModel.CaricamentoConsentito = DataPlotsVisibile
+    If DataPlotsVisibile Then AvviaPrefetchGraficiBase()
   End Sub
 
   Private Sub Btn_BasicMouseWheel_Click(sender As Object, e As RoutedEventArgs) Handles btn_BasicMouseWheel.Click
@@ -1830,7 +1851,9 @@ Class MainWindow
   End Sub
 
   Private Sub XYplot_GotFocus(sender As Object, e As RoutedEventArgs) Handles XYplot.GotFocus
-    AssicuraCtrlXYplot()
+    Using clsLogTempi.Misura("XYplot_GotFocus: AssicuraCtrlXYplot (creazione controllo se prima volta)")
+      AssicuraCtrlXYplot()
+    End Using
     If IsInDesignMode Then Exit Sub
   End Sub
 

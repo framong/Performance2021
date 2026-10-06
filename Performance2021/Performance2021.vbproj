@@ -159,6 +159,8 @@
     <Compile Include="FinestraAvanzamento.vb" />
     <Compile Include="LeewayModel.vb" />
     <Compile Include="SeaStateNorm.vb" />
+    <Compile Include="ComboFiltro.vb" />
+    <Compile Include="LogTempi.vb" />
     <Compile Include="SeaStateNormForm.xaml.vb">
       <DependentUpon>SeaStateNormForm.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -1310,6 +1310,7 @@ Public Class clsXYPlotSettings
     Set(value As Boolean)
       _HLineCustom1Show = value
       HLineCustom1Visibility = IIf(value, Visibility.Visible, Visibility.Hidden)
+      HLineCustom1IsHidden = Not value
     End Set
     Get
       Return _HLineCustom1Show
@@ -1322,6 +1323,7 @@ Public Class clsXYPlotSettings
     Set(value As Boolean)
       _HLineCustom2Show = value
       HLineCustom2Visibility = IIf(value, Visibility.Visible, Visibility.Hidden)
+      HLineCustom2IsHidden = Not value
     End Set
     Get
       Return _HLineCustom2Show
@@ -1334,6 +1336,7 @@ Public Class clsXYPlotSettings
     Set(value As Boolean)
       _VLineCustom1Show = value
       VLineCustom1Visibility = IIf(value, Visibility.Visible, Visibility.Hidden)
+      VLineCustom1IsHidden = Not value
     End Set
     Get
       Return _VLineCustom1Show
@@ -1346,20 +1349,34 @@ Public Class clsXYPlotSettings
     Set(value As Boolean)
       _VLineCustom2Show = value
       VLineCustom2Visibility = IIf(value, Visibility.Visible, Visibility.Hidden)
+      VLineCustom2IsHidden = Not value
     End Set
     Get
       Return _VLineCustom2Show
     End Get
   End Property
 
+  ' nascoste di default: Visibility vale Visible a zero e, se il setter di Show non viene chiamato
+  ' (es. impostazioni nuove o senza la chiave nel json), le linee comparirebbero anche non flaggate
   <JsonIgnore>
-  Public Property HLineCustom1Visibility As Visibility
+  Public Property HLineCustom1Visibility As Visibility = Visibility.Hidden
   <JsonIgnore>
-  Public Property HLineCustom2Visibility As Visibility
+  Public Property HLineCustom2Visibility As Visibility = Visibility.Hidden
   <JsonIgnore>
-  Public Property VLineCustom1Visibility As Visibility
+  Public Property VLineCustom1Visibility As Visibility = Visibility.Hidden
   <JsonIgnore>
-  Public Property VLineCustom2Visibility As Visibility
+  Public Property VLineCustom2Visibility As Visibility = Visibility.Hidden
+
+  ' le annotazioni SciChart gestiscono da sole Visibility (la riscrivono, e con il binding TwoWay la riportano
+  ' qui come Visible), quindi per nasconderle si usa IsHidden, che SciChart rispetta
+  <JsonIgnore>
+  Public Property HLineCustom1IsHidden As Boolean = True
+  <JsonIgnore>
+  Public Property HLineCustom2IsHidden As Boolean = True
+  <JsonIgnore>
+  Public Property VLineCustom1IsHidden As Boolean = True
+  <JsonIgnore>
+  Public Property VLineCustom2IsHidden As Boolean = True
 
   Public Property HLineCustom1Value As Double = 0
   Public Property HLineCustom2Value As Double = 0
@@ -1498,32 +1515,25 @@ Public Class clsXYPlotSettings
   End Function
 
   Public Sub AggiornaAvailableChannels()
-    AvailableChannels.Clear()
-    For Each c In DataProvider2020.Channels.ListaCanali.OrderBy(Function(x) x.LongName).ToList
-      AvailableChannels.Add(c)
-      Select Case c.ChannelId
-        Case XAxisChannelName
-          XAxisChannel = c ' DataProvider2020.CanaleDbl(XAxisChannelName)
-        Case YAxisChannelName
-          YAxisChannel = c ' DataProvider2020.CanaleDbl(YAxisChannelName)
-        Case FilterChannelName
-          FilterChannel = c ' DataProvider2020.CanaleDbl(FilterChannelName)
-        Case Filter2ChannelName
-          Filter2Channel = c ' DataProvider2020.CanaleDbl(Filter2ChannelName)
-        Case ColorChannelName
-          ColorChannel = c ' DataProvider2020.CanaleDbl(ColorChannelName)
-        Case SailingStateChannelName
-          SailingStateChannel = c ' DataProvider2020.CanaleDbl(SailingStateChannelName)
-      End Select
-    Next
+    ' la lista e' agganciata a molte combo: si prepara per intero e la si sostituisce in un colpo solo,
+    ' invece di fare Clear e un Add per canale (ogni Add rielabora tutte le combo collegate)
+    Using clsLogTempi.Misura("AggiornaAvailableChannels: ordinamento canali")
+      Dim Ordinati As List(Of clsChannel2020) = DataProvider2020.Channels.ListaCanali.OrderBy(Function(x) x.LongName).ToList
+      clsLogTempi.Scrivi("AggiornaAvailableChannels: canali = " & Ordinati.Count)
+      Using clsLogTempi.Misura("AggiornaAvailableChannels: sostituzione lista (bind combo)")
+        AvailableChannels = New ObservableCollection(Of clsChannel2020)(Ordinati)
+      End Using
+    End Using
     If ZAxisChannelName Is Nothing Then ZAxisChannelName = ""
-    XAxisChannel = DataProvider2020.Channels.Canale(XAxisChannelName)
-    YAxisChannel = DataProvider2020.Channels.Canale(YAxisChannelName)
-    ZAxisChannel = DataProvider2020.Channels.Canale(ZAxisChannelName)
-    ColorChannel = DataProvider2020.Channels.Canale(ColorChannelName)
-    FilterChannel = DataProvider2020.Channels.Canale(FilterChannelName)
-    Filter2Channel = DataProvider2020.Channels.Canale(Filter2ChannelName)
-    SailingStateChannel = DataProvider2020.Channels.Canale(SailingStateChannelName)
+    Using clsLogTempi.Misura("AggiornaAvailableChannels: assegnazione canali X/Y/Z/Color/Filter")
+    Using clsLogTempi.Misura("  X = " & XAxisChannelName) : XAxisChannel = DataProvider2020.Channels.Canale(XAxisChannelName) : End Using
+    Using clsLogTempi.Misura("  Y = " & YAxisChannelName) : YAxisChannel = DataProvider2020.Channels.Canale(YAxisChannelName) : End Using
+    Using clsLogTempi.Misura("  Z = " & ZAxisChannelName) : ZAxisChannel = DataProvider2020.Channels.Canale(ZAxisChannelName) : End Using
+    Using clsLogTempi.Misura("  Color = " & ColorChannelName) : ColorChannel = DataProvider2020.Channels.Canale(ColorChannelName) : End Using
+    Using clsLogTempi.Misura("  Filter = " & FilterChannelName) : FilterChannel = DataProvider2020.Channels.Canale(FilterChannelName) : End Using
+    Using clsLogTempi.Misura("  Filter2 = " & Filter2ChannelName) : Filter2Channel = DataProvider2020.Channels.Canale(Filter2ChannelName) : End Using
+    Using clsLogTempi.Misura("  SailingState = " & SailingStateChannelName) : SailingStateChannel = DataProvider2020.Channels.Canale(SailingStateChannelName) : End Using
+    End Using
   End Sub
 
   Public Sub VerificaImpostaListe()
@@ -2915,10 +2925,23 @@ Public Class clsPeriodsManager2021
     AddToTempIfNew(Period, False)
   End Sub
 
+  ' chiavi (StringaPeriodo) dei periodi gia' in TempPeriods: evita la scansione lineare con formattazione di
+  ' una stringa per ogni elemento a ogni inserimento (quadratica, pesantissima con migliaia di periodi).
+  ' Si ricostruisce da sola se la lista e' stata modificata altrove (Clear/Remove/Add diretti): cambia il conteggio.
+  Private _ChiaviTemp As HashSet(Of String) = Nothing
+
   Public Sub AddToTempIfNew(Period As clsPeriod2021, AggiornaCollections As Boolean)
-    If TempPeriods.Lista.Where(Function(x) x.TR.StringaPeriodo = Period.TR.StringaPeriodo).Count = 0 Then
+    If _ChiaviTemp Is Nothing OrElse _ChiaviTemp.Count <> TempPeriods.Lista.Count Then
+      _ChiaviTemp = New HashSet(Of String)
+      For Each p In TempPeriods.Lista
+        _ChiaviTemp.Add(p.TR.StringaPeriodo)
+      Next
+    End If
+    Dim Chiave As String = Period.TR.StringaPeriodo
+    If Not _ChiaviTemp.Contains(Chiave) Then
       'Period.UpdateDetails()
       TempPeriods.Lista.Add(Period)
+      _ChiaviTemp.Add(Chiave)
       If AggiornaCollections Then TempPeriods.AggiornaCollections()
     End If
   End Sub
@@ -3060,6 +3083,8 @@ Public Class clsPeriodsManager2021
     ' StraightLineReaching se < 3 Bs PolarPer > minimo et < massimo
 
 
+    Dim SwSS As Stopwatch = Stopwatch.StartNew()
+    clsLogTempi.Scrivi("  SailingState: inizio (canali TWA/YRT)")
     Dim IdInizio As Integer = DataProvider2020.TrovaIndice(TR.Start)
     Dim IdFine As Integer = DataProvider2020.TrovaIndice(TR.Finish)
     Dim Valori(DataProvider2020.TimeStamps.Count - 1) As eRowType
@@ -3074,8 +3099,9 @@ Public Class clsPeriodsManager2021
       Dim v(DataProvider2020.TimeStamps.Count - 1) As Double
       Return v
     End If
+    clsLogTempi.Scrivi("  SailingState: canali pronti, " & SwSS.ElapsedMilliseconds & " ms; inizio ciclo rotazioni")
     For i As Integer = IdInizio To IdFine
-      ' ogni volta che la barca supera il valore di yrt marco le x righe precedenti 
+      ' ogni volta che la barca supera il valore di yrt marco le x righe precedenti
       Dim Twa As Double = TwaChannel.Valori(i)
       Dim yr As Double = MmYrt.SetAndGet(YrtChannel.Valori(i))
       If Not Double.IsNaN(yr) AndAlso DataProvider2020.TrovaIndice(DataProvider2020.Momento(i)) > 0 Then
@@ -3122,6 +3148,7 @@ Public Class clsPeriodsManager2021
 
     'Clipboard.SetText(String.Join(vbCrLf, Valori))
     ' quando cambiano le mura sovrascive la rotazione con la strambata o virata se esistono
+    clsLogTempi.Scrivi("  SailingState: ciclo rotazioni finito, " & SwSS.ElapsedMilliseconds & " ms; inizio ciclo virate/strambate")
     For i As Integer = IdInizio To IdFine
       Dim Twa As Double = TwaChannel.Valori(i)
       If Not Double.IsNaN(Twa) Then ' AndAlso Not Double.IsNaN(BsTp) Then
@@ -3153,6 +3180,7 @@ Public Class clsPeriodsManager2021
 
     ' i tre indici di qualita' filtrano la singola riga, ciascuno con la propria soglia minima.
     ' Soglia 0 = filtro disattivato.
+    clsLogTempi.Scrivi("  SailingState: ciclo virate/strambate finito, " & SwSS.ElapsedMilliseconds & " ms; inizio canali qualita'")
     AppConfig.ActiveProfile.PeriodsFinderSettings.NormalizzaValoriMancanti()
     Dim MinEnvQ As Integer = AppConfig.ActiveProfile.PeriodsFinderSettings.MinEnvironmentQualityIndex
     Dim MinAttQ As Integer = AppConfig.ActiveProfile.PeriodsFinderSettings.MinAttitudeQualityIndex
@@ -3162,6 +3190,7 @@ Public Class clsPeriodsManager2021
     Dim ChAttQ As clsChannel2020 = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eAttitudeQuality)
     Dim chBsPerc = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eBSPp)
     Dim chTwaD = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWAd)
+    clsLogTempi.Scrivi("  SailingState: canali qualita' pronti, " & SwSS.ElapsedMilliseconds & " ms; inizio assegnazione righe")
     For i As Integer = IdInizio To IdFine
       If Valori(i) = eRowType.eUndefined Then ' la riga non e' ancora stata definita, ovvero non e' ne una virata, ne una strambata, ne un round up, ne un bear away
         Dim Bspp As Double = chBsPerc.Valori(i)
@@ -3204,6 +3233,7 @@ Public Class clsPeriodsManager2021
 
     'Clipboard.SetText(String.Join(vbCrLf, Valori))
 
+    clsLogTempi.Scrivi("  SailingState: assegnazione righe finita, " & SwSS.ElapsedMilliseconds & " ms; inizio creazione periodi")
     TempPeriods.Lista.Clear()
 
     ' manca la deselezione delle manovre finte
@@ -3301,7 +3331,9 @@ Public Class clsPeriodsManager2021
       End If
       LastRT = CurrentRT
     Next
+    clsLogTempi.Scrivi("  SailingState: periodi creati (" & TempPeriods.Lista.Count & "), " & SwSS.ElapsedMilliseconds & " ms; aggiorna collections")
     AggiornaCollections()
+    clsLogTempi.Scrivi("  SailingState: collections aggiornate, " & SwSS.ElapsedMilliseconds & " ms; aggrega reaching")
     'aggrega reaching brevi
     Dim ptd As New List(Of clsPeriod2021)
     Dim ptadd As New List(Of clsPeriod2021)
@@ -3335,6 +3367,7 @@ Public Class clsPeriodsManager2021
     Next
 
     AggiornaCollections()
+    clsLogTempi.Scrivi("  SailingState: fine, " & SwSS.ElapsedMilliseconds & " ms")
     Return ValoriCanale
 
   End Function

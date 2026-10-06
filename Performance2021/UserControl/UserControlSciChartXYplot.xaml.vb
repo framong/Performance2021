@@ -26,9 +26,11 @@ Public Class UserControlSciChartXYplot
   'WithEvents tm As New Timers.Timer
 
   Public Sub New()
+    clsLogTempi.Scrivi("XY UserControl: costruttore, inizio")
     Me.DataContext = VM
     ' This call is required by the designer.
     InitializeComponent()
+    clsLogTempi.Scrivi("XY UserControl: InitializeComponent finito")
 
     ' --- Nulla di ciò che segue deve girare nel designer XAML ---
     If IsInDesignMode Then Exit Sub
@@ -56,7 +58,9 @@ Public Class UserControlSciChartXYplot
 
   Private Sub Button_Click(sender As Object, e As RoutedEventArgs)
 
-    VM.AggiornaGrafico(VM.CollectImages = False)
+    Using clsLogTempi.Misura("XY Refresh: AggiornaGrafico")
+      VM.AggiornaGrafico(VM.CollectImages = False)
+    End Using
     Plot.ZoomExtents()
 
 
@@ -345,7 +349,9 @@ Public Class UserControlSciChartXYplot
 
   Private Sub UserControl_GotFocus(sender As Object, e As RoutedEventArgs)
     If VM.CurrentPlotSettings Is Nothing Then Exit Sub
-    VM.CurrentPlotSettings.VerificaImpostaListe()
+    Using clsLogTempi.Misura("XY UserControl_GotFocus: VerificaImpostaListe")
+      VM.CurrentPlotSettings.VerificaImpostaListe()
+    End Using
   End Sub
 
 
@@ -616,6 +622,11 @@ Public Class UserControlSciChartXYplot
 
   Private Sub Button_Click_17(sender As Object, e As RoutedEventArgs)
 
+  End Sub
+
+  ''' <summary>Rende le combo dei canali X e Y editabili con filtro di ricerca.</summary>
+  Private Sub Combo_Canali_Loaded(sender As Object, e As RoutedEventArgs)
+    clsComboFiltro.Attiva(DirectCast(sender, ComboBox))
   End Sub
 
   ''' <summary>Doppio click sull'etichetta X: imposta la True Wind Speed come canale dell'asse X.</summary>
