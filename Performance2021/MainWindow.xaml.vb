@@ -82,7 +82,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 06 13"
+    Versione = "v02 - 2026 10 06 14"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -204,7 +204,9 @@ Class MainWindow
     Dim ChartsName As String = "BasicCharts"
     MatriceControlliBase = New clsMatriceControlliSinglePeriod(ChartsName)
 
-    DataPlotSync.AggiornaVisibleRange(DataProvider2020.TimeRange, False)
+    Using clsLogTempi.Misura("  Base: AggiornaVisibleRange")
+      DataPlotSync.AggiornaVisibleRange(DataProvider2020.TimeRange, False)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0")
 
     ' Si creano SOLO i ViewModel (operazione leggerissima).
@@ -212,6 +214,7 @@ Class MainWindow
     ' entra effettivamente in viewport, oppure dal prefetch in background.
     Dim Disponibili As HashSet(Of String) = CanaliDisponibili()
     Dim c As Integer = 0
+    Dim MisuraVm As IDisposable = clsLogTempi.Misura("  Base: creazione ViewModel dei plot")
     For Each GB In AppConfig.ActiveProfile.BasicChartSettings
       Dim NumCanaliValidi As Integer = 0
       If Not GB.YaxisChannels Is Nothing Then
@@ -227,14 +230,20 @@ Class MainWindow
     Next
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0d" & c & " VM creati:" & MatriceControlliBase.MatriceControlli.Count)
 
-    ItmCtrl_BasicCharts.ItemsSource = MatriceControlliBase.MatriceControlli
-    If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0e" & c)
-    btn_BasicMouseWheel.Content = "w" & DataPlotSync.SetMouseWheelMode(clsChartSyncManager.eMouseWheelZoomMode.eXonly)
-    If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0f" & c)
-    btn_BasicPanSelection.Content = "rb" & DataPlotSync.SetPanSelect(clsChartSyncManager.eRubberMode.eXonly)
+    MisuraVm.Dispose()
+
+    Using clsLogTempi.Misura("  Base: ItemsSource dei plot + mouse wheel / pan")
+      ItmCtrl_BasicCharts.ItemsSource = MatriceControlliBase.MatriceControlli
+      If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0e" & c)
+      btn_BasicMouseWheel.Content = "w" & DataPlotSync.SetMouseWheelMode(clsChartSyncManager.eMouseWheelZoomMode.eXonly)
+      If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD0f" & c)
+      btn_BasicPanSelection.Content = "rb" & DataPlotSync.SetPanSelect(clsChartSyncManager.eRubberMode.eXonly)
+    End Using
 
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD00")
-    FillGraphEventi()
+    Using clsLogTempi.Misura("  Base: FillGraphEventi (grafico eventi in alto)")
+      FillGraphEventi()
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD000")
 
     ' Riempimento progressivo dei plot non visibili, a priorita' bassa: l'interfaccia resta
@@ -374,15 +383,22 @@ Class MainWindow
   End Sub
 
   Private Sub ApriFileSelezionati(FileSelezionati As List(Of String))
+    clsLogTempi.Scrivi("ApriFileSelezionati: " & FileSelezionati.Count & " file")
     LoadingProgressVisualizza()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbg0")
     ' PRIMA di tutto: via ogni traccia del dataset precedente
-    ResetStatoDataset()
+    Using clsLogTempi.Misura("Apri: ResetStatoDataset")
+      ResetStatoDataset()
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbg0r - reset stato")
-    DataProvider2020 = New clsDataProvider2020(FileSelezionati)
+    Using clsLogTempi.Misura("Apri: New clsDataProvider2020 (intestazioni dei file)")
+      DataProvider2020 = New clsDataProvider2020(FileSelezionati)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbg00")
     txtSelectedFiles.Text = DataProvider2020.SelectedFilesList
-    ImpostaDataGridCanali2020(DataProvider2020)
+    Using clsLogTempi.Misura("Apri: ImpostaDataGridCanali2020")
+      ImpostaDataGridCanali2020(DataProvider2020)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbg000")
     LoadingProgressNascondi()
   End Sub
@@ -520,21 +536,30 @@ Class MainWindow
     'End If
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgA")
 
+    clsLogTempi.Scrivi("CaricaFileSelezionati: inizio (Load Data)")
     LoadingProgressVisualizza()
     ' le liste sono gia' state azzerate da ResetStatoDataset in ApriFileSelezionati,
     ' ma il Load Data puo' essere premuto anche con un provider gia' presente
     PeriodsManager.Periods.Lista.Clear()
     ExpStarts.StartsList.Clear()
-    PeriodsManager.ReloadPeriods(DataProvider2020.ParquetFiles.First.FileInfo.Directory.FullName)
+    Using clsLogTempi.Misura("Load: PeriodsManager.ReloadPeriods")
+      PeriodsManager.ReloadPeriods(DataProvider2020.ParquetFiles.First.FileInfo.Directory.FullName)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgB")
 
-    DataProvider2020.CaricaValoriCanaliSelezionati()
+    Using clsLogTempi.Misura("Load: CaricaValoriCanaliSelezionati (lettura parquet)")
+      DataProvider2020.CaricaValoriCanaliSelezionati()
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgC")
 
-    ApriFileSailUsage(False)
+    Using clsLogTempi.Misura("Load: ApriFileSailUsage")
+      ApriFileSailUsage(False)
+    End Using
     ' qui vanno azzerati tutti i canali
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgD")
-    CaricaGraficiBase()
+    Using clsLogTempi.Misura("Load: CaricaGraficiBase (totale)")
+      CaricaGraficiBase()
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgE")
 
     lbl_sb_LoadedFiles.Content = ""
@@ -543,17 +568,26 @@ Class MainWindow
     Next
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgF")
 
-    DataPlotSync.AggiornaVisibleRange(DataProvider2020.TimeRange, True)
+    Using clsLogTempi.Misura("Load: DataPlotSync.AggiornaVisibleRange")
+      DataPlotSync.AggiornaVisibleRange(DataProvider2020.TimeRange, True)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgG")
 
-    MapControl.AggiornaTracciaBase(1)
+    Using clsLogTempi.Misura("Load: MapControl.AggiornaTracciaBase")
+      MapControl.AggiornaTracciaBase(1)
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgH")
 
 
-    MainTabControl.SelectedItem = BasicCharts
+    Using clsLogTempi.Misura("Load: selezione tab Data Plots (include la creazione dei visual)")
+      MainTabControl.SelectedItem = BasicCharts
+    End Using
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " dbgI")
+    ' segna quando la UI ha finito di disegnare tutto (layout e render del tab Data Plots)
+    Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Sub() clsLogTempi.Scrivi("Load: UI di nuovo inattiva dopo la selezione di Data Plots"))
 
     LoadingProgressNascondi()
+    clsLogTempi.Scrivi("CaricaFileSelezionati: fine del metodo")
 
   End Sub
 
