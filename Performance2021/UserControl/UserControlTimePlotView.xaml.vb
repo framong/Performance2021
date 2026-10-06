@@ -755,27 +755,43 @@ Public Class clsTimePlotViewModel
   End Sub
 
   ''' <summary>
-  ''' Versione asincrona di CaricaSeNecessario: il calcolo pesante gira su un thread di
-  ''' background, la UI resta reattiva, e al ritorno si costruiscono assi, serie e annotazioni.
-  ''' </summary>
-  ''' <summary>
   ''' False quando il tab Data Plots non e' quello visibile: il caricamento dei plot (che gira per buona parte sul
   ''' thread UI) viene rinviato, cosi' non rallenta il tab su cui si sta lavorando. Lo imposta MainWindow
   ''' al cambio di tab e, tornando su Data Plots, rilancia il riempimento dei plot rimasti da caricare.
   ''' </summary>
   Public Shared Property CaricamentoConsentito As Boolean = True
 
+  ''' <summary>
+  ''' Un solo plot alla volta: prima i plot visibili ne avviavano cinque insieme, le cui parti sul thread UI si
+  ''' intrecciavano (ognuno piu' lento) e, una volta partiti, non si potevano fermare al cambio di tab.
+  ''' In coda, invece, i plot non ancora iniziati si fermano appena il tab Data Plots non e' piu' visibile.
+  ''' </summary>
+  Private Shared ReadOnly _CodaCaricamento As New Threading.SemaphoreSlim(1, 1)
+
+  ''' <summary>
+  ''' Versione asincrona di CaricaSeNecessario: il calcolo pesante gira su un thread di
+  ''' background, la UI resta reattiva, e al ritorno si costruiscono assi, serie e annotazioni.
+  ''' </summary>
   Public Async Function CaricaSeNecessarioAsync() As Threading.Tasks.Task(Of Boolean)
     If DatiCaricati Then Return True
     If Not CaricamentoConsentito Then Return False
-    If _CalcoloInCorso Then Return False
+    If _CalcoloInCorso Then Return False ' in coda o in corso
     If DataProvider2020 Is Nothing Then Return False
     If Not DataProvider2020.ValoriCaricati Then Return False
 
     _CalcoloInCorso = True
-    Dim SwPlot As Stopwatch = Stopwatch.StartNew()
-    clsLogTempi.Scrivi("  plot dati: inizio caricamento " & TitoloPlotLog())
+    Dim InCodaAcquisita As Boolean = False
+    Dim SwPlot As Stopwatch = Nothing
     Try
+      Await _CodaCaricamento.WaitAsync()
+      InCodaAcquisita = True
+      ' dopo l'attesa la situazione puo' essere cambiata: tab lasciato, dataset ricaricato, plot gia' caricato
+      If DatiCaricati Then Return True
+      If Not CaricamentoConsentito Then Return False
+      If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Return False
+
+      SwPlot = Stopwatch.StartNew()
+      clsLogTempi.Scrivi("  plot dati: inizio caricamento " & TitoloPlotLog())
       TestoStatoCaricamento = "Loading data..."
 
       Dim CS As List(Of clsChannel2020) = RisolviCanali()
@@ -812,7 +828,8 @@ Public Class clsTimePlotViewModel
 
     Finally
       _CalcoloInCorso = False
-      clsLogTempi.Scrivi("  plot dati: fine caricamento " & TitoloPlotLog() & " : " & SwPlot.ElapsedMilliseconds & " ms")
+      If InCodaAcquisita Then _CodaCaricamento.Release()
+      If Not SwPlot Is Nothing Then clsLogTempi.Scrivi("  plot dati: fine caricamento " & TitoloPlotLog() & " : " & SwPlot.ElapsedMilliseconds & " ms")
     End Try
   End Function
 
