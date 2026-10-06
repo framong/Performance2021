@@ -82,7 +82,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 06 11"
+    Versione = "v02 - 2026 10 06 12"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1855,6 +1855,13 @@ Class MainWindow
       AssicuraCtrlXYplot()
     End Using
     If IsInDesignMode Then Exit Sub
+    ' anticipa la preparazione dei canali (SailingState compreso): si sovrappone al tempo in cui l'utente guarda
+    ' il tab, invece di partire al primo clic nel controllo
+    Dim Ctrl As UserControlSciChartXYplot = ctrlXYplot
+    Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
+        Sub()
+          If Ctrl Is ctrlXYplot AndAlso MainTabControl.SelectedItem Is XYplot Then Ctrl.PreparaListeCanali()
+        End Sub)
   End Sub
 
   Private Sub PolarChecks_GotFocus(sender As Object, e As RoutedEventArgs) Handles PolarChecks.GotFocus

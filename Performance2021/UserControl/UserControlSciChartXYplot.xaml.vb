@@ -347,6 +347,19 @@ Public Class UserControlSciChartXYplot
   '  End If
   'End Sub
 
+  ''' <summary>
+  ''' Prepara la lista canali e le impostazioni (calcola anche i canali math di X/Y/Color, es. SailingState) senza
+  ''' aspettare il primo clic nel controllo: MainWindow la lancia a priorita' idle appena il tab XY e' mostrato.
+  ''' Idempotente: se la lista e' gia' pronta non fa nulla.
+  ''' </summary>
+  Public Sub PreparaListeCanali()
+    If VM Is Nothing OrElse VM.CurrentPlotSettings Is Nothing Then Exit Sub
+    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
+    Using clsLogTempi.Misura("XY PreparaListeCanali (anticipata, idle)")
+      VM.CurrentPlotSettings.VerificaImpostaListe()
+    End Using
+  End Sub
+
   Private Sub UserControl_GotFocus(sender As Object, e As RoutedEventArgs)
     If VM.CurrentPlotSettings Is Nothing Then Exit Sub
     Using clsLogTempi.Misura("XY UserControl_GotFocus: VerificaImpostaListe")
