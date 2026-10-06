@@ -158,6 +158,11 @@
     <Compile Include="FinestraCanaliReport.vb" />
     <Compile Include="FinestraAvanzamento.vb" />
     <Compile Include="LeewayModel.vb" />
+    <Compile Include="SeaStateNorm.vb" />
+    <Compile Include="SeaStateNormForm.xaml.vb">
+      <DependentUpon>SeaStateNormForm.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="LeewayModelForm.xaml.vb">
       <DependentUpon>LeewayModelForm.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -304,6 +309,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="QualitySettingsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SeaStateNormForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

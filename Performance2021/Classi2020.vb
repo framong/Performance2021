@@ -4065,6 +4065,22 @@ Public Class clsDataProvider2020
       Case clsChannels2020.eCanaliChiave.eLeewayModel
         ' leeway teorico: coefficienti nel profilo (AppConfig.ActiveProfile.LeewayModel), vedi LeewayModel.vb
         Canale.Valori = clsLeewayModel.CalcolaSerie(Me)
+      Case clsChannels2020.eCanaliChiave.eSeaStateNorm, clsChannels2020.eCanaliChiave.eSeaStateNormDelta
+        ' SeaState atteso dalla TWS (tabella nel profilo) e differenza rispetto al SeaState misurato
+        Dim chTwsSS As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
+        If chTwsSS Is Nothing OrElse chTwsSS.Valori Is Nothing Then Exit Select
+        Dim Norm() As Double = clsSeaStateNorm.CalcolaSerie(chTwsSS.Valori)
+        If Canale.CanaleChiave = clsChannels2020.eCanaliChiave.eSeaStateNorm Then
+          Canale.Valori = Norm
+        Else
+          Dim chMis As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSeaState)
+          If chMis Is Nothing OrElse chMis.Valori Is Nothing Then Exit Select
+          Dim Delta(Norm.Length - 1) As Double
+          For i As Integer = 0 To Norm.Length - 1
+            If i < chMis.Valori.Length Then Delta(i) = chMis.Valori(i) - Norm(i) Else Delta(i) = Double.NaN
+          Next
+          Canale.Valori = Delta
+        End If
       Case clsChannels2020.eCanaliChiave.eHeelDelta, clsChannels2020.eCanaliChiave.eTrimDelta, clsChannels2020.eCanaliChiave.eRudderDelta
         If Not TgtManager.Tgt Is Nothing Then
           Dim chVal As clsChannel2020 = Nothing
@@ -5944,6 +5960,9 @@ Public Class clsChannels2020
 
     eLeewayModel = 159 ' leeway teorico dal modello a coefficienti (clsLeewayModel)
 
+    eSeaStateNorm = 160 ' SeaState atteso per la TWS corrente, da tabella del profilo (clsSeaStateNorm)
+    eSeaStateNormDelta = 161 ' SeaState misurato meno SeaState normalizzato
+
 
   End Enum
 
@@ -6655,6 +6674,20 @@ Public Class clsChannels2020
           pLongName = "Leeway Model"
           pIsMath = True
           pPolarHeader = "Leeway"
+        Case eCanaliChiave.eSeaStateNorm
+          pShortName = "SeaStateNorm_m"
+          pLongName = "Sea State Norm_m"
+          pShortUM = ""
+          pLongUM = ""
+          pIsMath = True
+          pDecimals = 2
+        Case eCanaliChiave.eSeaStateNormDelta
+          pShortName = "SeaStateNormDelta_m"
+          pLongName = "Sea State Norm Delta_m"
+          pShortUM = ""
+          pLongUM = ""
+          pIsMath = True
+          pDecimals = 2
         Case eCanaliChiave.eVmgShearPerc
           pShortName = "VmgShP"
           pLongName = "Vmg Shear Perc"

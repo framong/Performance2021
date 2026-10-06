@@ -618,6 +618,13 @@ Public Class UserControlSciChartXYplot
 
   End Sub
 
+  ''' <summary>Doppio click sull'etichetta X: imposta la True Wind Speed come canale dell'asse X.</summary>
+  Private Sub Label_X_MouseDoubleClick(sender As Object, e As MouseButtonEventArgs)
+    If VM Is Nothing OrElse VM.CurrentPlotSettings Is Nothing OrElse VM.CurrentPlotSettings.AvailableChannels Is Nothing Then Exit Sub
+    Dim Tws = VM.CurrentPlotSettings.AvailableChannels.FirstOrDefault(Function(c) c.CanaleChiave = clsChannels2020.eCanaliChiave.eTWS)
+    If Not Tws Is Nothing Then VM.CurrentPlotSettings.XAxisChannel = Tws
+  End Sub
+
   Private Sub Button_Click_SwapAxes(sender As Object, e As RoutedEventArgs)
     Dim X = VM.CurrentPlotSettings.XAxisChannel
     Dim Y = VM.CurrentPlotSettings.YAxisChannel

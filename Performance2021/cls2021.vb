@@ -2045,6 +2045,8 @@ Public Class clsProfile2021
   Public Property MySongLeewaySettings As clsMySongLeewaySettings
   ''' <summary>Coefficienti e impostazioni del modello teorico del leeway (vedi LeewayModel.vb). Nothing nei profili precedenti: si usano i default.</summary>
   Public Property LeewayModel As clsLeewayModelSettings
+  ''' <summary>Tabella TWS / SeaState atteso per il canale SeaStateNorm. Nothing nei profili precedenti: si usa quella di default.</summary>
+  Public Property SeaStateNormTable As List(Of clsSeaStateNormPoint)
   ''' <summary>Cosa includere nel report PDF delle straight line (menu Reports dei tab upwind, downwind, reaching). Nothing = valori di default.</summary>
   Public Property StraightLineReportOptions As clsStraightLineReportOptions
   ''' <summary>Opzioni di report separate per tab (prima erano una sola, condivisa). Nothing = alla prima lettura si parte da una copia di StraightLineReportOptions.</summary>

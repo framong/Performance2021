@@ -81,7 +81,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 05 05"
+    Versione = "v02 - 2026 10 06 01"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1687,6 +1687,17 @@ Class MainWindow
     If Not f.RichiestoRefresh Then Exit Sub
     If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
     clsDataCorrections.ClearChannelValues(clsChannels2020.eCanaliChiave.eLeewayModel)
+    RidisegnaPlot(False)
+  End Sub
+
+  ''' <summary>Apre la tabella TWS / SeaState atteso; al salvataggio ricalcola i canali SeaStateNorm e SeaStateNormDelta.</summary>
+  Private Sub btn_SeaStateNorm_Click(sender As Object, e As RoutedEventArgs)
+    Dim f As New SeaStateNormForm
+    f.Owner = Me
+    If f.ShowDialog() <> True Then Exit Sub
+    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
+    clsDataCorrections.ClearChannelValues(clsChannels2020.eCanaliChiave.eSeaStateNorm)
+    clsDataCorrections.ClearChannelValues(clsChannels2020.eCanaliChiave.eSeaStateNormDelta)
     RidisegnaPlot(False)
   End Sub
 

@@ -29,7 +29,7 @@
       <ComboBox FontSize="12" Name="SorgenteDati" SelectedItem="{Binding CurrentPlotSettings.SorgenteDati}" MinWidth="100" Margin="1,0,5,0">
       </ComboBox>
 
-      <Label HorizontalContentAlignment="Left">X
+      <Label HorizontalContentAlignment="Left" MouseDoubleClick="Label_X_MouseDoubleClick" ToolTip="Double click to set True Wind Speed as X channel">X
         <!--<CheckBox FontSize="12" Content=" X Axis" IsChecked="{Binding CurrentPlotSettings.XAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
       </Label>
       <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" >
