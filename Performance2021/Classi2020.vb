@@ -3335,26 +3335,50 @@ Public Class clsDataProvider2020
     End If
 
     adesso = Now
+    Dim SwTgt As Stopwatch = Stopwatch.StartNew()
 
     Dim Polare As clsChannelTarget = TgtManager.Tgt.Polare(NomeCanaleTarget)
     If Polare Is Nothing Then Return False
 
     'ObjContaTempo.StampaMillisecondiTrascorsi("   Target inizio loop ")
 
-    'For i As Long = 0 To chTws.Valori.Count - 1
-    For i As Long = 0 To chTws.Valori.Count - 1
-      Dim TWS As Double = chTws.Valori(i)
-      If Not Double.IsNaN(TWS) Then
-        Dim TWA As Double = System.Math.Abs(chTwa.Valori(i))
-        Dim pol As Double = Polare.PolarValue(TWS, TWA)
-        Dim tgt As Double = Polare.TargetValue(TWS, TWA <= 90)
-        CanaleTgt.Valori(i) = tgt
-        CanalePol.Valori(i) = pol
-      Else
-        CanaleTgt.Valori(i) = Double.NaN
-        CanalePol.Valori(i) = Double.NaN
-      End If
-    Next
+    ' calcolo veloce (interpolatori di riga costruiti una volta sola); se la tabella e' vuota si usa il ciclo classico
+    If Polare.CalcolaSerie(chTws.Valori, chTwa.Valori, CanaleTgt.Valori, CanalePol.Valori) Then
+      ' verifica a campione contro il calcolo classico, riportata nel log dei tempi (differenza massima assoluta)
+      Try
+        Dim Passo As Integer = Math.Max(1, chTws.Valori.Length \ 300)
+        Dim MaxDiff As Double = 0
+        Dim Controllate As Integer = 0
+        For i As Integer = 0 To chTws.Valori.Length - 1 Step Passo
+          Dim TWS As Double = chTws.Valori(i)
+          If Double.IsNaN(TWS) Then Continue For
+          Dim TWA As Double = System.Math.Abs(chTwa.Valori(i))
+          Dim dp As Double = Math.Abs(Polare.PolarValue(TWS, TWA) - CanalePol.Valori(i))
+          Dim dt As Double = Math.Abs(Polare.TargetValue(TWS, TWA <= 90) - CanaleTgt.Valori(i))
+          If Not Double.IsNaN(dp) Then MaxDiff = Math.Max(MaxDiff, dp)
+          If Not Double.IsNaN(dt) Then MaxDiff = Math.Max(MaxDiff, dt)
+          Controllate += 1
+        Next
+        clsLogTempi.Scrivi("  target/polare " & NomeCanaleTarget & ": verifica a campione su " & Controllate & " righe, differenza massima " & MaxDiff.ToString("E2"))
+      Catch ex As Exception
+        clsLogTempi.Scrivi("  target/polare " & NomeCanaleTarget & ": verifica a campione fallita: " & ex.Message)
+      End Try
+    Else
+      For i As Long = 0 To chTws.Valori.Count - 1
+        Dim TWS As Double = chTws.Valori(i)
+        If Not Double.IsNaN(TWS) Then
+          Dim TWA As Double = System.Math.Abs(chTwa.Valori(i))
+          Dim pol As Double = Polare.PolarValue(TWS, TWA)
+          Dim tgt As Double = Polare.TargetValue(TWS, TWA <= 90)
+          CanaleTgt.Valori(i) = tgt
+          CanalePol.Valori(i) = pol
+        Else
+          CanaleTgt.Valori(i) = Double.NaN
+          CanalePol.Valori(i) = Double.NaN
+        End If
+      Next
+    End If
+    clsLogTempi.Scrivi("  target/polare " & NomeCanaleTarget & ": serie calcolate in " & SwTgt.ElapsedMilliseconds & " ms")
     'Console.WriteLine("VerificaCanaleTgtPol - Channels Data Loaded " & Now.Subtract(adesso).TotalSeconds.ToString("F3"))
     'ObjContaTempo.StampaMillisecondiTrascorsi("   Target fine loop ")
 
@@ -4892,6 +4916,8 @@ Public Class clsDataProvider2020
         Dim AndaturaValida(N - 1) As Boolean
 
         Dim idx As Integer = 0
+        Dim SwDq As Stopwatch = Stopwatch.StartNew()
+        clsLogTempi.Scrivi("  DataQuality: preparazione finita, inizio passata 1 (" & Lista.Count & " canali, finestra " & samples & " righe)")
 
         ' ---------------------------------------------------------------------------------
         ' PASSATA 1: instabilita' assoluta di Environment e Attitude
@@ -4968,6 +4994,7 @@ Public Class clsDataProvider2020
 
         ' ---------------------------------------------------------------------------------
         ' PASSATA 2: performance relativa al rendimento tipico dell'intorno
+        clsLogTempi.Scrivi("  DataQuality: passata 1 finita in " & SwDq.ElapsedMilliseconds & " ms, inizio passata 2")
         ' Il riferimento e' la mediana di BSp calcolata a blocchi di un minuto sull'intorno di
         ' +/- RefWindowMinutes, separatamente per andatura e sui soli campioni gia' giudicati
         ' validi dai due indici di stabilita'. Tra i centri dei blocchi si interpola.
@@ -9807,6 +9834,107 @@ Public Class clsChannelTarget
 
   End Function
 
+
+  ''' <summary>
+  ''' Calcola in un colpo solo le serie target e polare per tutte le righe (TWS = righe della tabella, TWA = colonne),
+  ''' con lo stesso risultato di chiamare PolarValue / TargetValue riga per riga. Il costo del metodo per riga
+  ''' era la ricostruzione, a ogni chiamata, di due spline (Akima + lineare): qui l'interpolatore di ogni riga della
+  ''' tabella si costruisce una sola volta, al primo uso. Restituisce False se la tabella e' vuota (si usa il percorso classico).
+  ''' Non usa i campi di stato condivisi (_RigaAnte, _Interpolatore): non interferisce con le chiamate classiche.
+  ''' </summary>
+  Public Function CalcolaSerie(Tws As Double(), Twa As Double(), Tgt As Double(), Pol As Double()) As Boolean
+    If _Rows Is Nothing OrElse _Rows.Count = 0 Then Return False
+    Dim n As Integer = _Rows.Count
+    Dim FunzPolar(n - 1) As Func(Of Double, Double)
+    Dim TgtUp(n - 1) As Double
+    Dim TgtDn(n - 1) As Double
+    Dim TgtUpPronto(n - 1) As Boolean
+    Dim TgtDnPronto(n - 1) As Boolean
+
+    Dim PolarRiga As Func(Of Integer, Double, Double) =
+      Function(r As Integer, c As Double) As Double
+        If FunzPolar(r) Is Nothing Then
+          Dim cv As Double() = _Rows(r).ColumnsValues
+          Dim tv As Double() = _Rows(r).TgtValues
+          If cv.Count = 2 Then
+            Dim ca As Double = (tv(0) - tv(1)) / (cv(0) - cv(1))
+            Dim org As Double = tv(0) - (((tv(0) - tv(1)) / (cv(0) - cv(1))) * cv(0))
+            FunzPolar(r) = Function(x As Double) org + ca * x
+          Else
+            Dim ip = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(cv, tv)
+            FunzPolar(r) = Function(x As Double) ip.Interpolate(x)
+          End If
+        End If
+        Return FunzPolar(r)(c)
+      End Function
+
+    Dim TargetRiga As Func(Of Integer, Boolean, Double) =
+      Function(r As Integer, up As Boolean) As Double
+        If up Then
+          If Not TgtUpPronto(r) Then
+            TgtUp(r) = GetTargetValue(_Rows(r), True)
+            TgtUpPronto(r) = True
+          End If
+          Return TgtUp(r)
+        Else
+          If Not TgtDnPronto(r) Then
+            TgtDn(r) = GetTargetValue(_Rows(r), False)
+            TgtDnPronto(r) = True
+          End If
+          Return TgtDn(r)
+        End If
+      End Function
+
+    ' interpolazione lineare tra due righe, come LinearSpline.Interpolate: y0 + (y1 - y0) / (x1 - x0) * (x - x0)
+    Dim Lineare As Func(Of Double, Double, Double, Double, Double, Double) =
+      Function(x As Double, x0 As Double, x1 As Double, y0 As Double, y1 As Double) As Double
+        If x1 <= x0 Then
+          Return ValoreInterpolazioneLineare(x, New Double() {x0, x1}, New Double() {y0, y1}) ' righe non crescenti: comportamento classico
+        End If
+        Return y0 + ((y1 - y0) / (x1 - x0)) * (x - x0)
+      End Function
+
+    For i As Integer = 0 To Tws.Length - 1
+      Dim TWS_ As Double = Tws(i)
+      If Double.IsNaN(TWS_) Then
+        Tgt(i) = Double.NaN
+        Pol(i) = Double.NaN
+        Continue For
+      End If
+      Dim TWA_ As Double = System.Math.Abs(Twa(i))
+      Dim Upwind As Boolean = TWA_ <= 90
+
+      ' righe che racchiudono il valore (stessa logica di ImpostaRigaAntePost)
+      Dim IdAnte As Integer = -1
+      Dim IdPost As Integer = -1
+      For r As Integer = 0 To n - 1
+        If _Rows(r).RowValue <= TWS_ Then IdAnte = r
+        If _Rows(r).RowValue >= TWS_ Then
+          IdPost = r
+          Exit For
+        End If
+      Next
+      Dim Ante As Integer, Post As Integer
+      If IdAnte = -1 Then
+        Ante = 0 : Post = -1
+      ElseIf IdPost = -1 Then
+        Ante = n - 1 : Post = -1
+      Else
+        Ante = IdAnte : Post = IdPost
+      End If
+
+      If Post = -1 OrElse Ante = Post Then
+        Pol(i) = PolarRiga(Ante, TWA_)
+        Tgt(i) = TargetRiga(Ante, Upwind)
+      Else
+        Dim x0 As Double = _Rows(Ante).RowValue
+        Dim x1 As Double = _Rows(Post).RowValue
+        Pol(i) = Lineare(TWS_, x0, x1, PolarRiga(Ante, TWA_), PolarRiga(Post, TWA_))
+        Tgt(i) = Lineare(TWS_, x0, x1, TargetRiga(Ante, Upwind), TargetRiga(Post, Upwind))
+      End If
+    Next
+    Return True
+  End Function
 
   Private Sub ImpostaRigaAntePost(RowValue As Double)
     Dim _IdRigaAnte As Integer = -1
