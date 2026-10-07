@@ -4994,7 +4994,8 @@ Public Class clsDataProvider2020
 
         ' ---------------------------------------------------------------------------------
         ' PASSATA 2: performance relativa al rendimento tipico dell'intorno
-        clsLogTempi.Scrivi("  DataQuality: passata 1 finita in " & SwDq.ElapsedMilliseconds & " ms, inizio passata 2")
+        clsLogTempi.Scrivi("  DataQuality: passata 1 finita in " & SwDq.ElapsedMilliseconds & " ms, inizio passata 2" &
+                           " (verifica SD veloce vs classica: " & clsChDataQuality.VerificaSdControlli & " controlli, differenza massima " & clsChDataQuality.VerificaSdDiffMax.ToString("E2") & ")")
         ' Il riferimento e' la mediana di BSp calcolata a blocchi di un minuto sull'intorno di
         ' +/- RefWindowMinutes, separatamente per andatura e sui soli campioni gia' giudicati
         ' validi dai due indici di stabilita'. Tra i centri dei blocchi si interpola.

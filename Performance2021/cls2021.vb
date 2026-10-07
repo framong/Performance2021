@@ -332,8 +332,34 @@ Public Class clsChDataQuality
     Riempito(Posizione) = True
   End Sub
 
-  ''' <summary>Deviazione standard sui soli slot effettivamente riempiti.</summary>
+  ''' <summary>
+  ''' Deviazione standard campionaria sui soli slot riempiti, senza allocare array: stessa ricorrenza usata da
+  ''' MathNet (ArrayStatistics.Variance) sugli stessi valori, nello stesso ordine. Chiamata ~5 milioni di volte
+  ''' nel calcolo della qualita': la versione con array temporaneo + MathNet costava circa 1,8 s.
+  ''' </summary>
   Public Function SD() As Double
+    Dim n As Integer = 0
+    Dim t As Double = 0
+    Dim Varianza As Double = 0
+    Dim Vals As Double() = Values
+    Dim Pieni As Boolean() = Riempito
+    For i As Integer = 0 To Pieni.Length - 1
+      If Pieni(i) Then
+        Dim x As Double = Vals(i)
+        n += 1
+        t += x
+        If n > 1 Then
+          Dim diff As Double = (n * x) - t
+          Varianza += (diff * diff) / (n * (n - 1.0))
+        End If
+      End If
+    Next
+    If n < 2 Then Return Double.NaN
+    Return Math.Abs(Math.Sqrt(Varianza / (n - 1)))
+  End Function
+
+  ''' <summary>Versione precedente (array temporaneo + MathNet): serve solo alla verifica a campione dell'equivalenza.</summary>
+  Public Function SDClassica() As Double
     Dim n As Integer = 0
     For i As Integer = 0 To Riempito.Count - 1
       If Riempito(i) Then n += 1
@@ -382,8 +408,23 @@ Public Class clsChDataQuality
   ''' Tolleranza consumata dal canale, in percentuale: 100 significa che la variazione osservata
   ''' e' esattamente quella tollerata. NaN se la finestra non ha ancora dati sufficienti.
   ''' </summary>
+  ' verifica a campione (1 chiamata su 16384) della SD veloce contro quella classica, riportata nel log dei tempi
+  Public Shared VerificaSdChiamate As Long = 0
+  Public Shared VerificaSdControlli As Long = 0
+  Public Shared VerificaSdDiffMax As Double = 0
+
   Public Function TolleranzaUsata(Andatura As eAndatura, SeaState As Double) As Double
     Dim s As Double = SD()
+    VerificaSdChiamate += 1
+    If (VerificaSdChiamate And 16383) = 0 Then
+      Dim sc As Double = SDClassica()
+      If Not Double.IsNaN(s) AndAlso Not Double.IsNaN(sc) Then
+        VerificaSdControlli += 1
+        VerificaSdDiffMax = Math.Max(VerificaSdDiffMax, Math.Abs(s - sc))
+      ElseIf Double.IsNaN(s) <> Double.IsNaN(sc) Then
+        VerificaSdDiffMax = Double.PositiveInfinity ' una e' NaN e l'altra no: non equivalenti
+      End If
+    End If
     If Double.IsNaN(s) Then Return Double.NaN
 
     If Setting.UsePercent Then
@@ -3105,8 +3146,14 @@ Public Class clsPeriodsManager2021
       Dim Twa As Double = TwaChannel.Valori(i)
       Dim yr As Double = MmYrt.SetAndGet(YrtChannel.Valori(i))
       If Not Double.IsNaN(yr) AndAlso DataProvider2020.TrovaIndice(DataProvider2020.Momento(i)) > 0 Then
-        Dim inizioTmp As Integer = DataProvider2020.TrovaIndice(DataProvider2020.Momento(i).AddSeconds(-SecAnteRot)) '' SecAnteRot))
-        Dim fineTmp As Integer = DataProvider2020.TrovaIndice(DataProvider2020.Momento(i).AddSeconds(SecPostRot))
+        ' gli indici di inizio/fine servono solo nelle rotazioni e subito dopo: si calcolano a richiesta
+        ' (prima erano due ricerche binarie su 750mila righe per ogni riga, anche quando non servivano)
+        Dim inizioTmp As Integer = -1
+        Dim fineTmp As Integer = -1
+        If Math.Abs(yr) > RotationYrt OrElse prevIsRot Then
+          inizioTmp = DataProvider2020.TrovaIndice(DataProvider2020.Momento(i).AddSeconds(-SecAnteRot)) '' SecAnteRot))
+          fineTmp = DataProvider2020.TrovaIndice(DataProvider2020.Momento(i).AddSeconds(SecPostRot))
+        End If
         If Math.Abs(yr) > RotationYrt Then
           Dim IsRU As Boolean = Math.Abs(TwaChannel.PrimoValoreNotNan(inizioTmp)) > Math.Abs(TwaChannel.PrimoValoreNotNan(fineTmp))
           If IsRU Then
@@ -3282,7 +3329,21 @@ Public Class clsPeriodsManager2021
                   Valori(ii) = eRowType.eUndefined
                 Next
               Else
-                Dim DeltaTwaAvg = chTwaD.Valori.Skip(Inizio).Take(i - 1 - Inizio).ToArray.Where(Function(x) Not Double.IsNaN(x)).Average ' Select(Function(x) Math.Abs(x)).Average
+                ' media dei valori non NaN su [Inizio, i-2]. In .NET Framework Skip() scorre tutti gli elementi
+                ' precedenti anche su un array (O(n) per periodo): ciclo diretto, stesso risultato.
+                ' Se non c'e' nessun valore valido Average() lanciava un'eccezione: si salta il periodo come prima.
+                Dim SommaTwaD As Double = 0
+                Dim NTwaD As Integer = 0
+                Dim UltimoTwaD As Integer = Math.Min(i - 2, chTwaD.Valori.Length - 1)
+                For k As Integer = Inizio To UltimoTwaD
+                  Dim vD As Double = chTwaD.Valori(k)
+                  If Not Double.IsNaN(vD) Then
+                    SommaTwaD += vD
+                    NTwaD += 1
+                  End If
+                Next
+                If NTwaD = 0 Then Throw New InvalidOperationException("Nessun valore TWAd valido nel periodo")
+                Dim DeltaTwaAvg As Double = SommaTwaD / NTwaD
                 If Math.Abs(DeltaTwaAvg) < MaxTwaDeltaUpDn Then
                   AggiungiPeriodoConDurata(TRtmp, clsPeriod2021.ePeriodType.eStraightLineVmg)
                 Else
