@@ -40,6 +40,9 @@ Public Class UserControlSciChartXYplot
     SorgenteDati.ItemsSource = System.Enum.GetValues(GetType(clsXYPlotSettings.eDataSource)).Cast(Of clsXYPlotSettings.eDataSource)
     SailingState.ItemsSource = System.Enum.GetValues(GetType(clsPeriodsManager2021.eRowType)).Cast(Of clsPeriodsManager2021.eRowType)
     VM.CurrentPlotSettings = AppConfig.ActiveProfile.XYPlotSettings
+    ' PropertyChanged lo aggiunge Fody dopo la compilazione: dal compilatore la classe non lo espone, quindi si passa da Object
+    Dim NotificaImpostazioni As System.ComponentModel.INotifyPropertyChanged = TryCast(CObj(VM.CurrentPlotSettings), System.ComponentModel.INotifyPropertyChanged)
+    If Not NotificaImpostazioni Is Nothing Then AddHandler NotificaImpostazioni.PropertyChanged, AddressOf Settings_PropertyChanged
     VM.XyReports = AppConfig.ActiveProfile.XyReports
     'tm.Interval = 300
     'tmavviopdf.Interval = 500
@@ -316,7 +319,42 @@ Public Class UserControlSciChartXYplot
   'End Sub
 
 
+  Private _LegendRef As SciChart.Charting.Visuals.SciChartLegend
+
+  Private Shared Function TrovaLegenda(Radice As DependencyObject) As SciChart.Charting.Visuals.SciChartLegend
+    Dim L As SciChart.Charting.Visuals.SciChartLegend = TryCast(Radice, SciChart.Charting.Visuals.SciChartLegend)
+    If Not L Is Nothing Then Return L
+    If Not (TypeOf Radice Is Visual OrElse TypeOf Radice Is Media.Media3D.Visual3D) Then Return Nothing
+    For i As Integer = 0 To VisualTreeHelper.GetChildrenCount(Radice) - 1
+      Dim r As SciChart.Charting.Visuals.SciChartLegend = TrovaLegenda(VisualTreeHelper.GetChild(Radice, i))
+      If Not r Is Nothing Then Return r
+    Next
+    Return Nothing
+  End Function
+
+  ''' <summary>
+  ''' Applica alla legenda la dimensione impostata (LegendFontSize). Il FontSize della superficie non arriva fino alla
+  ''' legenda, quindi si imposta direttamente sul suo controllo, cercato nell'albero visuale e poi ricordato.
+  ''' </summary>
+  Private Sub AggiornaFontLegenda()
+    If VM Is Nothing OrElse VM.CurrentPlotSettings Is Nothing Then Exit Sub
+    If _LegendRef Is Nothing OrElse Not _LegendRef.IsLoaded Then
+      If Not VM.CurrentPlotSettings.ShowLegend Then Exit Sub
+      _LegendRef = TrovaLegenda(Plot)
+    End If
+    If _LegendRef Is Nothing Then Exit Sub
+    Dim Size As Double = VM.CurrentPlotSettings.LegendFontSizeEff
+    If _LegendRef.FontSize <> Size Then _LegendRef.FontSize = Size
+  End Sub
+
+  Private Sub Settings_PropertyChanged(sender As Object, e As System.ComponentModel.PropertyChangedEventArgs)
+    If e.PropertyName = "LegendFontSize" OrElse e.PropertyName = "LegendFontSizeEff" OrElse e.PropertyName = "ForceShowLegend" OrElse e.PropertyName = "ShowLegend" Then
+      Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, New Action(AddressOf AggiornaFontLegenda))
+    End If
+  End Sub
+
   Private Sub Plot_Rendered(sender As Object, e As EventArgs)
+    AggiornaFontLegenda()
     If Not VM.RenderAtteso Then Return
     If VM.XyReports Is Nothing Then Return
     If VM.XyReports.ActiveReport Is Nothing Then Return
@@ -635,11 +673,6 @@ Public Class UserControlSciChartXYplot
 
   Private Sub Button_Click_17(sender As Object, e As RoutedEventArgs)
 
-  End Sub
-
-  ''' <summary>Rende le combo dei canali X e Y editabili con filtro di ricerca.</summary>
-  Private Sub Combo_Canali_Loaded(sender As Object, e As RoutedEventArgs)
-    clsComboFiltro.Attiva(DirectCast(sender, ComboBox))
   End Sub
 
   ''' <summary>Doppio click sull'etichetta X: imposta la True Wind Speed come canale dell'asse X.</summary>

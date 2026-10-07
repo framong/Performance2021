@@ -1442,6 +1442,44 @@ Public Class clsXYPlotSettings
     End Set
   End Property
 
+  ' dimensioni dei testi sul grafico (nei profili vecchi la chiave manca e restano questi valori, uguali a quelli di prima)
+  Public Property ChartTitleFontSize As Integer = 30 ' titolo (il sottotitolo e' circa la sua meta')
+  Public Property ChartLabelsFontSize As Integer = 40 ' nomi dei canali X e Y scritti sul grafico
+  Public Property AxisNumbersFontSize As Integer = 12 ' numeri sugli assi
+  Public Property LegendFontSize As Integer = 12 ' legenda (nomi delle serie)
+
+  ' valori effettivi usati dal grafico: mai sotto i 6 punti (un FontSize 0 o negativo non e' valido)
+  <JsonIgnore>
+  Public ReadOnly Property ChartTitleFontSizeEff As Double
+    Get
+      Return Math.Max(6, ChartTitleFontSize)
+    End Get
+  End Property
+  <JsonIgnore>
+  Public ReadOnly Property ChartSubTitleFontSizeEff As Double
+    Get
+      Return Math.Max(6, Math.Round(Math.Max(6, ChartTitleFontSize) * 16 / 30))
+    End Get
+  End Property
+  <JsonIgnore>
+  Public ReadOnly Property ChartLabelsFontSizeEff As Double
+    Get
+      Return Math.Max(6, ChartLabelsFontSize)
+    End Get
+  End Property
+  <JsonIgnore>
+  Public ReadOnly Property LegendFontSizeEff As Double
+    Get
+      Return Math.Max(6, LegendFontSize)
+    End Get
+  End Property
+  <JsonIgnore>
+  Public ReadOnly Property AxisNumbersFontSizeEff As Double
+    Get
+      Return Math.Max(6, AxisNumbersFontSize)
+    End Get
+  End Property
+
   Dim _LegendIsVisible As Boolean
   Public Property LegendIsVisible As Boolean
     Get
@@ -1452,9 +1490,14 @@ Public Class clsXYPlotSettings
     End Set
   End Property
 
+  ''' <summary>
+  ''' La legenda si vede solo con "Show Legend" spuntato. Prima valeva ForceShowLegend OrElse LegendIsVisible, e
+  ''' LegendIsVisible viene messo a True a ogni disegno del grafico: la legenda c'era sempre e la casella poteva
+  ''' solo "forzarla", mai nasconderla.
+  ''' </summary>
   Public ReadOnly Property ShowLegend As Boolean
     Get
-      Return ForceShowLegend OrElse LegendIsVisible
+      Return ForceShowLegend
     End Get
   End Property
 
@@ -3573,22 +3616,29 @@ Public Class clsPeriodsManager2021
     If Not _VmgPercentageCheckedOnly OrElse Lista.Count = 0 Then
       Lista = ListaStraightLineVmg
     End If
-    If Not ChVmgTp Is Nothing Then
+    If Not ChVmgTp Is Nothing AndAlso Not ChTws Is Nothing Then
       If VmgPercentage Is Nothing Then VmgPercentage = New clsVmgPercentage
       ' PeriodsManager.TwsEquivalentAtNorma
       VmgPercentage.AzzeraValori()
-      If Not ChVmgTp.Valori Is Nothing Then
+      If Not ChVmgTp.Valori Is Nothing AndAlso Not ChTws.Valori Is Nothing Then
+        Dim Ultima As Integer = Math.Min(ChTws.Valori.Length, ChVmgTp.Valori.Length) - 1
         For Each periodo In Lista
-          Dim IsUpwind As Boolean = periodo.AvgTwa < 90
-          For i As Integer = periodo.TR.IdRigaIniziale To periodo.TR.IdRigaFinale
-            If Not Double.IsNaN(ChTws.Valori(i)) Then
-              VmgPercentage.AggiungiCoppia(ChTws.Valori(i), ChVmgTp.Valori(i), IsUpwind)
+          ' l'andatura si decide sul valore assoluto: AvgTwa e' negativo con le mure a sinistra e senza il valore
+          ' assoluto una poppa con mure a sinistra (es. -150) veniva contata come bolina
+          Dim IsUpwind As Boolean = Math.Abs(periodo.AvgTwa) < 90
+          For i As Integer = Math.Max(0, periodo.TR.IdRigaIniziale) To Math.Min(Ultima, periodo.TR.IdRigaFinale)
+            Dim Tws As Double = ChTws.Valori(i)
+            Dim Vmgp As Double = ChVmgTp.Valori(i)
+            ' i valori non validi non entrano nelle medie: un solo NaN nella lista rendeva NaN la media del Tws
+            If Not Double.IsNaN(Tws) AndAlso Not Double.IsNaN(Vmgp) AndAlso Not Double.IsInfinity(Vmgp) Then
+              VmgPercentage.AggiungiCoppia(Tws, Vmgp, IsUpwind, False)
             End If
           Next
         Next
       End If
+      ' la descrizione si calcola una sola volta, non a ogni coppia aggiunta
+      VmgPercentage.AggiornaDescrizione()
     End If
-    'VmgPercentage.AggiornaDescrizione()
   End Sub
 
 

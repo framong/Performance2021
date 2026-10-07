@@ -159,7 +159,7 @@
     <Compile Include="FinestraAvanzamento.vb" />
     <Compile Include="LeewayModel.vb" />
     <Compile Include="SeaStateNorm.vb" />
-    <Compile Include="ComboFiltro.vb" />
+    <Compile Include="CampiNumerici.vb" />
     <Compile Include="LogTempi.vb" />
     <Compile Include="SeaStateNormForm.xaml.vb">
       <DependentUpon>SeaStateNormForm.xaml</DependentUpon>
@@ -263,6 +263,9 @@
       <DependentUpon>PeriodManagerView.xaml</DependentUpon>
     </Compile>
     <Compile Include="SciChart\RubberBandModifier.vb" />
+    <Compile Include="UserControl\ChannelPicker.xaml.vb">
+      <DependentUpon>ChannelPicker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserControl\UserControlNumericUpDown.xaml.vb">
       <DependentUpon>UserControlNumericUpDown.xaml</DependentUpon>
     </Compile>
@@ -428,6 +431,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="UserControl\PeriodManagerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\ChannelPicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

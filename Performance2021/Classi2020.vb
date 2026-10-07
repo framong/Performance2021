@@ -170,30 +170,48 @@ Public Class clsVmgPercentage
 
   Public Property Descrizione As String
 
-  Private Sub AggiornaDescrizione()
-    'Dim TwsEquiv As Double = ValoreMainChannelEquivalentTargetUp
+  ''' <summary>Tws equivalente formattato; "n/a" se non calcolabile (polare assente, valore fuori tabella...).</summary>
+  Private Shared Function FormatoTwsEquivalente(Valore As Double) As String
+    If Double.IsNaN(Valore) OrElse Double.IsInfinity(Valore) Then Return "n/a"
+    Return Valore.ToString("F1")
+  End Function
+
+  ''' <summary>
+  ''' Riscrive la descrizione mostrata sul pulsante: "Up: 95%(12.3k) @12.1k, Dn: ...", cioe' Vmg% medio (Tws equivalente
+  ''' al quale il target darebbe quella percentuale) alla Tws media. Non lancia mai eccezioni: un errore nel calcolo del
+  ''' Tws equivalente lasciava la descrizione vuota.
+  ''' </summary>
+  Public Sub AggiornaDescrizione()
     Dim strTmp As String = "Up: "
-    If pUpwindTwsAvg.Count > 0 Then
-      strTmp &= Format(UpwindVmgAvg, "F0")
-      strTmp &= "%("
-      strTmp &= ValoreMainChannelEquivalentTargetUp.ToString("F1")
-      strTmp &= "k) @"
-      strTmp &= Format(UpwindTwsAvg, "F1")
-      strTmp &= "k"
-    Else
-      strTmp &= "no data"
-    End If
+    Try
+      If pUpwindTwsAvg.Count > 0 Then
+        strTmp &= Format(UpwindVmgAvg, "F0")
+        strTmp &= "%("
+        strTmp &= FormatoTwsEquivalente(ValoreMainChannelEquivalentTargetUp)
+        strTmp &= "k) @"
+        strTmp &= Format(UpwindTwsAvg, "F1")
+        strTmp &= "k"
+      Else
+        strTmp &= "no data"
+      End If
+    Catch ex As Exception
+      strTmp &= "n/a"
+    End Try
     strTmp &= ", Dn: "
-    If pDownwindTwsAvg.Count > 0 Then
-      strTmp &= Format(DownwindVmgAvg, "F0")
-      strTmp &= "%("
-      strTmp &= ValoreMainChannelEquivalentTargetDn.ToString("F1")
-      strTmp &= "k) @"
-      strTmp &= Format(DownwindTwsAvg, "F1")
-      strTmp &= "k"
-    Else
-      strTmp &= "no data"
-    End If
+    Try
+      If pDownwindTwsAvg.Count > 0 Then
+        strTmp &= Format(DownwindVmgAvg, "F0")
+        strTmp &= "%("
+        strTmp &= FormatoTwsEquivalente(ValoreMainChannelEquivalentTargetDn)
+        strTmp &= "k) @"
+        strTmp &= Format(DownwindTwsAvg, "F1")
+        strTmp &= "k"
+      Else
+        strTmp &= "no data"
+      End If
+    Catch ex As Exception
+      strTmp &= "n/a"
+    End Try
     Descrizione = strTmp
   End Sub
 
@@ -206,7 +224,9 @@ Public Class clsVmgPercentage
     End Set
   End Property
 
-  Public Sub AggiungiCoppia(ValoreX As Double, ValoreY As Double, IsUpwind As Boolean)
+  ''' <param name="AggiornaDescr">False quando si aggiungono molte coppie di seguito: la descrizione (che ricalcola medie e Tws
+  ''' equivalente su tutti i dati) va poi aggiornata una sola volta con AggiornaDescrizione.</param>
+  Public Sub AggiungiCoppia(ValoreX As Double, ValoreY As Double, IsUpwind As Boolean, Optional AggiornaDescr As Boolean = True)
     If IsUpwind Then
       ValoriUp.AggiungiCoppia(CInt(ValoreX), ValoreY)
       pUpwindTwsAvg.Add(ValoreX)
@@ -216,7 +236,7 @@ Public Class clsVmgPercentage
       pDownwindTwsAvg.Add(ValoreX)
       pDownwindVmgAvg.Add(ValoreY)
     End If
-    AggiornaDescrizione()
+    If AggiornaDescr Then AggiornaDescrizione()
   End Sub
 
   Public Sub AzzeraValori()
@@ -10540,68 +10560,65 @@ Public Class clsTgt
     Return Nothing
   End Function
 
+  ''' <summary>
+  ''' Tws al quale il target della barca vale quanto il target alla Tws MainChannelValue moltiplicato per Coefficient/100
+  ''' (es. 95% del target a 12 nodi = target a circa 11,2 nodi). Si scende (Coefficient &lt; 100) o si sale (&gt; 100) a passi
+  ''' di un nodo finche' il target attraversa il valore cercato, poi si interpola linearmente TRA I DUE PUNTI CHE LO
+  ''' RACCHIUDONO. NaN se non e' calcolabile (polare assente, valore fuori dalla tabella).
+  ''' Prima si interpolava tra il punto trovato e la Tws di partenza anche saltando nodi intermedi, e quando il
+  ''' target non era raggiungibile si restituiva 0 (mostrato come "0.0k"), o si andava in errore.
+  ''' </summary>
+  Private Function TwsEquivalente(MainChannelValue As Double, Coefficient As Double, Canale As String, Upwind As Boolean) As Double
+    If Double.IsNaN(MainChannelValue) OrElse Double.IsNaN(Coefficient) OrElse Coefficient <= 0 Then Return Double.NaN
+    Dim Target As Func(Of Double, clsValoriPuntoPolare) = Function(t As Double) If(Upwind, ValoreTgtUp(t, Canale), ValoreTgtDn(t, Canale))
+
+    Dim P0 As clsValoriPuntoPolare = Target(MainChannelValue)
+    If P0 Is Nothing Then Return Double.NaN
+    Dim BsTgt As Double = P0.Bs
+    Dim BsEq As Double = BsTgt * Coefficient / 100
+    If Coefficient = 100 Then Return MainChannelValue
+
+    Dim PrecTws As Double = MainChannelValue
+    Dim PrecBs As Double = BsTgt
+    If Coefficient < 100 Then
+      For i As Integer = CInt(Math.Ceiling(MainChannelValue)) - 1 To 0 Step -1
+        Dim Tg As clsValoriPuntoPolare = Target(i)
+        If Not Tg Is Nothing Then
+          If Tg.Bs < BsEq Then
+            Dim dBs As Double = PrecBs - Tg.Bs
+            If dBs <= 0 Then Return Double.NaN
+            Return i + (BsEq - Tg.Bs) / dBs * (PrecTws - i)
+          End If
+          PrecTws = i
+          PrecBs = Tg.Bs
+        End If
+      Next
+    Else
+      For i As Integer = CInt(Math.Floor(MainChannelValue)) + 1 To 30
+        Dim Tg As clsValoriPuntoPolare = Target(i)
+        If Not Tg Is Nothing Then
+          If Tg.Bs > BsEq Then
+            Dim dBs As Double = Tg.Bs - PrecBs
+            If dBs <= 0 Then Return Double.NaN
+            Return PrecTws + (BsEq - PrecBs) / dBs * (i - PrecTws)
+          End If
+          PrecTws = i
+          PrecBs = Tg.Bs
+        End If
+      Next
+    End If
+    Return Double.NaN
+  End Function
+
   Public ReadOnly Property ValoreMainChannelEquivalentTargetUp(MainChannelValue As Double, Coefficient As Double, Canale As String) As Double
     Get
-      Dim BsTgt As Double = ValoreTgtUp(MainChannelValue, Canale).Bs
-      Dim BsEq As Double = BsTgt * Coefficient / 100
-      If Coefficient < 100 Then
-        For i As Integer = MainChannelValue - 1 To 0 Step -1
-          Dim Tg As clsValoriPuntoPolare = ValoreTgtUp(i, Canale)
-          If Not Tg Is Nothing Then
-            Dim TgTmp As Double = Tg.Bs
-            If TgTmp < BsEq Then
-              Dim Delta As Double = (BsEq - TgTmp) * (MainChannelValue - i) / (BsTgt - TgTmp)
-              Return i + Delta
-              Exit For
-            End If
-          End If
-        Next
-      Else
-        For i As Integer = MainChannelValue + 1 To 30 Step 1
-          Dim Tg As clsValoriPuntoPolare = ValoreTgtUp(i, Canale)
-          If Not Tg Is Nothing Then
-            Dim TgTmp As Double = Tg.Bs
-            If TgTmp > BsEq Then
-              Dim Delta As Double = (TgTmp - BsEq) * (i - MainChannelValue) / (TgTmp - BsTgt)
-              Return i - Delta
-              Exit For
-            End If
-          End If
-        Next
-      End If
-      'Stop
-      Return 0
+      Return TwsEquivalente(MainChannelValue, Coefficient, Canale, True)
     End Get
   End Property
 
   Public ReadOnly Property ValoreMainChannelEquivalentTargetDn(MainChannelValue As Double, Coefficient As Double, Canale As String) As Double
     Get
-      Dim BsTgt As Double = ValoreTgtDn(MainChannelValue, Canale).Bs
-      Dim BsEq As Double = BsTgt * Coefficient / 100
-      If Coefficient < 100 Then
-        For i As Integer = MainChannelValue - 1 To 0 Step -1
-          Dim VT = ValoreTgtDn(i, Canale)
-          If Not VT Is Nothing Then
-            Dim TgTmp As Double = VT.Bs
-            If TgTmp < BsEq Then
-              Dim Delta As Double = (BsEq - TgTmp) * (MainChannelValue - i) / (BsTgt - TgTmp)
-              Return i + Delta
-              Exit For
-            End If
-          End If
-        Next
-      Else
-        For i As Integer = MainChannelValue + 1 To 30 Step 1
-          Dim TgTmp As Double = ValoreTgtDn(i, Canale).Bs
-          If TgTmp > BsEq Then
-            Dim Delta As Double = (TgTmp - BsEq) * (i - MainChannelValue) / (TgTmp - BsTgt)
-            Return i - Delta
-            Exit For
-          End If
-        Next
-      End If
-      'Stop
-      Return 0
+      Return TwsEquivalente(MainChannelValue, Coefficient, Canale, False)
     End Get
   End Property
 

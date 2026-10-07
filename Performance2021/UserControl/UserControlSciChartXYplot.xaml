@@ -13,7 +13,6 @@
              >
   <UserControl.Resources>
     <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
-    <local:clsVistaPropriaConverter x:Key="VistaPropria"></local:clsVistaPropriaConverter>
   </UserControl.Resources>
 
   <Grid Name="GrigliaGrafico">
@@ -33,15 +32,14 @@
       <Label HorizontalContentAlignment="Left" MouseDoubleClick="Label_X_MouseDoubleClick" ToolTip="Double click to set True Wind Speed as X channel">X
         <!--<CheckBox FontSize="12" Content=" X Axis" IsChecked="{Binding CurrentPlotSettings.XAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
       </Label>
-      <ComboBox DisplayMemberPath="LongName" FontSize="12" Loaded="Combo_Canali_Loaded" ToolTip="Type to filter the channels" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels, Converter={StaticResource VistaPropria}}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" >
-        <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
-      </ComboBox>
+      <local:ChannelPicker FontSize="12" Width="170" Margin="1,0,5,0" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedChannel="{Binding CurrentPlotSettings.XAxisChannel}" />
+      <!-- (al posto della ComboBox del canale X: click apre il popup con la ricerca) -->
+      <!--<ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.XAxisChannel}"  MinWidth="100" Margin="1,0,5,0" ></ComboBox>-->
       <Label HorizontalContentAlignment="Left">Y
         <!--<CheckBox FontSize="12" Content=" Y Axis" IsChecked="{Binding CurrentPlotSettings.YAxisDerivative}" ToolTip="Plot the selected channel derivative" FlowDirection="RightToLeft" ></CheckBox>-->
       </Label >
-      <ComboBox DisplayMemberPath="LongName" FontSize="12" Loaded="Combo_Canali_Loaded" ToolTip="Type to filter the channels" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels, Converter={StaticResource VistaPropria}}" SelectedItem="{Binding CurrentPlotSettings.YAxisChannel}" MinWidth="150" Margin="1,0,5,0">
-        <!--<ComboBoxItem Content="{Binding LongName}"></ComboBoxItem>-->
-      </ComboBox>
+      <local:ChannelPicker FontSize="12" Width="200" Margin="1,0,5,0" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedChannel="{Binding CurrentPlotSettings.YAxisChannel}" />
+      <!--<ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels}" SelectedItem="{Binding CurrentPlotSettings.YAxisChannel}" MinWidth="150" Margin="1,0,5,0"></ComboBox>-->
       <Button Click="Button_Click_SwapAxes" Margin="10,0,10,0">Swap</Button>
 
       <Label MinWidth="70" FontSize="12" Content="GroupBy:" HorizontalContentAlignment="Right" Margin="10,0,0,0"></Label>
@@ -59,7 +57,7 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label Width="120" ToolTip="DataPoint Opacity (0:Trasparent 255:Solid)">DataPoint Opacity</Label>
-                <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputByte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointOpacity,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointOpacity}"></TextBox>
               </StackPanel>
             </MenuItem.Header>
           </MenuItem>
@@ -67,7 +65,7 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label Width="120" ToolTip="DataPoint Opacity Size">DataPoint Size</Label>
-                <TextBox Height="20" MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputByte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointSize,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox Height="20" MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.DataPointSize}"></TextBox>
               </StackPanel>
             </MenuItem.Header>
           </MenuItem>
@@ -108,6 +106,38 @@
           </MenuItem>
           <MenuItem>
             <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="Font size of the chart title (the subtitle is about half of it). Default 30">Chart Title Size</Label>
+                <TextBox Height="20" MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.ChartTitleFontSize}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="Font size of the X and Y channel names written on the chart. Default 40">Chart Labels Size</Label>
+                <TextBox Height="20" MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.ChartLabelsFontSize}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="Font size of the numbers on the X and Y axes. Default 12">Axis Numbers Size</Label>
+                <TextBox Height="20" MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.AxisNumbersFontSize}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <Label Width="120" ToolTip="Font size of the legend (series names). The legend is shown only when Show Legend is ticked. Default 12">Legend Size</Label>
+                <TextBox Height="20" MinWidth="40" local:NumericInput.Kind="Byte" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.LegendFontSize}"></TextBox>
+              </StackPanel>
+            </MenuItem.Header>
+          </MenuItem>
+          <MenuItem>
+            <MenuItem.Header>
               <Label ToolTip="Trend Line Degree">Show Custom Lines</Label>
             </MenuItem.Header>
           </MenuItem>
@@ -118,7 +148,7 @@
                   <MenuItem.Header>
                     <StackPanel Orientation="Horizontal">
                       <CheckBox  IsChecked="{Binding CurrentPlotSettings.HLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Horizontal" Width="100" Background="BlueViolet"></CheckBox>
-                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom1Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                      <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom1Value}"></TextBox>
                     </StackPanel>
                   </MenuItem.Header>
                 </MenuItem>
@@ -126,7 +156,7 @@
                   <MenuItem.Header>
                     <StackPanel Orientation="Horizontal">
                       <CheckBox  IsChecked="{Binding CurrentPlotSettings.HLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"  Content="Horizontal" Width="100" Background="Red"></CheckBox>
-                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom2Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                      <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.HLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.HLineCustom2Value}"></TextBox>
                     </StackPanel>
                   </MenuItem.Header>
                 </MenuItem>
@@ -134,7 +164,7 @@
                   <MenuItem.Header>
                     <StackPanel Orientation="Horizontal">
                       <CheckBox  IsChecked="{Binding CurrentPlotSettings.VLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"  Content="Vertical" Width="100" Background="BlueViolet"></CheckBox>
-                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom1Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                      <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom1Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom1Value}"></TextBox>
                     </StackPanel>
                   </MenuItem.Header>
                 </MenuItem>
@@ -142,7 +172,7 @@
                   <MenuItem.Header>
                     <StackPanel Orientation="Horizontal">
                       <CheckBox  IsChecked="{Binding CurrentPlotSettings.VLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Vertical" Width="100" Background="Red"></CheckBox>
-                      <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" PreviewKeyDown="TxtNumber_PreviewKeyDown" DataObject.Pasting="TxtNumber_Pasting" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom2Value,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                      <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" IsEnabled="{Binding CurrentPlotSettings.VLineCustom2Show,UpdateSourceTrigger=PropertyChanged}" Text="{Binding CurrentPlotSettings.VLineCustom2Value}"></TextBox>
                     </StackPanel>
                   </MenuItem.Header>
                 </MenuItem>
@@ -169,7 +199,7 @@
               <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding CurrentPlotSettings.VmcAutoFilter}" x:Name="Chk_VmcTwaAutoFilter" Content="Vmc Twa AutoFilter" ToolTip="When VMC is selected as Y channel set the TWA fileter in the defined range of his value" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>
                 <Label ToolTip="Trend Line Degree" VerticalAlignment="Top">, Twa Range in degrees</Label>
-                <TextBox MinWidth="30" Height="20" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.VmcAutoFilterRange,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox MinWidth="30" Height="20" local:NumericInput.Kind="Int" Text="{Binding CurrentPlotSettings.VmcAutoFilterRange}"></TextBox>
                 <!--<CheckBox IsChecked="{Binding CurrentPlotSettings.VmcAutoFilterRange}" x:Name="Chk_VmcTwaAutoFilter" Content="Vmc Twa AutoFilter" ToolTip="When VMC is selected as Y channel set the TWA fileter in the defined range of his value" VerticalAlignment="Center" Margin="5,0,0,0"></CheckBox>-->
               </StackPanel>
             </MenuItem.Header>
@@ -206,9 +236,9 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Trend Line Degree">Trend Line Grade</Label>
-                <TextBox MinWidth="40" Height="20" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.GradoTrendLines,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox MinWidth="40" Height="20" local:NumericInput.Kind="Byte" Text="{Binding CurrentPlotSettings.GradoTrendLines}"></TextBox>
                 <Label Width="100" HorizontalContentAlignment="Right" ToolTip="Minimum number of samples to consider a test valid">Min Samples</Label>
-                <TextBox MinWidth="40" Height="20" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.MinSamples,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox MinWidth="40" Height="20" local:NumericInput.Kind="Byte" Text="{Binding CurrentPlotSettings.MinSamples}"></TextBox>
               </StackPanel>
             </MenuItem.Header>
           </MenuItem>
@@ -220,7 +250,7 @@
                 </ComboBox>
                 <Label ToolTip="Distribution Intervals" Content="Intervals" Margin="10,0,0,0"></Label>
                 <!--<nud:NumericUpDown Value="{Binding CurrentPlotSettings.ColorChannelIntervals}" ToolTip="Color Channel Intervals" Width="50" Height="25" MaxValue="30" MinValue="1"></nud:NumericUpDown>-->
-                <TextBox Height="20" MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.ColorChannelIntervals,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <TextBox Height="20" MinWidth="60" local:NumericInput.Kind="Byte" Text="{Binding CurrentPlotSettings.ColorChannelIntervals}"></TextBox>
                 <!--<extucxy:IntegerUpDown x:Name="UsNud_ColorChannelIntervals" Value="{Binding CurrentPlotSettings.ColorChannelIntervals}" ToolTip="Color Channel Intervals" Width="50" Height="25" Maximum="30" Minimum="1"></extucxy:IntegerUpDown>-->
               </StackPanel>
             </MenuItem.Header>
@@ -260,7 +290,7 @@
               <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                   <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMin,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMin}"></TextBox>
                 </StackPanel>
               </MenuItem.Header>
             </MenuItem>
@@ -268,7 +298,7 @@
               <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                   <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMax,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMax}"></TextBox>
                 </StackPanel>
               </MenuItem.Header>
             </MenuItem>
@@ -290,7 +320,7 @@
               <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMin,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMin}"></TextBox>
                 </StackPanel>
               </MenuItem.Header>
             </MenuItem>
@@ -298,7 +328,7 @@
               <MenuItem.Header>
                 <StackPanel Orientation="Horizontal">
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMax,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMax}"></TextBox>
                 </StackPanel>
               </MenuItem.Header>
             </MenuItem>
@@ -323,11 +353,11 @@
               <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal">
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyGroupFilterPerc,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Apply Grouping Filter Percentage" Width="210"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.GroupFilterPerc,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Int" Text="{Binding CurrentPlotSettings.GroupFilterPerc}" HorizontalContentAlignment="Right"></TextBox>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyPercentileFilter,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Apply Percentile Boundary Filter" Width="210"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.PercentileFilter,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Int" Text="{Binding CurrentPlotSettings.PercentileFilter}" HorizontalContentAlignment="Right"></TextBox>
                 </StackPanel>
               </StackPanel>
             </MenuItem.Header>
@@ -338,18 +368,18 @@
                 <StackPanel Orientation="Horizontal">
                   <Label ToolTip="" Width="165">X Axis Channel Boundaries</Label>
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMinX,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="45"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MinX,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Decimal" Text="{Binding CurrentPlotSettings.MinX}" HorizontalContentAlignment="Right" ></TextBox>
                   <Label ToolTip="" Width="10" HorizontalAlignment="Right"></Label>
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMaxX,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="45"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MaxX,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Decimal" Text="{Binding CurrentPlotSettings.MaxX}" HorizontalContentAlignment="Right"></TextBox>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <Label ToolTip="" Width="165">Y Axis Channel Boundaries</Label>
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMinY,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="45"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MinY,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Decimal" Text="{Binding CurrentPlotSettings.MinY}" HorizontalContentAlignment="Right" ></TextBox>
                   <Label ToolTip="" Width="10" HorizontalAlignment="Right"></Label>
                   <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyMaxY,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="45"></CheckBox>
-                  <TextBox Height="20"  MinWidth="40" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.MaxY,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"></TextBox>
+                  <TextBox Height="20"  MinWidth="40" local:NumericInput.Kind="Decimal" Text="{Binding CurrentPlotSettings.MaxY}" HorizontalContentAlignment="Right"></TextBox>
                 </StackPanel>
               </StackPanel>
             </MenuItem.Header>
@@ -366,7 +396,7 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Distribution Intervals" Width="100">Dis. Intervals</Label>
-                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.DistributionIntervals,UpdateSourceTrigger=PropertyChanged}" ToolTip="Distribution Intervals"></TextBox>
+                <TextBox MinWidth="60" local:NumericInput.Kind="Byte" Text="{Binding CurrentPlotSettings.DistributionIntervals}" ToolTip="Distribution Intervals"></TextBox>
                 <Label ToolTip="Distribution Intervals"></Label>
               </StackPanel>
             </MenuItem.Header>
@@ -375,7 +405,7 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)" Width="100">Dis. Opacity</Label>
-                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputByte" Text="{Binding CurrentPlotSettings.DistributionOpacity,UpdateSourceTrigger=PropertyChanged}"  ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></TextBox>
+                <TextBox MinWidth="60" local:NumericInput.Kind="Byte" Text="{Binding CurrentPlotSettings.DistributionOpacity}"  ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></TextBox>
                 <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></Label>
               </StackPanel>
             </MenuItem.Header>
@@ -384,7 +414,7 @@
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
                 <Label ToolTip="Distribution Bar Width (0:Thin 100:One Interval)" Width="100">Dis. Bar Width</Label>
-                <TextBox MinWidth="60" PreviewTextInput="TextBox_PreviewTextInputInt" Text="{Binding CurrentPlotSettings.DistributionBarWidth,UpdateSourceTrigger=PropertyChanged}" ToolTip="Distribution Bar Width (0:Thin 100:One Interval)" ></TextBox>
+                <TextBox MinWidth="60" local:NumericInput.Kind="Int" Text="{Binding CurrentPlotSettings.DistributionBarWidth}" ToolTip="Distribution Bar Width (0:Thin 100:One Interval)" ></TextBox>
                 <Label ToolTip="Distribution Opacity (0:Trasparent 255:Solid)"></Label>
               </StackPanel>
             </MenuItem.Header>
@@ -442,25 +472,25 @@
 												>
 
             <sc:SciChartSurface.XAxes >
-              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1" ></sc:NumericAxis>
+              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1" FontSize="{Binding CurrentPlotSettings.AxisNumbersFontSizeEff}"></sc:NumericAxis>
               <sc:NumericAxis Id="BottomX" Visibility="Hidden" GrowBy="0.1,0.1"></sc:NumericAxis>
               <sc:NumericAxis Id="LeftX" AxisAlignment="Left" Visibility="Hidden" GrowBy="0.1,0" FlipCoordinates="True" ></sc:NumericAxis>
             </sc:SciChartSurface.XAxes>
             <sc:SciChartSurface.YAxes>
-              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1"></sc:NumericAxis>
+              <sc:NumericAxis Id="DefaultAxisId" GrowBy="0.1,0.1" FontSize="{Binding CurrentPlotSettings.AxisNumbersFontSizeEff}"></sc:NumericAxis>
               <sc:NumericAxis Id="BottomY" Visibility="Hidden" GrowBy="0.1,0.1"></sc:NumericAxis>
               <sc:NumericAxis Id="LeftY" Visibility="Hidden" GrowBy="0.1,0.1" FlipCoordinates="True"></sc:NumericAxis>
             </sc:SciChartSurface.YAxes>
 
             <sc:SciChartSurface.Annotations>
-              <sc:TextAnnotation Text="{Binding Titolo}" X1="0.5" Y1="0.0" FontSize="30" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
-              <sc:TextAnnotation Text="{Binding SottoTitolo}" X1="0.5" Y1="0.07" FontSize="16" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
-              <sc:TextAnnotation Text="{Binding YLabel}" X1="0.1" Y1="0.1" FontSize="40" HorizontalAnchorPoint="Left" VerticalAnchorPoint="Bottom" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative">
+              <sc:TextAnnotation Text="{Binding Titolo}" X1="0.5" Y1="0.0" FontSize="{Binding CurrentPlotSettings.ChartTitleFontSizeEff}" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding SottoTitolo}" X1="0.5" Y1="0.07" FontSize="{Binding CurrentPlotSettings.ChartSubTitleFontSizeEff}" HorizontalAnchorPoint="Center" AnnotationCanvas="BelowChart" Foreground="#FF000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding YLabel}" X1="0.1" Y1="0.1" FontSize="{Binding CurrentPlotSettings.ChartLabelsFontSizeEff}" HorizontalAnchorPoint="Left" VerticalAnchorPoint="Bottom" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative">
                 <sc:TextAnnotation.RenderTransform>
                   <RotateTransform Angle="90"></RotateTransform>
                 </sc:TextAnnotation.RenderTransform>
               </sc:TextAnnotation>
-              <sc:TextAnnotation Text="{Binding XLabel}" X1="0.98" Y1="0.9" FontSize="40" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative"></sc:TextAnnotation>
+              <sc:TextAnnotation Text="{Binding XLabel}" X1="0.98" Y1="0.9" FontSize="{Binding CurrentPlotSettings.ChartLabelsFontSizeEff}" HorizontalAnchorPoint="Right" AnnotationCanvas="BelowChart" Foreground="#66000000" CoordinateMode="Relative"></sc:TextAnnotation>
               <sc:TextAnnotation Text="{Binding CursorStats}" X1="0.01" Y1="0.99" FontSize="12" VerticalAnchorPoint="Bottom" HorizontalAnchorPoint="left" AnnotationCanvas="AboveChart" Foreground="#FF000000" Background="LightYellow" CoordinateMode="Relative"></sc:TextAnnotation>
               <sc:HorizontalLineAnnotation Stroke="Gray" StrokeThickness="2" StrokeDashArray="2,2" X1="0" X2="1"
                                     CoordinateMode="RelativeX" Y1="0"></sc:HorizontalLineAnnotation>
