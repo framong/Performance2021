@@ -79,10 +79,11 @@ Class MainWindow
     DataContext = Me ' ma o vero fai???
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startF - viewmodel eventi")
     MapControl = New clsGestioneMapsui(TrackPlot)
+    AddHandler MapControl.LegendaCambiata, AddressOf AggiornaLegendaMappa
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 07 09"
+    Versione = "v02 - 2026 10 08 11"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1111,6 +1112,81 @@ Class MainWindow
 
   End Sub
 
+
+  Private Sub MapControlColoreCambiato(sender As Object, e As SelectionChangedEventArgs)
+    If MapControl Is Nothing Then Exit Sub
+    MapControl.ModoColore = cmb_MapColore.SelectedIndex
+    MapControl.AggiornaColoreTraccia()
+  End Sub
+
+  Private Sub MapControlSelOn(sender As Object, e As RoutedEventArgs)
+    If MapControl Is Nothing Then Exit Sub
+    MapControl.SoloSelezione = True
+  End Sub
+
+  Private Sub MapControlSelOff(sender As Object, e As RoutedEventArgs)
+    If MapControl Is Nothing Then Exit Sub
+    MapControl.SoloSelezione = False
+  End Sub
+
+  Private Sub AggiornaLegendaMappa()
+    If MapControl Is Nothing Then Exit Sub
+    lbl_MapColore.Text = MapControl.LegendaTesto
+    If MapControl.LegendaColori.Count < 2 Then
+      bar_MapColore.Visibility = Visibility.Collapsed
+      Exit Sub
+    End If
+    Dim Gradiente As New LinearGradientBrush
+    Gradiente.StartPoint = New System.Windows.Point(0, 0)
+    Gradiente.EndPoint = New System.Windows.Point(1, 0)
+    For k As Integer = 0 To MapControl.LegendaColori.Count - 1
+      Dim c = MapControl.LegendaColori(k)
+      Gradiente.GradientStops.Add(New GradientStop(System.Windows.Media.Color.FromRgb(CByte(c.R), CByte(c.G), CByte(c.B)), k / (MapControl.LegendaColori.Count - 1)))
+    Next
+    bar_MapColore.Background = Gradiente
+    bar_MapColore.Visibility = Visibility.Visible
+  End Sub
+
+  Private MappaPopupWindow As Window
+  Private MappaPopupParent As Grid
+  Private MappaPopupIndice As Integer
+
+  ''' <summary>Sposta la mappa in una finestra ridimensionabile; alla chiusura la rimette nella posizione originale.</summary>
+  Private Sub MapControlPopup(sender As Object, e As RoutedEventArgs)
+    If MappaPopupWindow IsNot Nothing Then
+      MappaPopupWindow.Activate()
+      Exit Sub
+    End If
+    Dim genitore = TryCast(TrackPlot.Parent, Grid)
+    If genitore Is Nothing Then Exit Sub
+
+    MappaPopupParent = genitore
+    MappaPopupIndice = genitore.Children.IndexOf(TrackPlot)
+    genitore.Children.Remove(TrackPlot)
+
+    Dim w As New Window With {
+      .Title = "Map",
+      .Width = 800,
+      .Height = 600,
+      .ResizeMode = ResizeMode.CanResize,
+      .WindowStartupLocation = WindowStartupLocation.CenterOwner,
+      .Owner = Me,
+      .Content = TrackPlot
+    }
+    AddHandler w.Closed, AddressOf MapControlPopupChiusa
+    MappaPopupWindow = w
+    w.Show()
+  End Sub
+
+  Private Sub MapControlPopupChiusa(sender As Object, e As EventArgs)
+    Dim w = CType(sender, Window)
+    w.Content = Nothing
+    If MappaPopupParent IsNot Nothing Then
+      MappaPopupParent.Children.Insert(Math.Min(MappaPopupIndice, MappaPopupParent.Children.Count), TrackPlot)
+    End If
+    MappaPopupWindow = Nothing
+    MappaPopupParent = Nothing
+  End Sub
 
   Private Sub FiltraGrigliaCanali()
     If DataProvider2020 Is Nothing Then Exit Sub

@@ -554,7 +554,7 @@ Public Class clsGestioneMapsui
   Public Sub AzzeraTraccia()
     If MyMapControl Is Nothing Then Exit Sub
     If MyMapControl.Map Is Nothing Then Exit Sub
-    Dim Nomi As String() = {"Selezione", "Traccia", "Vettori", "Cursore"}
+    Dim Nomi As String() = {"Selezione", "Traccia", "Glifi", "Vettori", "Cursore"}
     For Each Nome In Nomi
       Dim DaTogliere = MyMapControl.Map.Layers.Where(Function(x) x.Name = Nome).ToList
       For Each Ly In DaTogliere
@@ -580,6 +580,11 @@ Public Class clsGestioneMapsui
     Dim LayerTraccia = CreaLayerTraccia(MinHz)
     MyMapControl.Map.Layers.Add(LayerTraccia)
     MyMapControl.Map.Layers.Last.Name = "Traccia"
+    _LayerGlifi = New Layer With {.Name = "Glifi"}
+    ' senza questo lo stile di default del layer disegna un pallino bianco dietro a ogni simbolo
+    _LayerGlifi.Style = New VectorStyle With {.Enabled = False}
+    MyMapControl.Map.Layers.Add(_LayerGlifi)
+    ImpostaGlifi()
     MyMapControl.Navigator.CenterOn(LayerTraccia.Envelope.Centroid)
     MyMapControl.Navigator.ZoomTo(200)
 
@@ -812,6 +817,314 @@ Public Class clsGestioneMapsui
     Return New Color(255, 215, 0, 255)
   End Function
 
+#Region "Colorazione della traccia"
+
+  ' 0 andatura, 1 Vmg%, 2 Bs%, 3 Current rate, 4 Tws, 5 Twd (scostamento dalla media + barbe), 6 Current dir (frecce)
+  Dim _ModoColore As Integer = 0
+  Dim _RampTipo As Integer
+  Dim _RampMin As Double
+  Dim _RampMax As Double
+  Dim _LayerGlifi As Mapsui.Layers.Layer
+  Dim _MediaTwd As Double
+
+  Public Event LegendaCambiata()
+  Public LegendaTesto As String = ""
+  Public LegendaColori As New List(Of Color)
+
+  Dim _SoloSelezione As Boolean = False
+
+  ''' <summary>True = la traccia (e i glifi) copre solo il periodo visualizzato, False = tutto il file.</summary>
+  Public Property SoloSelezione As Boolean
+    Get
+      Return _SoloSelezione
+    End Get
+    Set(value As Boolean)
+      _SoloSelezione = value
+      AggiornaColoreTraccia()
+      ZoomToAll()
+    End Set
+  End Property
+
+  Private Sub LimitiTraccia(ByRef Da As Integer, ByRef A As Integer)
+    Da = 0
+    A = DataProvider2020.TimeStamps.Count - 1
+    If _SoloSelezione AndAlso TRselezione IsNot Nothing Then
+      Da = System.Math.Max(0, System.Math.Min(A, TRselezione.IdRigaIniziale))
+      A = System.Math.Max(Da, System.Math.Min(A, TRselezione.IdRigaFinale))
+    End If
+  End Sub
+
+  Public Property ModoColore As Integer
+    Get
+      Return _ModoColore
+    End Get
+    Set(value As Integer)
+      _ModoColore = value
+    End Set
+  End Property
+
+  ''' <summary>Ridisegna solo colori e glifi della traccia, senza spostare la mappa.</summary>
+  Public Sub AggiornaColoreTraccia()
+    If MyMapControl Is Nothing OrElse MyMapControl.Map Is Nothing Then Exit Sub
+    If DataProvider2020 Is Nothing OrElse chLat Is Nothing OrElse _MinHz = 0 Then Exit Sub
+    Dim LayerTraccia As Mapsui.Layers.Layer = TrovaLayer("Traccia")
+    If LayerTraccia Is Nothing Then Exit Sub
+    LayerTraccia.DataSource = New MemoryProvider(Traccia(_MinHz))
+    LayerTraccia.DataHasChanged()
+    ImpostaGlifi()
+    MyMapControl.Refresh()
+  End Sub
+
+  Private Sub ImpostaGlifi()
+    If _LayerGlifi Is Nothing Then Exit Sub
+    Dim Lista = CreaGlifi()
+    If Lista.Count = 0 Then
+      _LayerGlifi.Enabled = False
+    Else
+      _LayerGlifi.DataSource = New MemoryProvider(Lista)
+      _LayerGlifi.Enabled = True
+      _LayerGlifi.DataHasChanged()
+    End If
+  End Sub
+
+  Private Shared Function ChiaveColore(c As Color) As Integer
+    Return (CInt(c.R) << 16) Or (CInt(c.G) << 8) Or CInt(c.B)
+  End Function
+
+  Private Function ValoriCanale(Chiave As clsChannels2020.eCanaliChiave) As Double()
+    Dim ch = DataProvider2020.CanaleDbl(Chiave)
+    If ch Is Nothing OrElse ch.Valori Is Nothing Then Return Nothing
+    If ch.Valori.Length <> DataProvider2020.TimeStamps.Count Then Return Nothing
+    Return ch.Valori
+  End Function
+
+  Private Sub PercentiliValidi(v As Double(), ByRef Basso As Double, ByRef Alto As Double)
+    Dim ok = v.Where(Function(x) Not Double.IsNaN(x) AndAlso Not Double.IsInfinity(x)).OrderBy(Function(x) x).ToArray
+    If ok.Length = 0 Then
+      Basso = 0 : Alto = 1
+      Exit Sub
+    End If
+    Basso = ok(CInt((ok.Length - 1) * 0.05))
+    Alto = ok(CInt((ok.Length - 1) * 0.95))
+    If Alto - Basso < 0.01 Then Alto = Basso + 0.01
+  End Sub
+
+  ''' <summary>Valori da mappare in colore per il modo scelto (Nothing = andatura o dato non disponibile) e relativa legenda.</summary>
+  Private Function PreparaValoriColore() As Double()
+    LegendaTesto = ""
+    LegendaColori = New List(Of Color)
+    Dim v As Double() = Nothing
+    Dim Testo As String = ""
+    Select Case _ModoColore
+      Case 0
+        RaiseEvent LegendaCambiata()
+        Return Nothing
+      Case 1
+        v = ValoriCanale(clsChannels2020.eCanaliChiave.eVMGp)
+        _RampTipo = 1 : _RampMin = 80 : _RampMax = 100
+        Testo = "80 → 100 % Vmg"
+      Case 2
+        v = ValoriCanale(clsChannels2020.eCanaliChiave.eBSPp)
+        _RampTipo = 1 : _RampMin = 80 : _RampMax = 100
+        Testo = "80 → 100 % Bs"
+      Case 3, 6
+        v = ValoriCanale(clsChannels2020.eCanaliChiave.eCurrRateRec)
+        _RampTipo = 0
+        If v IsNot Nothing Then
+          PercentiliValidi(v, _RampMin, _RampMax)
+          Testo = _RampMin.ToString("F2") & " → " & _RampMax.ToString("F2") & " kts current"
+        End If
+      Case 4
+        v = ValoriCanale(clsChannels2020.eCanaliChiave.eTWS)
+        _RampTipo = 0
+        If v IsNot Nothing Then
+          PercentiliValidi(v, _RampMin, _RampMax)
+          Testo = _RampMin.ToString("F1") & " → " & _RampMax.ToString("F1") & " kts Tws"
+        End If
+      Case 5
+        Dim twd = ValoriCanale(clsChannels2020.eCanaliChiave.eTWD)
+        If twd IsNot Nothing Then
+          Dim ss As Double = 0, cc As Double = 0
+          For Each x In twd
+            If Not Double.IsNaN(x) Then
+              ss += System.Math.Sin(Radians(x))
+              cc += System.Math.Cos(Radians(x))
+            End If
+          Next
+          _MediaTwd = Degrees(System.Math.Atan2(ss, cc))
+          If _MediaTwd < 0 Then _MediaTwd += 360
+          v = New Double(twd.Length - 1) {}
+          For i As Integer = 0 To twd.Length - 1
+            v(i) = If(Double.IsNaN(twd(i)), Double.NaN, DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(_MediaTwd, twd(i)))
+          Next
+          Dim Basso, Alto As Double
+          PercentiliValidi(v.Select(Function(x) System.Math.Abs(x)).ToArray, Basso, Alto)
+          Dim R As Double = System.Math.Max(5, System.Math.Ceiling(Alto))
+          _RampTipo = 2 : _RampMin = -R : _RampMax = R
+          Testo = "-" & R.ToString("F0") & "° ← " & _MediaTwd.ToString("F0") & "° → +" & R.ToString("F0") & "° Twd"
+        End If
+    End Select
+    If v Is Nothing Then
+      LegendaTesto = "n/a"
+    Else
+      For k As Integer = 0 To 4
+        LegendaColori.Add(ColoreDaRamp(k / 4.0))
+      Next
+      LegendaTesto = Testo
+    End If
+    RaiseEvent LegendaCambiata()
+    Return v
+  End Function
+
+  Private Function ColoreDaValore(v As Double) As Color
+    If Double.IsNaN(v) OrElse Double.IsInfinity(v) Then Return Color.Gray
+    Dim t As Double = (v - _RampMin) / (_RampMax - _RampMin)
+    Return ColoreDaRamp(t)
+  End Function
+
+  Private Function Mescola(a As Color, b As Color, t As Double) As Color
+    Return New Color(CInt(a.R + (b.R - a.R) * t), CInt(a.G + (b.G - a.G) * t), CInt(a.B + (b.B - a.B) * t), 255)
+  End Function
+
+  ''' <summary>t tra 0 e 1, quantizzato in 24 gradini per non frammentare troppo la traccia.</summary>
+  Private Function ColoreDaRamp(t As Double) As Color
+    t = System.Math.Max(0, System.Math.Min(1, t))
+    t = System.Math.Round(t * 24) / 24
+    Select Case _RampTipo
+      Case 1 ' rosso - giallo - verde
+        If t < 0.5 Then Return Mescola(New Color(215, 40, 40, 255), New Color(240, 200, 0, 255), t * 2)
+        Return Mescola(New Color(240, 200, 0, 255), New Color(30, 160, 60, 255), (t - 0.5) * 2)
+      Case 2 ' blu - grigio - rosso
+        If t < 0.5 Then Return Mescola(New Color(30, 80, 220, 255), New Color(210, 210, 210, 255), t * 2)
+        Return Mescola(New Color(210, 210, 210, 255), New Color(220, 40, 30, 255), (t - 0.5) * 2)
+      Case Else ' blu - azzurro - verde - giallo - rosso
+        Dim Stops As Color() = {New Color(30, 40, 230, 255), New Color(0, 200, 230, 255), New Color(40, 190, 60, 255), New Color(250, 220, 0, 255), New Color(230, 30, 30, 255)}
+        Dim x As Double = t * 4
+        Dim k As Integer = System.Math.Min(3, CInt(System.Math.Floor(x)))
+        Return Mescola(Stops(k), Stops(k + 1), x - k)
+    End Select
+  End Function
+
+  ' Glifi sulla traccia: barbe del vento (modo Twd) o frecce di corrente (modo Current dir).
+  ' Sono simboli bitmap di dimensione fissa in pixel, ruotati sulla direzione, cosi' restano leggibili a ogni zoom.
+  Shared _BarbeIds As New Dictionary(Of Integer, Integer)
+  Shared _FrecciaId As Integer = -1
+
+  Private Shared Function RegistraBitmap(bmp As System.Drawing.Bitmap) As Integer
+    Dim ms As New System.IO.MemoryStream
+    bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png)
+    ms.Position = 0
+    Return BitmapRegistry.Instance.Register(ms)
+  End Function
+
+  Private Shared Function IdBarba(Tws As Double) As Integer
+    Dim Classe As Integer = CInt(System.Math.Min(60, System.Math.Round(Tws / 5) * 5))
+    If _BarbeIds.ContainsKey(Classe) Then Return _BarbeIds(Classe)
+    Dim Id As Integer
+    Using bmp As New System.Drawing.Bitmap(64, 64, System.Drawing.Imaging.PixelFormat.Format32bppArgb)
+      Using g = System.Drawing.Graphics.FromImage(bmp)
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias
+        For Passo As Integer = 0 To 1
+          Dim Spessore As Single = If(Passo = 0, 5.0F, 2.2F)
+          Using pen As New System.Drawing.Pen(If(Passo = 0, System.Drawing.Color.White, System.Drawing.Color.Black), Spessore)
+            pen.StartCap = System.Drawing.Drawing2D.LineCap.Round
+            pen.EndCap = System.Drawing.Drawing2D.LineCap.Round
+            If Classe = 0 Then
+              g.DrawEllipse(pen, 26, 26, 12, 12)
+            Else
+              g.DrawLine(pen, 32, 62, 32, 2)
+              Dim Y As Single = 4
+              For k As Integer = 1 To Classe \ 10
+                g.DrawLine(pen, 32, Y, 48, Y + 7)
+                Y += 7
+              Next
+              If Classe Mod 10 = 5 Then
+                If Classe = 5 Then Y = 11
+                g.DrawLine(pen, 32, Y, 40, Y + 3.5F)
+              End If
+            End If
+          End Using
+        Next
+      End Using
+      Id = RegistraBitmap(bmp)
+    End Using
+    _BarbeIds(Classe) = Id
+    Return Id
+  End Function
+
+  Private Shared Function IdFreccia() As Integer
+    If _FrecciaId >= 0 Then Return _FrecciaId
+    Using bmp As New System.Drawing.Bitmap(64, 64, System.Drawing.Imaging.PixelFormat.Format32bppArgb)
+      Using g = System.Drawing.Graphics.FromImage(bmp)
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias
+        Dim Testa As System.Drawing.PointF() = {New System.Drawing.PointF(32, 2), New System.Drawing.PointF(19, 24), New System.Drawing.PointF(45, 24)}
+        Using bianco As New System.Drawing.Pen(System.Drawing.Color.White, 7)
+          bianco.LineJoin = System.Drawing.Drawing2D.LineJoin.Round
+          g.DrawLine(bianco, 32, 60, 32, 20)
+          g.DrawPolygon(bianco, Testa)
+        End Using
+        Using blu As New System.Drawing.Pen(System.Drawing.Color.FromArgb(255, 0, 60, 190), 3)
+          g.DrawLine(blu, 32, 60, 32, 20)
+        End Using
+        Using br As New System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 60, 190))
+          g.FillPolygon(br, Testa)
+        End Using
+      End Using
+      _FrecciaId = RegistraBitmap(bmp)
+    End Using
+    Return _FrecciaId
+  End Function
+
+  Private Function CreaGlifi() As List(Of Feature)
+    Dim Lista As New List(Of Feature)
+    If _ModoColore <> 5 AndAlso _ModoColore <> 6 Then Return Lista
+    If DataProvider2020 Is Nothing OrElse chLat Is Nothing OrElse chLat.Valori.Count = 0 Then Return Lista
+    Dim n As Integer = DataProvider2020.TimeStamps.Count
+    Dim Rate As Double() = Nothing, Dir As Double() = Nothing
+    If _ModoColore = 6 Then
+      Rate = ValoriCanale(clsChannels2020.eCanaliChiave.eCurrRateRec)
+      Dir = ValoriCanale(clsChannels2020.eCanaliChiave.eCurrDirRec)
+      If Rate Is Nothing OrElse Dir Is Nothing Then Return Lista
+    ElseIf chTws Is Nothing OrElse chTwd Is Nothing Then
+      Return Lista
+    End If
+    ' circa 40 glifi lungo tutto il file, mai piu' fitti di uno ogni 30 s
+    Dim iDa As Integer, iA As Integer
+    LimitiTraccia(iDa, iA)
+    Dim Inizio As DateTime = If(iDa = 0, DataProvider2020.TimeRange.Start, DataProvider2020.TimeStamps(iDa))
+    Dim Fine As DateTime = If(iA = n - 1, DataProvider2020.TimeRange.Finish, DataProvider2020.TimeStamps(iA))
+    Dim Passo As Double = System.Math.Max(10, Fine.Subtract(Inizio).TotalSeconds / 40)
+    Dim Prossimo As DateTime = Inizio
+    For i As Integer = iDa To iA
+      Dim m = DataProvider2020.TimeStamps(i)
+      If m = Nothing OrElse m < Prossimo Then Continue For
+      Dim pos As New clsGeographicPosition(chLat.Valori(i), chLng.Valori(i))
+      If Double.IsNaN(pos.LatDec) OrElse pos.LatDec = 0 OrElse pos.LatDec = pos.LngDec Then Continue For
+      Dim Ss As New SymbolStyle
+      Ss.UnitType = UnitType.Pixel
+      Ss.SymbolOffset = New Offset(0, 0, True)
+      If _ModoColore = 6 Then
+        If Double.IsNaN(Rate(i)) OrElse Double.IsNaN(Dir(i)) OrElse Rate(i) < 0.05 Then Continue For
+        Ss.BitmapId = IdFreccia()
+        Ss.SymbolScale = 0.35 + 0.35 * System.Math.Min(Rate(i), 3)
+        Ss.SymbolRotation = Dir(i)
+      Else
+        If Double.IsNaN(chTws.Valori(i)) OrElse Double.IsNaN(chTwd.Valori(i)) Then Continue For
+        Ss.BitmapId = IdBarba(chTws.Valori(i))
+        Ss.SymbolScale = 1
+        Ss.SymbolRotation = MagneticToTrue(pos, m, chTwd.Valori(i))
+      End If
+      Dim F As New Feature
+      F.Geometry = Mapsui.Projection.SphericalMercator.FromLonLat(pos.LngDec, pos.LatDec)
+      F.Styles.Add(Ss)
+      Lista.Add(F)
+      Prossimo = m.AddSeconds(Passo)
+    Next
+    Return Lista
+  End Function
+
+#End Region
+
   Private Function Traccia(MinHz As Integer) As List(Of Feature)
     _MinHz = MinHz
     'ImpostaCanali()
@@ -824,13 +1137,19 @@ Public Class clsGestioneMapsui
     St.Line = New Pen(ColoreDaSailingMode(LastSailingMode), 2)
     'St.Line = New Pen(Color.Red, 2)
     FcTmp.Styles.Add(St)
+    Dim LastKey As Integer = ChiaveColore(ColoreDaSailingMode(LastSailingMode))
+    Dim UltimoVertice As Mapsui.Geometries.Point = Nothing
+    Dim ValoriColore As Double() = PreparaValoriColore()
 
     Dim lastvalidgeopoint As clsGeographicPosition = Nothing
     Dim lastvalidmoment As DateTime = DataProvider2020.TimeRange.Start
     Dim d As New clsCalcoliDuePuntiGeo()
     Dim maxbsms As Double = 50
-    Dim mprev As DateTime = DataProvider2020.TimeRange.Start.AddSeconds(-1)
-    For i As Integer = 0 To DataProvider2020.TimeStamps.Count - 1
+    Dim iDa As Integer, iA As Integer
+    LimitiTraccia(iDa, iA)
+    ' TimeStamps(0) puo' essere vuoto (DateTime.MinValue): AddSeconds(-1) solleverebbe un'eccezione
+    Dim mprev As DateTime = If(iDa = 0, DataProvider2020.TimeRange.Start, DataProvider2020.TimeStamps(iDa)).AddSeconds(-1)
+    For i As Integer = iDa To iA
       Dim m = DataProvider2020.TimeStamps(i)
       If Not m = Nothing AndAlso m.Subtract(mprev).TotalMilliseconds > (1000 / MinHz) Then
         Dim la, ln As Double
@@ -845,16 +1164,29 @@ Public Class clsGestioneMapsui
         'Console.WriteLine(geopoint.LatDec & " " & geopoint.LngDec)
         If Not Double.IsNaN(geopoint.LatDec) AndAlso Not (geopoint.LatDec = 0) AndAlso Not (geopoint.LatDec = geopoint.LngDec) Then
           'Dim ActualSailingMode As eSailingMode = SailingMode(chTwa.Valori(i), chBs.Valori(i), chPortArm.Valori(i), chStbdArm.Valori(i))
-          Dim ActualSailingMode As eSailingMode = SailingMode(chTwa.Valori(i), chBs.Valori(i))
-          If Not ActualSailingMode = LastSailingMode Then
+          Dim ActualColor As Color
+          If _ModoColore = 0 OrElse ValoriColore Is Nothing Then
+            If _ModoColore = 0 Then
+              ActualColor = ColoreDaSailingMode(SailingMode(chTwa.Valori(i), chBs.Valori(i)))
+            Else
+              ActualColor = Color.Gray
+            End If
+          Else
+            ActualColor = ColoreDaValore(ValoriColore(i))
+          End If
+          Dim ActualKey As Integer = ChiaveColore(ActualColor)
+          If Not ActualKey = LastKey Then
             TracciaTmp.Add(FcTmp)
             FcTmp = New Feature
             linea = New LineString
             FcTmp.Geometry = linea
+            ' con i colori continui il nuovo tratto riparte dall'ultimo punto, per non lasciare buchi
+            If _ModoColore <> 0 AndAlso UltimoVertice IsNot Nothing Then linea.Vertices.Add(UltimoVertice)
             St = New VectorStyle
-            St.Line = New Pen(ColoreDaSailingMode(ActualSailingMode), 2)
+            St.Line = New Pen(ActualColor, 2)
             'St.Line = New Pen(Color.Red, 2)
             FcTmp.Styles.Add(St)
+            LastKey = ActualKey
           End If
           If lastvalidgeopoint Is Nothing Then
             lastvalidgeopoint = geopoint
@@ -868,11 +1200,11 @@ Public Class clsGestioneMapsui
               Dim punto As Mapsui.Geometries.Point = Mapsui.Projection.SphericalMercator.FromLonLat(geopoint.LngDec, geopoint.LatDec)
               If pStartingPoint Is Nothing Then pStartingPoint = Mapsui.Projection.SphericalMercator.FromLonLat(geopoint.LngDec, geopoint.LatDec)
               linea.Vertices.Add(punto)
+              UltimoVertice = punto
               lastvalidgeopoint = geopoint
               lastvalidmoment = DataProvider2020.TimeStamps(i)
             End If
           End If
-          LastSailingMode = ActualSailingMode
         End If
         mprev = m
       End If
@@ -912,12 +1244,9 @@ Public Class clsGestioneMapsui
 
   Public Sub AggiornaSelezione(TimeRange As clsTimeRange)
     TRselezione = TimeRange
-    If TimeRange.HasSameRange(DataProvider2020.TimeRange) Then
-      pLayerSelezione.Enabled = False
-    Else
-      pLayerSelezione.Enabled = True
-      pLayerSelezione.DataSource = New MemoryProvider(Selezione(TimeRange.IdRigaIniziale, TimeRange.IdRigaFinale))
-    End If
+    ' l'evidenziazione dorata e' stata sostituita dal toggle Sel (traccia del solo periodo visualizzato)
+    pLayerSelezione.Enabled = False
+    If _SoloSelezione Then AggiornaColoreTraccia()
   End Sub
 
   Private Function Selezione(IdIniziale As Integer, IdFinale As Integer) As Feature

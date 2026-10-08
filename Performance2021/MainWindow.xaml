@@ -370,12 +370,30 @@
             <StackPanel Orientation="Horizontal"  HorizontalAlignment="Right" VerticalAlignment="Top">
               <ToggleButton Unchecked="MapControlStopDrawing" x:Name="mcDrawLine" Width="40" Content="R,B&amp;A" ToolTip="Range, Bearing and Angles" Margin="0,2,2,2"></ToggleButton>
               <Button Click="MapControlZoomAll" Width="30" Content="All" ToolTip="Zoom to the whole track" Margin="2,2,2,2"></Button>
-              <Button Click="MapControlZoomSel" Width="30" Content="Sel" ToolTip="Zoom to the actual selection" Margin="0,2,2,2"></Button>
+              <ToggleButton Checked="MapControlSelOn" Unchecked="MapControlSelOff" x:Name="mcSel" Width="30" Content="Sel" ToolTip="On: show only the displayed period. Off: show the whole track" Margin="0,2,2,2"></ToggleButton>
               <Button Click="MapControlZoomIn" Width="30" Content="In" ToolTip="Zoom IN" Margin="0,2,2,2"></Button>
               <Button Click="MapControlZoomOut" Width="30" Content="Out" ToolTip="Zoom OUT" Margin="0,2,2,2"></Button>
               <Button Click="MapControlToggleChart" Width="40" Content="Chart" ToolTip="{Binding CurrentMapsuiChart}" Margin="0,2,2,2"></Button>
               <ToggleButton Checked="MapControl20Hz" Unchecked="MapControl1Hz" x:Name="MapControlHz" Width="40" Content="Hz" ToolTip="Draw track 1 or 20 Hz" Margin="0,2,2,2"></ToggleButton>
               <Button Click="ExportWayPoint" Width="25" Content="Gpx" ToolTip="Export Waypoint to Gpx" Margin="0,2,2,2"></Button>
+              <Button Click="MapControlPopup" Width="30" Content="Pop" ToolTip="Open the map in a resizable window" Margin="0,2,2,2"></Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="4,0,0,4">
+              <ComboBox x:Name="cmb_MapColore" MinWidth="130" SelectedIndex="0" SelectionChanged="MapControlColoreCambiato" ToolTip="Track colouring">
+                <ComboBoxItem Content="Point of sailing"/>
+                <ComboBoxItem Content="Vmg %"/>
+                <ComboBoxItem Content="Bs %"/>
+                <ComboBoxItem Content="Current rate"/>
+                <ComboBoxItem Content="Tws"/>
+                <ComboBoxItem Content="Twd (shift + barbs)"/>
+                <ComboBoxItem Content="Current dir (arrows)"/>
+              </ComboBox>
+              <Border x:Name="bar_MapColore" Width="70" Height="10" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#FF404040" BorderThickness="1" Visibility="Collapsed"/>
+              <TextBlock x:Name="lbl_MapColore" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="#FF202020" IsHitTestVisible="False">
+                <TextBlock.Effect>
+                  <DropShadowEffect Color="White" ShadowDepth="0" BlurRadius="4" Opacity="1"/>
+                </TextBlock.Effect>
+              </TextBlock>
             </StackPanel>
             <TextBlock x:Name="lbl_MapCorrente" HorizontalAlignment="Right" VerticalAlignment="Bottom"
 								   Margin="0,0,6,4" FontSize="11" Foreground="#FF202020" IsHitTestVisible="False"
