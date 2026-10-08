@@ -6826,9 +6826,10 @@ Public Class clsExpeditionStart
   Public Property LineBiasMt As Double
   Public Property LineBiasSec As Double
   Public Property ZoneAtStart As Double
+  Public Const SecondiPrimaDellaPartenza As Integer = 300 ' i dati prestart partono da -5 minuti
   Dim SecondsArray As Integer() = {-60, -50, -40, -30, -26, -24, -22, -20, -18, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 10, 15, 30, 60}
   Public Property BoatDataTable As New ObservableCollection(Of clsPrestartBoatData) ' sottoinsieme ai soli secondi indicati nel secondsarray
-  Public Property PrestartBoatData As New ObservableCollection(Of clsPrestartBoatData) ' dati da -180 a +60 intorno alla partenza
+  Public Property PrestartBoatData As New ObservableCollection(Of clsPrestartBoatData) ' dati da -300 a +60 intorno alla partenza
   Public Property BoatDataAtZero As clsPrestartBoatData
   Public Property BoatDataAtPlusTwo As clsPrestartBoatData
   Public Property First30secAverages As clsPrestartBoatData
@@ -6855,7 +6856,7 @@ Public Class clsExpeditionStart
   Public Property AP As New clsAccelerationPath
 
   Public Sub SetCurrentPoint(SecToStart As Integer)
-    CurrentBoatData = PrestartBoatData(SecToStart + 180)
+    CurrentBoatData = PrestartBoatData(SecToStart + SecondiPrimaDellaPartenza)
     DrawPolarProjection()
   End Sub
 
@@ -6876,7 +6877,7 @@ Public Class clsExpeditionStart
   End Sub
 
   Public Sub GoPrevious()
-    Dim i = Math.Max(-180, CurrentBoatData.SecondsToStart - 1)
+    Dim i = Math.Max(-SecondiPrimaDellaPartenza, CurrentBoatData.SecondsToStart - 1)
     SetCurrentPoint(i)
     'DrawPolarProjection()
   End Sub
@@ -7036,7 +7037,7 @@ Public Class clsExpeditionStart
   End Property
 
   Private Function PosizioneBarca(SecToStart As Integer) As clsGeographicPosition
-    Dim Id As Integer = SecToStart + 180
+    Dim Id As Integer = SecToStart + SecondiPrimaDellaPartenza
     If Id < 0 Then Id = 0
     If Id > PrestartBoatData.Count - 1 Then Id = PrestartBoatData.Count - 1
     Return PrestartBoatData(Id).BoatPosition
@@ -7056,14 +7057,14 @@ Public Class clsExpeditionStart
   End Function
 
   Public Function PrevHdgVal(ActualSecondsToStart As Integer) As Double
-    Dim Id As Integer = ActualSecondsToStart + 180
+    Dim Id As Integer = ActualSecondsToStart + SecondiPrimaDellaPartenza
     If Id < 0 Then Id = 0
     If Id > PrestartBoatData.Count - 1 Then Id = PrestartBoatData.Count - 1
     Return PrestartBoatData(Id).Hdg
   End Function
 
   Public Function PrevSowVal(ActualSecondsToStart As Integer) As Double
-    Dim Id As Integer = ActualSecondsToStart + 180
+    Dim Id As Integer = ActualSecondsToStart + SecondiPrimaDellaPartenza
     If Id < 0 Then Id = 0
     If Id > PrestartBoatData.Count - 1 Then Id = PrestartBoatData.Count - 1
     Return PrestartBoatData(Id).Bs
@@ -7346,7 +7347,7 @@ Public Class clsExpeditionStart
     Dim CB As Color = Colors.LightYellow
     Dim C0 As Color = Colors.Yellow
     Dim BsPrev As Double = 0
-    Dim StsPrev As Double = -181
+    Dim StsPrev As Double = -SecondiPrimaDellaPartenza - 1
     Dim momento As DateTime
 
     Dim VmgP30sec As New List(Of Double)
@@ -7358,7 +7359,7 @@ Public Class clsExpeditionStart
     Dim TwaD1min As New List(Of Double)
 
 
-    For s As Integer = -180 To 60 ' SecondsArray.First To SecondsArray.Last
+    For s As Integer = -SecondiPrimaDellaPartenza To 60 ' SecondsArray.First To SecondsArray.Last
       'If s = -20 Then Stop
       momento = startTime.AddSeconds(s)
       idm = DataProvider2020.TrovaIndice(momento)

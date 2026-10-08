@@ -344,6 +344,7 @@
       <Button Width="60" Content="Prev" Click="Button_Click_7" Margin="5"></Button>
       <Button Width="60" Content="Next" Click="Button_Click_8" Margin="5"></Button>
       <Button Width="60" Content="Gun" Click="Button_Click_4" Margin="5"></Button>
+      <Button Width="60" Content="-5m" Click="Button_Click_14" Margin="5"></Button>
       <Button Width="60" Content="-3m" Click="Button_Click_3" Margin="5"></Button>
       <Button Width="60" Content="-1m" Click="Button_Click_9" Margin="5"></Button>
       <Button Width="60" Content="+1m" Click="Button_Click_6" Margin="5"></Button>

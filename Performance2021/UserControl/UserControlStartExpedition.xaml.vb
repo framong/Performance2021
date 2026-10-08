@@ -80,8 +80,8 @@
   End Sub
 
   Private Sub Button_Click_10(sender As Object, e As RoutedEventArgs)
-    Dim TR As New clsTimeRange(ExpStarts.SelectedStart.StartTime.AddSeconds(-180), ExpStarts.SelectedStart.StartTime.AddSeconds(60))
-    Dim IR As New SciChart.Data.Model.DateRange(ExpStarts.SelectedStart.StartTime.AddSeconds(-180), ExpStarts.SelectedStart.StartTime.AddSeconds(60))
+    Dim TR As New clsTimeRange(ExpStarts.SelectedStart.StartTime.AddSeconds(-clsExpeditionStart.SecondiPrimaDellaPartenza), ExpStarts.SelectedStart.StartTime.AddSeconds(60))
+    Dim IR As New SciChart.Data.Model.DateRange(ExpStarts.SelectedStart.StartTime.AddSeconds(-clsExpeditionStart.SecondiPrimaDellaPartenza), ExpStarts.SelectedStart.StartTime.AddSeconds(60))
     DataPlotSync.SharedXVisibleRange = IR
     GraficoEventiViewModel.AggiornaSelezione(TR)
     MapControl.AggiornaSelezione(TR)
@@ -102,4 +102,8 @@
     Private Sub Button_Click_13(sender As Object, e As RoutedEventArgs)
         ExpStarts.SendEmailToMailingList()
     End Sub
+
+  Private Sub Button_Click_14(sender As Object, e As RoutedEventArgs)
+    ExpStarts.SelectedStart.SetCurrentPoint(-clsExpeditionStart.SecondiPrimaDellaPartenza)
+  End Sub
 End Class
