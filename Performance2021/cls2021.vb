@@ -736,10 +736,13 @@ Public Class clsStraightLineReportOptions
   Public Property AskChannels As Boolean = False
   ''' <summary>Ampiezza in % della banda centrale usata per Min e Max dei valori nei report: 90 = P5 e P95, 100 = minimo e massimo veri. I grafici mostrano sempre tutto.</summary>
   Public Property RangeBandPercent As Integer = 90
+  ''' <summary>True: dati a video e report considerano solo i campioni che passano il filtro impostato nel tab XY Plots.</summary>
+  Public Property ApplyXyFilter As Boolean = False
 
   Public Function Copia() As clsStraightLineReportOptions
     Return New clsStraightLineReportOptions With {.PrintCharts = PrintCharts, .PrintTable = PrintTable, .PrintPeriods = PrintPeriods,
-      .CreateTableCsv = CreateTableCsv, .TwaBinDegrees = TwaBinDegrees, .AskChannels = AskChannels, .RangeBandPercent = RangeBandPercent}
+      .CreateTableCsv = CreateTableCsv, .TwaBinDegrees = TwaBinDegrees, .AskChannels = AskChannels, .RangeBandPercent = RangeBandPercent,
+      .ApplyXyFilter = ApplyXyFilter}
   End Function
 End Class
 

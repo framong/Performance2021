@@ -90,7 +90,6 @@ Public Class UserControlStraightLineReaching
   End Sub
 
   Private Sub SeriesSelectionModifier_SelectionChanged(sender As Object, e As EventArgs)
-    Stop
     Dim Selezione As ObjectModel.ObservableCollection(Of SciChart.Charting.Visuals.RenderableSeries.IRenderableSeries) = DirectCast(DirectCast(sender, SciChart.Charting.ChartModifiers.SeriesSelectionModifier).ParentSurface.SelectedRenderableSeries, ObjectModel.ObservableCollection(Of SciChart.Charting.Visuals.RenderableSeries.IRenderableSeries))
     StraightLineVM2020.AggiornaControlli(Selezione)
   End Sub
@@ -204,6 +203,19 @@ Public Class UserControlStraightLineReaching
 
   Private Sub btn_DeleteSelected_Click(sender As Object, e As RoutedEventArgs)
     If StraightLineVM2020.EliminaPeriodiSelezionati() Then Btn_Refresh_Click(sender, e)
+  End Sub
+
+  ''' <summary>Opzione "Apply XY Plots filter": salva e ridisegna i dati con (o senza) il filtro del tab XY Plots.</summary>
+  Private Sub ApplyXyFilter_Click(sender As Object, e As RoutedEventArgs)
+    AppConfig.Salva()
+    Btn_Refresh_Click(sender, e)
+  End Sub
+
+  ''' <summary>Il tooltip mostra il filtro attuale del tab XY Plots (si legge al momento in cui si apre).</summary>
+  Private Sub XyFilter_ToolTipOpening(sender As Object, e As ToolTipEventArgs)
+    Dim Chk As CheckBox = TryCast(sender, CheckBox)
+    If Chk Is Nothing Then Exit Sub
+    Chk.ToolTip = StraightLineVM2020.TestoToolTipFiltroXy()
   End Sub
 
   Private Sub ReportOption_Click(sender As Object, e As RoutedEventArgs)

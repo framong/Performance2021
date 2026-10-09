@@ -41,6 +41,8 @@ Partial Public Class clsStraightLineReport
     Public TwsMin As Double
     Public TwsMax As Double
     Public IsReaching As Boolean
+    ''' <summary>Periodi spuntati lasciati fuori perche' nessun loro campione passa il filtro XY (come nei grafici a video).</summary>
+    Public EsclusiDalFiltro As Integer
     ''' <summary>Statistiche dei periodi, calcolate una sola volta (riepilogo, tabelle per TWA ed elenco periodi le riusano).</summary>
     Public Stat As List(Of clsStatPeriodo)
   End Class
@@ -65,6 +67,9 @@ Partial Public Class clsStraightLineReport
   ' impostati all'inizio di ogni report (thread UI, un report alla volta): banda dei percentili per Min e Max dei valori
   ' e finestra di avanzamento. I grafici mostrano sempre tutti i dati.
   Private Shared _Banda As Double = 90
+  ''' <summary>Filtro sui campioni del tab XY Plots (Nothing = nessuno) e sua descrizione: li imposta il chiamante prima del report, gli stessi dei grafici a video.</summary>
+  Public Shared FiltroMaschera As Func(Of Integer, Boolean) = Nothing
+  Public Shared FiltroDescrizione As String = ""
   Private Shared _Av As FinestraAvanzamento = Nothing
   Private Shared _ImgFatte As Integer = 0
   Private Shared _ImgTot As Integer = 0
@@ -190,21 +195,36 @@ Partial Public Class clsStraightLineReport
     Dim Tws As New List(Of Double)
     Dim Inizio As DateTime = Nothing
     Dim Fine As DateTime = Nothing
+    Dim chTws As clsChannel2020 = If(FiltroMaschera Is Nothing, Nothing, DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS))
     For Each StLn In ListaPeriodi
       If Not StLn.IsChecked Then Continue For
+      Dim TwsPeriodo As Double = StLn.TwsDetails.AvgVal
+      If Not FiltroMaschera Is Nothing Then
+        ' come nei grafici a video: un periodo senza campioni che passano il filtro XY non entra nel report
+        If MinutiPeriodo(StLn) <= 0 Then
+          Info.EsclusiDalFiltro += 1
+          Continue For
+        End If
+        ' Tws del titolo calcolato sugli stessi campioni filtrati
+        TwsPeriodo = MediaCanale(chTws, StLn)
+      End If
       Info.Periodi.Add(StLn)
       If Inizio = Nothing OrElse StLn.TR.Start < Inizio Then Inizio = StLn.TR.Start
       If Fine = Nothing OrElse StLn.TR.Finish > Fine Then Fine = StLn.TR.Finish
       If Not StLn.Keys.Trim = "" AndAlso Not Info.Chiavi.ContainsKey(StLn.Keys.Trim) Then
         Info.Chiavi.Add(StLn.Keys.Trim, ColoreDaOutputType(StLn, OutputType))
       End If
-      Tws.Add(StLn.TwsDetails.AvgVal)
+      If Not Double.IsNaN(TwsPeriodo) Then Tws.Add(TwsPeriodo)
       If Math.Abs(StLn.AvgTwa) < 90 Then Up += 1 Else Dn += 1
       If StLn.IsStbd Then Info.Dritta += 1 Else Info.Porta += 1
       If Not StLn.StraightLineReachingDetails Is Nothing AndAlso StLn.StraightLineVmgDetails Is Nothing Then Info.IsReaching = True
     Next
     If Info.Periodi.Count = 0 Then
-      MsgBox("No periods are checked: check the periods to include in the report.", MsgBoxStyle.Exclamation, "Straight Line report")
+      If Info.EsclusiDalFiltro > 0 Then
+        MsgBox("None of the checked periods has samples that pass the XY Plots filter:" & vbCrLf & FiltroDescrizione, MsgBoxStyle.Exclamation, "Straight Line report")
+      Else
+        MsgBox("No periods are checked: check the periods to include in the report.", MsgBoxStyle.Exclamation, "Straight Line report")
+      End If
       Return Nothing
     End If
 
@@ -214,8 +234,8 @@ Partial Public Class clsStraightLineReport
     ElseIf Up = 0 Then
       Info.Tipo &= " Downwind"
     End If
-    Info.TwsMin = Tws.Min
-    Info.TwsMax = Tws.Max
+    Info.TwsMin = If(Tws.Count = 0, 0, Tws.Min)
+    Info.TwsMax = If(Tws.Count = 0, 0, Tws.Max)
     Info.Tr = New clsTimeRange(Inizio, Fine)
     Dim Titolo As String = Info.Tipo & " (Tws:" & Info.TwsMin.ToString("F0") & "-" & Info.TwsMax.ToString("F0") & ") " & Filtro
     If Info.Tr.Durata.TotalDays < 1 Then
@@ -226,6 +246,19 @@ Partial Public Class clsStraightLineReport
     Info.TitoloBreve = Titolo.Trim
     Info.Titolo = Titolo.Trim & Suffisso
     Return Info
+  End Function
+
+  ''' <summary>Minuti del periodo che passano il filtro XY (durata intera senza filtro), come nei grafici a video.</summary>
+  Private Shared Function MinutiPeriodo(p As clsPeriod2021) As Double
+    Return clsFiltroCampioniXY.MinutiValidi(p.TR, FiltroMaschera)
+  End Function
+
+  ''' <summary>Riga del filtro XY per l'intestazione (vuota con l'opzione spenta), con i periodi esclusi.</summary>
+  Private Shared Function TestoFiltro(Info As clsInfo) As String
+    If FiltroDescrizione = "" Then Return ""
+    Dim T As String = FiltroDescrizione
+    If Info.EsclusiDalFiltro > 0 Then T &= " " & Info.EsclusiDalFiltro & " checked period(s) without samples passing the filter left out."
+    Return T
   End Function
 
   ''' <summary>Media del canale nel periodo, con lo stesso calcolo dei punti dei grafici.</summary>
@@ -246,7 +279,13 @@ Partial Public Class clsStraightLineReport
     If Canale Is Nothing OrElse Canale.Valori Is Nothing OrElse Canale.Valori.Count = 0 Then Return Nothing
     Dim Assoluto As Boolean = Canale.DataType = clsChannel2020.eDataType.e180
     Dim M As New clsValoriPeriodoCanale2020(Canale, p.TR, Assoluto)
+    M.Maschera = FiltroMaschera
     Campioni = M.AggiornaValori(Assoluto)
+    If Not FiltroMaschera Is Nothing AndAlso Not M.HaDati Then
+      ' tutti i campioni del periodo scartati dal filtro
+      Campioni = Nothing
+      Return Nothing
+    End If
     Return M
   End Function
 
@@ -255,7 +294,7 @@ Partial Public Class clsStraightLineReport
   ''' file dei periodi sono stati calcolati alla creazione e possono differire se canali, target o correzioni sono cambiati.
   ''' </summary>
   Private Shared Function StatPeriodo(p As clsPeriod2021, IsReaching As Boolean) As clsStatPeriodo
-    Dim S As New clsStatPeriodo With {.Periodo = p, .IsStbd = p.IsStbd, .Minuti = p.TR.Durata.TotalMinutes}
+    Dim S As New clsStatPeriodo With {.Periodo = p, .IsStbd = p.IsStbd, .Minuti = MinutiPeriodo(p)}
     Dim chTws = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
     Dim chTwa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
     Dim chSow = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
@@ -360,12 +399,30 @@ Partial Public Class clsStraightLineReport
   Private Sub DisegnaIntestazione(C As clsCtx, Info As clsInfo, OutputType As clsStraightLineVM2020.eOutputType)
     C.Gfx.DrawString(Info.Titolo, New XFont("Verdana", 15, XFontStyle.Bold), XBrushes.Black, New XRect(Margine, C.Y, C.W - 2 * Margine, 22), XStringFormats.CenterLeft)
     C.Y += 24
-    Dim Minuti As Double = Info.Periodi.Sum(Function(p) p.TR.Durata.TotalMinutes)
+    Dim Minuti As Double = Info.Periodi.Sum(Function(p) MinutiPeriodo(p))
     Dim Sotto As String = Info.Periodi.Count & " periods, " & Minuti.ToString("F1") & " min"
     Dim Nome As String = NomeFileDati()
     If Nome <> "" Then Sotto &= "   |   " & Nome
     C.Gfx.DrawString(Sotto, New XFont("Verdana", 8), XBrushes.Gray, New XRect(Margine, C.Y, C.W - 2 * Margine, 12), XStringFormats.CenterLeft)
     C.Y += 16
+    ' filtro XY: sempre scritto quando l'opzione e' attiva (anche se non filtra nulla o ignora un canale), a capo se non sta in una riga
+    Dim TF As String = TestoFiltro(Info)
+    If TF <> "" Then
+      Dim Ff As New XFont("Verdana", 8, XFontStyle.Bold)
+      Dim Riga As String = ""
+      For Each Parola In TF.Split(" "c)
+        Dim Prova As String = If(Riga = "", Parola, Riga & " " & Parola)
+        If Riga <> "" AndAlso C.Gfx.MeasureString(Prova, Ff).Width > C.W - 2 * Margine Then
+          C.Gfx.DrawString(Riga, Ff, XBrushes.DarkRed, New XRect(Margine, C.Y, C.W - 2 * Margine, 12), XStringFormats.CenterLeft)
+          C.Y += 12
+          Riga = Parola
+        Else
+          Riga = Prova
+        End If
+      Next
+      C.Gfx.DrawString(Riga, Ff, XBrushes.DarkRed, New XRect(Margine, C.Y, C.W - 2 * Margine, 12), XStringFormats.CenterLeft)
+      C.Y += 16
+    End If
     DisegnaLegenda(C, Info, OutputType)
   End Sub
 
@@ -703,11 +760,11 @@ Partial Public Class clsStraightLineReport
         RigaElenco(C, Titoli, Larghezze, Fh, Hr, XColors.LightGray, Nothing)
       End If
       Dim Valori As String() = {"", s.Periodo.TR.Start.ToString("HH:mm:ss"), If(s.IsStbd, "Stbd", "Port"),
-                                s.Periodo.TR.Durata.TotalSeconds.ToString("F0"), Formato(s.Tws, 1), Formato(Math.Abs(s.Twa), 0),
+                                (s.Minuti * 60).ToString("F0"), Formato(s.Tws, 1), Formato(Math.Abs(s.Twa), 0),
                                 Formato(s.Sow, 2), Formato(s.Perf, 1), s.Periodo.Keys.Trim}
       RigaElenco(C, Valori, Larghezze, F, Hr, If(Alt, XColors.WhiteSmoke, XColors.White), s.Periodo)
       ' pallino del colore del periodo e, a destra, la mura
-      C.Gfx.DrawEllipse(New XSolidBrush(ToX(ColoreDaOutputType(s.Periodo, OutputType))), Margine + 2, C.Y - Hr + 2, 7, 7)
+      C.Gfx.DrawEllipse(New XSolidBrush(ToX(ColoreDaOutputType(s.Periodo, OutputType, FiltroMaschera))), Margine + 2, C.Y - Hr + 2, 7, 7)
       Alt = Not Alt
     Next
     C.Y += 10
@@ -843,7 +900,7 @@ Partial Public Class clsStraightLineReport
       If Canale Is Nothing OrElse Canale.CanaleChiave = clsChannels2020.eCanaliChiave.eTWS Then Continue For
       Dim Coppia As New clsCoppieValoriTwsVsCanale(Canale)
       For Each p In Info.Periodi
-        Coppia.AccodaDati(p.TR)
+        Coppia.AccodaDati(p.TR, FiltroMaschera)
       Next
       Coppie.Add(Coppia)
     Next

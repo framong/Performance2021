@@ -61,6 +61,14 @@ Public Class UserControlSciChartXYplot
 
   Private Sub Button_Click(sender As Object, e As RoutedEventArgs)
 
+    ' Refresh = impostazioni (e quindi filtro) del profilo. Dopo uno Show o una stampa di report XY qui c'e' ancora la copia
+    ' dell'ultimo plot di report, con il suo filtro: si torna al profilo e si esce dalla modalita' report.
+    If Not VM.CurrentPlotSettings Is AppConfig.ActiveProfile.XYPlotSettings Then
+      VM.CurrentPlotSettings = AppConfig.ActiveProfile.XYPlotSettings
+      VM.CurrentPlotSettings.VerificaImpostaListe()
+    End If
+    VM.IsReport = False
+
     Using clsLogTempi.Misura("XY Refresh: AggiornaGrafico")
       VM.AggiornaGrafico(VM.CollectImages = False)
     End Using
@@ -1204,6 +1212,7 @@ Public Class clsSciChartXyPlotViewModel
     'XyReports.ActiveReport.ActivePlot = XyReports.ActiveReport.Plots.First
     CurrentPlotSettings = XyReports.ActiveReport.ActivePlot.Clone
     '_CollectImages = True
+    IsReport = True ' filtro (anche l'auto filtro VMC) del plot di report, non del profilo
     AggiornaGrafico(Surface)
     IsReport = False
   End Sub
@@ -1233,6 +1242,8 @@ Public Class clsSciChartXyPlotViewModel
       XyReports.ActiveReport = XyReports.Reports.First
     End If
     CurrentPlotSettings = XyReports.ActiveReport.ActivePlot.Clone
+    ' prima qui IsReport era gia' False (lo rimette a False lo Show): l'auto filtro VMC veniva letto dal profilo invece che dal plot di report
+    IsReport = True
     AggiornaGrafico(Surface)
     IsReport = False
   End Sub
@@ -1252,6 +1263,7 @@ Public Class clsSciChartXyPlotViewModel
         XyReports.ActiveReport.ActivePlot = XyReports.ActiveReport.Plots(idx + 1)
         CurrentPlotSettings = XyReports.ActiveReport.ActivePlot.Clone
         RenderAtteso = True  ' autorizza il prossimo render
+        IsReport = True ' ogni plot stampato usa il proprio filtro, anche se nel frattempo il tab ha ripreso il focus
         AggiornaGrafico(Surface)
       End If
     End If
@@ -1734,6 +1746,8 @@ Public Class clsSciChartXyPlotViewModel
 
   Private Function TipoFiltro2() As eTipoFiltro
     'If Not CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRangeFiltered Then Return eTipoFiltro.eNone
+    ' Current visible range = nessun filtro, come per il filtro 1 (prima il filtro 2 non si applicava ma finiva nel sottotitolo)
+    If CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return eTipoFiltro.eNone
     If Not CurrentPlotSettings.ApplyFilter2 Then Return eTipoFiltro.eNone
     If CurrentPlotSettings.Filter2Channel Is Nothing Then
       Return eTipoFiltro.eNone
@@ -1755,66 +1769,67 @@ Public Class clsSciChartXyPlotViewModel
     Return eTipoFiltro.eNone
   End Function
 
-  Private Function DatoValido(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-    Try
-      If Double.IsNaN(Valore) Then
-        Return False
-      Else
-        If AbsVal Then Valore = System.Math.Abs(Valore)
-        Select Case TipoFiltro
-          Case eTipoFiltro.eBetween
-            Return Valore >= CurrentPlotSettings.FilterValueMin And Valore <= CurrentPlotSettings.FilterValueMax
-          Case eTipoFiltro.eMax
-            Return Valore <= CurrentPlotSettings.FilterValueMax
-          Case eTipoFiltro.eMin
-            Return Valore >= CurrentPlotSettings.FilterValueMin
-          Case eTipoFiltro.eNone
-            Return True
-        End Select
-      End If
-      Return True
-    Catch ex As Exception
-      MsgBox("DatoValido")
-      Return True
-    End Try
-  End Function
-
-  Private Function DatoValido2(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-    Try
-      If Double.IsNaN(Valore) Then
-        Return False
-      Else
-        If AbsVal Then Valore = System.Math.Abs(Valore)
-        Select Case TipoFiltro
-          Case eTipoFiltro.eBetween
-            Return Valore >= CurrentPlotSettings.Filter2ValueMin And Valore <= CurrentPlotSettings.Filter2ValueMax
-          Case eTipoFiltro.eMax
-            Return Valore <= CurrentPlotSettings.Filter2ValueMax
-          Case eTipoFiltro.eMin
-            Return Valore >= CurrentPlotSettings.Filter2ValueMin
-          Case eTipoFiltro.eNone
-            Return True
-        End Select
-      End If
-      Return True
-    Catch ex As Exception
-      MsgBox("DatoValido")
-      Return True
-    End Try
-  End Function
-
-  Private Function DatoValidoSailingState(Valore As Double) As Boolean
-    Try
-      If Double.IsNaN(Valore) Then
-        Return False
-      Else
-        Return Valore = CurrentPlotSettings.SailingState
-      End If
-    Catch ex As Exception
-      MsgBox("DatoValido")
-      Return True
-    End Try
-  End Function
+  ' Copie non usate di DatoValido, DatoValido2, DatoValidoSailingState e RigaValida (le versioni attive sono nelle classi TimeRangeChartAdvanced e PeriodsChartAdvanced): commentate
+'  Private Function DatoValido(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
+'    Try
+'      If Double.IsNaN(Valore) Then
+'        Return False
+'      Else
+'        If AbsVal Then Valore = System.Math.Abs(Valore)
+'        Select Case TipoFiltro
+'          Case eTipoFiltro.eBetween
+'            Return Valore >= CurrentPlotSettings.FilterValueMin And Valore <= CurrentPlotSettings.FilterValueMax
+'          Case eTipoFiltro.eMax
+'            Return Valore <= CurrentPlotSettings.FilterValueMax
+'          Case eTipoFiltro.eMin
+'            Return Valore >= CurrentPlotSettings.FilterValueMin
+'          Case eTipoFiltro.eNone
+'            Return True
+'        End Select
+'      End If
+'      Return True
+'    Catch ex As Exception
+'      Console.WriteLine("DatoValido: " & ex.Message)
+'      Return True
+'    End Try
+'  End Function
+'
+'  Private Function DatoValido2(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
+'    Try
+'      If Double.IsNaN(Valore) Then
+'        Return False
+'      Else
+'        If AbsVal Then Valore = System.Math.Abs(Valore)
+'        Select Case TipoFiltro
+'          Case eTipoFiltro.eBetween
+'            Return Valore >= CurrentPlotSettings.Filter2ValueMin And Valore <= CurrentPlotSettings.Filter2ValueMax
+'          Case eTipoFiltro.eMax
+'            Return Valore <= CurrentPlotSettings.Filter2ValueMax
+'          Case eTipoFiltro.eMin
+'            Return Valore >= CurrentPlotSettings.Filter2ValueMin
+'          Case eTipoFiltro.eNone
+'            Return True
+'        End Select
+'      End If
+'      Return True
+'    Catch ex As Exception
+'      Console.WriteLine("DatoValido: " & ex.Message)
+'      Return True
+'    End Try
+'  End Function
+'
+'  Private Function DatoValidoSailingState(Valore As Double) As Boolean
+'    Try
+'      If Double.IsNaN(Valore) Then
+'        Return False
+'      Else
+'        Return Valore = CurrentPlotSettings.SailingState
+'      End If
+'    Catch ex As Exception
+'      Console.WriteLine("DatoValido: " & ex.Message)
+'      Return True
+'    End Try
+'  End Function
 
   Private Function TwaValido(ValoreTwa As Double) As Boolean
     Try
@@ -1863,37 +1878,37 @@ Public Class clsSciChartXyPlotViewModel
         End If
       End If
     Catch ex As Exception
-      MsgBox("twavalido")
-      Stop
+      Console.WriteLine("TwaValido: " & ex.Message)
       Return True
     End Try
   End Function
 
-  Private Function RigaValida(Indice As Integer, Filtro As eTipoFiltro, FilterChannel As clsChannel2020, Filtro2 As eTipoFiltro, Filte2Channel As clsChannel2020, CanaleTwa As clsChannel2020) As Boolean
-
-    Dim v = CurrentPlotSettings.YAxisChannel.Valori(Indice)
-    If v = 0 AndAlso CurrentPlotSettings.YaxisZeroIsNan Then
-      Return False
-    End If
-
-    Dim Valido As Boolean = True
-    If Not CanaleTwa Is Nothing Then
-      Valido = TwaValido(CanaleTwa.Valori(Indice))
-    End If
-    If Valido Then
-      If Not (CurrentPlotSettings.FilterChannel Is Nothing OrElse Filtro = eTipoFiltro.eNone) Then
-        Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
-      End If
-      If Valido AndAlso Not (CurrentPlotSettings.Filter2Channel Is Nothing OrElse Filtro2 = eTipoFiltro.eNone) Then
-        Valido = DatoValido2(Filtro2, CurrentPlotSettings.Filter2Channel.Valori(Indice), CurrentPlotSettings.ApplyFilter2AbsVal)
-      End If
-    End If
-    If Valido AndAlso CurrentPlotSettings.ApplyFilterSailingState Then
-      Valido = DatoValidoSailingState(CurrentPlotSettings.SailingStateChannel.Valori(Indice))
-    End If
-    Return Valido
-  End Function
-
+  ' Copia non usata (la versione attiva e' nelle classi TimeRangeChartAdvanced e PeriodsChartAdvanced): commentata
+'  Private Function RigaValida(Indice As Integer, Filtro As eTipoFiltro, FilterChannel As clsChannel2020, Filtro2 As eTipoFiltro, Filte2Channel As clsChannel2020, CanaleTwa As clsChannel2020) As Boolean
+'
+'    Dim v = CurrentPlotSettings.YAxisChannel.Valori(Indice)
+'    If v = 0 AndAlso CurrentPlotSettings.YaxisZeroIsNan Then
+'      Return False
+'    End If
+'
+'    Dim Valido As Boolean = True
+'    If Not CanaleTwa Is Nothing Then
+'      Valido = TwaValido(CanaleTwa.Valori(Indice))
+'    End If
+'    If Valido Then
+'      If Not (CurrentPlotSettings.FilterChannel Is Nothing OrElse Filtro = eTipoFiltro.eNone) Then
+'        Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
+'      End If
+'      If Valido AndAlso Not (CurrentPlotSettings.Filter2Channel Is Nothing OrElse Filtro2 = eTipoFiltro.eNone) Then
+'        Valido = DatoValido2(Filtro2, CurrentPlotSettings.Filter2Channel.Valori(Indice), CurrentPlotSettings.ApplyFilter2AbsVal)
+'      End If
+'    End If
+'    If Valido AndAlso CurrentPlotSettings.ApplyFilterSailingState Then
+'      Valido = DatoValidoSailingState(CurrentPlotSettings.SailingStateChannel.Valori(Indice))
+'    End If
+'    Return Valido
+'  End Function
+'
 
 
 
@@ -11155,8 +11170,7 @@ Public Class clsSciChartXyPlotViewModel
           End If
         End If
       Catch ex As Exception
-        MsgBox("twavalido")
-        Stop
+        Console.WriteLine("TwaValido: " & ex.Message)
         Return True
       End Try
     End Function
@@ -11168,6 +11182,9 @@ Public Class clsSciChartXyPlotViewModel
       If v = 0 AndAlso CurrentPlotSettings.YaxisZeroIsNan Then
         Return False
       End If
+
+      ' Current visible range = tutti i dati del range visibile: nessun filtro (andatura/mure, filtro 1, filtro 2, sailing state)
+      If CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return True
 
       Dim Valido As Boolean = True
       If Not CanaleTwa Is Nothing Then
@@ -11188,51 +11205,21 @@ Public Class clsSciChartXyPlotViewModel
     End Function
 
     Function DatoValido(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-      Try
-        If Double.IsNaN(Valore) Then
-          Return False
-        Else
-          If AbsVal Then Valore = System.Math.Abs(Valore)
-          Select Case TipoFiltro
-            Case eTipoFiltro.eBetween
-              Return Valore >= CurrentPlotSettings.FilterValueMin And Valore <= CurrentPlotSettings.FilterValueMax
-            Case eTipoFiltro.eMax
-              Return Valore <= CurrentPlotSettings.FilterValueMax
-            Case eTipoFiltro.eMin
-              Return Valore >= CurrentPlotSettings.FilterValueMin
-            Case eTipoFiltro.eNone
-              Return True
-          End Select
-        End If
-        Return True
-      Catch ex As Exception
-        MsgBox("DatoValido")
-        Return True
-      End Try
+      ' la regola e' unica (clsFiltroCampioniXY.ValoreValido), la stessa dei tab straight line: qui cambiano solo le impostazioni
+      If TipoFiltro = eTipoFiltro.eNone Then Return Not Double.IsNaN(Valore)
+      Return clsFiltroCampioniXY.ValoreValido(Valore, AbsVal,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMin,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMax,
+                                              CurrentPlotSettings.FilterValueMin, CurrentPlotSettings.FilterValueMax)
     End Function
 
     Function DatoValido2(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-      Try
-        If Double.IsNaN(Valore) Then
-          Return False
-        Else
-          If AbsVal Then Valore = System.Math.Abs(Valore)
-          Select Case TipoFiltro
-            Case eTipoFiltro.eBetween
-              Return Valore >= CurrentPlotSettings.Filter2ValueMin And Valore <= CurrentPlotSettings.Filter2ValueMax
-            Case eTipoFiltro.eMax
-              Return Valore <= CurrentPlotSettings.Filter2ValueMax
-            Case eTipoFiltro.eMin
-              Return Valore >= CurrentPlotSettings.Filter2ValueMin
-            Case eTipoFiltro.eNone
-              Return True
-          End Select
-        End If
-        Return True
-      Catch ex As Exception
-        MsgBox("DatoValido")
-        Return True
-      End Try
+      ' la regola e' unica (clsFiltroCampioniXY.ValoreValido), la stessa dei tab straight line: qui cambiano solo le impostazioni
+      If TipoFiltro = eTipoFiltro.eNone Then Return Not Double.IsNaN(Valore)
+      Return clsFiltroCampioniXY.ValoreValido(Valore, AbsVal,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMin,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMax,
+                                              CurrentPlotSettings.Filter2ValueMin, CurrentPlotSettings.Filter2ValueMax)
     End Function
 
     Function DatoValidoSailingState(Valore As Double) As Boolean
@@ -11243,7 +11230,7 @@ Public Class clsSciChartXyPlotViewModel
           Return Valore = CurrentPlotSettings.SailingState
         End If
       Catch ex As Exception
-        MsgBox("DatoValido")
+        Console.WriteLine("DatoValido: " & ex.Message)
         Return True
       End Try
     End Function
@@ -12152,8 +12139,7 @@ Public Class clsSciChartXyPlotViewModel
           End If
         End If
       Catch ex As Exception
-        MsgBox("twavalido")
-        Stop
+        Console.WriteLine("TwaValido: " & ex.Message)
         Return True
       End Try
     End Function
@@ -12165,6 +12151,9 @@ Public Class clsSciChartXyPlotViewModel
       If v = 0 AndAlso CurrentPlotSettings.YaxisZeroIsNan Then
         Return False
       End If
+
+      ' Current visible range = tutti i dati del range visibile: nessun filtro (andatura/mure, filtro 1, filtro 2, sailing state)
+      If CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return True
 
       Dim Valido As Boolean = True
       If Not CanaleTwa Is Nothing Then
@@ -12185,51 +12174,21 @@ Public Class clsSciChartXyPlotViewModel
     End Function
 
     Function DatoValido(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-      Try
-        If Double.IsNaN(Valore) Then
-          Return False
-        Else
-          If AbsVal Then Valore = System.Math.Abs(Valore)
-          Select Case TipoFiltro
-            Case eTipoFiltro.eBetween
-              Return Valore >= CurrentPlotSettings.FilterValueMin And Valore <= CurrentPlotSettings.FilterValueMax
-            Case eTipoFiltro.eMax
-              Return Valore <= CurrentPlotSettings.FilterValueMax
-            Case eTipoFiltro.eMin
-              Return Valore >= CurrentPlotSettings.FilterValueMin
-            Case eTipoFiltro.eNone
-              Return True
-          End Select
-        End If
-        Return True
-      Catch ex As Exception
-        MsgBox("DatoValido")
-        Return True
-      End Try
+      ' la regola e' unica (clsFiltroCampioniXY.ValoreValido), la stessa dei tab straight line: qui cambiano solo le impostazioni
+      If TipoFiltro = eTipoFiltro.eNone Then Return Not Double.IsNaN(Valore)
+      Return clsFiltroCampioniXY.ValoreValido(Valore, AbsVal,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMin,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMax,
+                                              CurrentPlotSettings.FilterValueMin, CurrentPlotSettings.FilterValueMax)
     End Function
 
     Function DatoValido2(TipoFiltro As eTipoFiltro, Valore As Double, AbsVal As Boolean) As Boolean
-      Try
-        If Double.IsNaN(Valore) Then
-          Return False
-        Else
-          If AbsVal Then Valore = System.Math.Abs(Valore)
-          Select Case TipoFiltro
-            Case eTipoFiltro.eBetween
-              Return Valore >= CurrentPlotSettings.Filter2ValueMin And Valore <= CurrentPlotSettings.Filter2ValueMax
-            Case eTipoFiltro.eMax
-              Return Valore <= CurrentPlotSettings.Filter2ValueMax
-            Case eTipoFiltro.eMin
-              Return Valore >= CurrentPlotSettings.Filter2ValueMin
-            Case eTipoFiltro.eNone
-              Return True
-          End Select
-        End If
-        Return True
-      Catch ex As Exception
-        MsgBox("DatoValido")
-        Return True
-      End Try
+      ' la regola e' unica (clsFiltroCampioniXY.ValoreValido), la stessa dei tab straight line: qui cambiano solo le impostazioni
+      If TipoFiltro = eTipoFiltro.eNone Then Return Not Double.IsNaN(Valore)
+      Return clsFiltroCampioniXY.ValoreValido(Valore, AbsVal,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMin,
+                                              TipoFiltro = eTipoFiltro.eBetween OrElse TipoFiltro = eTipoFiltro.eMax,
+                                              CurrentPlotSettings.Filter2ValueMin, CurrentPlotSettings.Filter2ValueMax)
     End Function
 
     Function DatoValidoSailingState(Valore As Double) As Boolean
@@ -12240,7 +12199,7 @@ Public Class clsSciChartXyPlotViewModel
           Return Valore = CurrentPlotSettings.SailingState
         End If
       Catch ex As Exception
-        MsgBox("DatoValido")
+        Console.WriteLine("DatoValido: " & ex.Message)
         Return True
       End Try
     End Function

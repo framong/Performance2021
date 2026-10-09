@@ -1079,7 +1079,8 @@ Module mdlCommon
 
   Dim ListaChiavi As New Dictionary(Of String, System.Windows.Media.Color)
 
-  Public Function ColoreDaOutputType(Periodo As clsPeriod2021, OutputType As clsStraightLineVM2020.eOutputType) As System.Windows.Media.Color
+  ''' <summary>Colore del periodo per il tipo di output. Maschera: filtro XY sui campioni, usato per il colore da performance (Nothing = nessun filtro).</summary>
+  Public Function ColoreDaOutputType(Periodo As clsPeriod2021, OutputType As clsStraightLineVM2020.eOutputType, Optional Maschera As Func(Of Integer, Boolean) = Nothing) As System.Windows.Media.Color
     Select Case OutputType
       Case clsStraightLineVM2020.eOutputType.eGroupByTack, clsStraightLineVM2020.eOutputType.eColorByTack
         If Periodo.IsStbd Then
@@ -1090,7 +1091,7 @@ Module mdlCommon
       Case clsStraightLineVM2020.eOutputType.eColorByKey
         Return ColoreDaChiave(Periodo)
       Case clsStraightLineVM2020.eOutputType.eColorByVmgTgtPerc, clsStraightLineVM2020.eOutputType.eColorByBsPolarPerc
-        Return ColoreDaPerformance(Periodo, OutputType)
+        Return ColoreDaPerformance(Periodo, OutputType, Maschera)
       Case Else
         Return Periodo.Colore
     End Select
@@ -1102,7 +1103,11 @@ Module mdlCommon
   End Function
 
 
-  Public Function ColoreDaPerformance(Period As clsPeriod2021, OutputType As clsStraightLineVM2020.eOutputType) As System.Windows.Media.Color
+  ''' <summary>
+  ''' Colore dalla performance media del periodo (Vmg% o Bs% polare). Senza Maschera usa la media salvata nei dettagli del periodo;
+  ''' con la Maschera (filtro XY) la media del canale di performance sui soli campioni che passano il filtro, come i punti dei grafici.
+  ''' </summary>
+  Public Function ColoreDaPerformance(Period As clsPeriod2021, OutputType As clsStraightLineVM2020.eOutputType, Optional Maschera As Func(Of Integer, Boolean) = Nothing) As System.Windows.Media.Color
     Dim MinVal As Double = AppConfig.ActiveProfile.MinVmgPerformanceValue
     Dim MaxVal As Double = AppConfig.ActiveProfile.MaxVmgPerformenceValue
     Dim VmgP As Double
@@ -1124,6 +1129,13 @@ Module mdlCommon
       Case Else
         Return Colors.DarkGray
     End Select
+    If Not Maschera Is Nothing Then
+      Dim V As New clsValoriPeriodoCanale2020(chPerf, Period.TR, False)
+      V.Maschera = Maschera
+      V.AggiornaValori(False)
+      If Not V.HaDati Then Return Colors.DarkGray ' nessun campione valido che passa il filtro
+      VmgP = V.Avg
+    End If
     VmgP -= MinVal
     VmgP *= (100 / (MaxVal - MinVal))
     If VmgP < 0 Then VmgP = 0
@@ -3258,9 +3270,9 @@ Public Class clsMediaMobile
           pTotale -= pMatrice(pIndice)
         End If
         pTotale += Valore
-        If Double.IsNaN(pTotale) Then Stop
-        If Double.IsInfinity(pTotale) Then Stop
         pMatrice(pIndice) = Valore
+        ' non dovrebbe accadere (i valori sono finiti): se il totale si e' corrotto lo si ricalcola dai valori presenti
+        If Double.IsNaN(pTotale) OrElse Double.IsInfinity(pTotale) Then pTotale = pMatrice.Sum()
         pIndice += 1
         If pIndice >= pSamples Then
           pIndice = 0

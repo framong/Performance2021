@@ -83,7 +83,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 08 13"
+    Versione = "v02 - 2026 10 09 07"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -334,6 +334,9 @@ Class MainWindow
     PeriodsManager.Periods.Lista.Clear()
     ExpStarts.StartsList.Clear()
     CurrentPeriodDescription = ""
+    ' filtro XY dei tab straight line: la maschera dell'ultimo report conserva i canali del set precedente
+    clsStraightLineReport.FiltroMaschera = Nothing
+    clsStraightLineReport.FiltroDescrizione = ""
 
     ' 4) sincronizzazione dei grafici: via il range condiviso del set precedente
     DataPlotSync.SharedXVisibleRange = Nothing

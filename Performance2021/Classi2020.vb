@@ -1877,10 +1877,11 @@ Public Class clsCoppieValoriTwsVsCanale
     Return True
   End Function
 
-  Public Sub AccodaDati(TR As clsTimeRange)
+  Public Sub AccodaDati(TR As clsTimeRange, Optional Maschera As Func(Of Integer, Boolean) = Nothing)
     _PerFascia = Nothing
     Dim chTws = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWS)
     For i As Integer = TR.IdRigaIniziale To TR.IdRigaFinale
+      If Not Maschera Is Nothing AndAlso Not Maschera(i) Then Continue For
       Dim tws = chTws.Valori(i)
       Dim val = Canale.Valori(i)
       If Canale.DataType = clsChannel2020.eDataType.e180 Then
@@ -2073,11 +2074,23 @@ Public Class clsValoriPeriodoCanale2020
   Public Function AggiornaValori(ForzaAbsolute As Boolean) As Double()
     Dim VnotNanP As Double() = Nothing
     Dim VnotNanS As Double() = Nothing
-    Dim VnotNan As Double() = DataProvider2020.ValoriIntervallo(pCanale, pTimeRange, VnotNanP, VnotNanS, True, ForzaAbsolute)
+    Dim VnotNan As Double() = DataProvider2020.ValoriIntervallo(pCanale, pTimeRange, VnotNanP, VnotNanS, True, ForzaAbsolute, Maschera)
     Return AggiornaValori(VnotNan, VnotNanP, VnotNanS)
   End Function
 
+  ''' <summary>Filtro opzionale sulle righe (indice del campione): se impostato le statistiche usano solo le righe per cui e' True.</summary>
+  Public Property Maschera As Func(Of Integer, Boolean) = Nothing
+
+  ''' <summary>False se dopo l'ultimo AggiornaValori non c'era nessun campione valido (per esempio tutti scartati dal filtro).</summary>
+  Public ReadOnly Property HaDati As Boolean
+    Get
+      Return pHaDati
+    End Get
+  End Property
+  Dim pHaDati As Boolean = True
+
   Public Function AggiornaValori(VnotNan As Double(), VnotNanP As Double(), VnotNanS As Double()) As Double()
+    pHaDati = Not (VnotNan Is Nothing OrElse VnotNan.Count = 0)
     If pCanale.Valori Is Nothing OrElse pCanale.Valori.Count = 0 Then
       pAvg = 0
       pAvgPort = 0
@@ -2888,7 +2901,19 @@ Public Class clsDataProvider2020
   End Function
 
 
-  Public Function ValoriIntervallo(Canale As clsChannel2020, TimeRange As clsTimeRange, ByRef SoloPort As Double(), ByRef SoloStbd As Double(), SoloNotNan As Boolean, ForceAbsolute As Boolean) As Double()
+  ''' <summary>Come l'altra versione per array, ma tiene solo le righe per cui Maschera(indice) e' True (Nothing = tutte).</summary>
+  Public Function ValoriIntervallo(ArrayValori As Double(), TimeRange As clsTimeRange, Maschera As Func(Of Integer, Boolean)) As Double()
+    If Maschera Is Nothing Then Return ValoriIntervallo(ArrayValori, TimeRange)
+    Dim IndiceIniziale As Integer = VerificaNotNothing(TrovaIndice(TimeRange.Start), True)
+    Dim IndiceFinale As Integer = VerificaNotNothing(TrovaIndice(TimeRange.Finish), False)
+    Dim V As New List(Of Double)
+    For i As Integer = IndiceIniziale To IndiceFinale - 1
+      If Maschera(i) Then V.Add(ArrayValori(i))
+    Next
+    Return V.ToArray
+  End Function
+
+  Public Function ValoriIntervallo(Canale As clsChannel2020, TimeRange As clsTimeRange, ByRef SoloPort As Double(), ByRef SoloStbd As Double(), SoloNotNan As Boolean, ForceAbsolute As Boolean, Optional Maschera As Func(Of Integer, Boolean) = Nothing) As Double()
     If Canale Is Nothing Then Return Nothing
     If TimeRange Is Nothing Then Return Nothing
     If Canale.Valori Is Nothing Then Return Nothing
@@ -2907,6 +2932,7 @@ Public Class clsDataProvider2020
         Select Case Canale.DataType
           Case clsChannel2020.eDataType.eAbs180, clsChannel2020.eDataType.eAbsLinear
             For i As Integer = IndiceIniziale To IndiceFinale - 1
+              If Not Maschera Is Nothing AndAlso Not Maschera(i) Then Continue For
               Dim vl = ArrayValori(i)
               If Not Double.IsInfinity(vl) Then
                 If SoloNotNan Then
@@ -2932,6 +2958,7 @@ Public Class clsDataProvider2020
             Next
           Case Else
             For i As Integer = IndiceIniziale To IndiceFinale - 1
+              If Not Maschera Is Nothing AndAlso Not Maschera(i) Then Continue For
               Dim vl = ArrayValori(i)
               If Not Double.IsInfinity(vl) Then
                 If ForceAbsolute Then vl = System.Math.Abs(vl)

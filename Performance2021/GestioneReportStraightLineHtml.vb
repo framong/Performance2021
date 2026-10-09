@@ -32,11 +32,12 @@ Partial Public Class clsStraightLineReport
     H.AppendLine("</head><body>")
 
     H.AppendLine("<h1>" & Enc(Info.Titolo) & "</h1>")
-    Dim Minuti As Double = Info.Periodi.Sum(Function(p) p.TR.Durata.TotalMinutes)
+    Dim Minuti As Double = Info.Periodi.Sum(Function(p) MinutiPeriodo(p))
     Dim Sotto As String = Info.Periodi.Count & " periods, " & Minuti.ToString("F1") & " min"
     Dim Nome As String = NomeFileDati()
     If Nome <> "" Then Sotto &= "  |  " & Nome
     H.AppendLine("<p class=""sub"">" & Enc(Sotto) & "</p>")
+    If TestoFiltro(Info) <> "" Then H.AppendLine("<p class=""sub"" style=""color:#8b0000""><b>" & Enc(TestoFiltro(Info)) & "</b></p>")
     H.AppendLine(LegendaHtml(Info, OutputType))
 
     H.AppendLine(RiepilogoHtml(Info, Stat))
@@ -298,9 +299,9 @@ Partial Public Class clsStraightLineReport
     Sb.AppendLine("</tr>")
     Dim Alt As Boolean = False
     For Each s In Stat
-      Sb.Append("<tr" & If(Alt, " class=""alt""", "") & "><td><span class=""dot"" style=""background:" & Css(ColoreDaOutputType(s.Periodo, OutputType)) & """></span></td>")
+      Sb.Append("<tr" & If(Alt, " class=""alt""", "") & "><td><span class=""dot"" style=""background:" & Css(ColoreDaOutputType(s.Periodo, OutputType, FiltroMaschera)) & """></span></td>")
       Sb.Append("<td class=""l"">" & s.Periodo.TR.Start.ToString("HH:mm:ss") & "</td><td class=""l"">" & If(s.IsStbd, "Stbd", "Port") & "</td>")
-      Sb.Append("<td class=""n"">" & s.Periodo.TR.Durata.TotalSeconds.ToString("F0") & "</td><td class=""n"">" & Formato(s.Tws, 1) & "</td>")
+      Sb.Append("<td class=""n"">" & (s.Minuti * 60).ToString("F0") & "</td><td class=""n"">" & Formato(s.Tws, 1) & "</td>")
       Sb.Append("<td class=""n"">" & Formato(Math.Abs(s.Twa), 0) & "</td><td class=""n"">" & Formato(s.Sow, 2) & "</td><td class=""n"">" & Formato(s.Perf, 1) & "</td>")
       Sb.AppendLine("<td class=""l"">" & Enc(s.Periodo.Keys.Trim) & "</td></tr>")
       Alt = Not Alt

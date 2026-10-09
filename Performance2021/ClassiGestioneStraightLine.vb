@@ -343,7 +343,151 @@ Public Class PuntoGroupByTack
 
 End Class
 
+''' <summary>
+''' Filtro sui campioni impostato nel tab XY Plots (canale 1 e canale 2, ciascuno con minimo e/o massimo, anche in valore assoluto),
+''' riusato dai tab straight line e dai loro report quando e' attiva l'opzione "Apply XY Plots filter".
+''' </summary>
+Public Class clsFiltroCampioniXY
 
+  Private Class clsCondizione
+    Public Canale As clsChannel2020
+    Public AbsVal As Boolean
+    Public UsaMin As Boolean
+    Public UsaMax As Boolean
+    Public Min As Double
+    Public Max As Double
+  End Class
+
+  ''' <summary>
+  ''' Impostazioni XY del profilo: sono sempre quelle da usare per i tab straight line. I plot dei report XY hanno un filtro
+  ''' proprio (copia delle impostazioni del plot) che vale solo per la stampa di quel report e non deve entrare qui.
+  ''' </summary>
+  Private Shared Function Impostazioni() As clsXYPlotSettings
+    If AppConfig Is Nothing OrElse AppConfig.ActiveProfile Is Nothing Then Return Nothing
+    Return AppConfig.ActiveProfile.XYPlotSettings
+  End Function
+
+  ''' <summary>
+  ''' Aggiunge la condizione se e' attiva con un minimo e/o un massimo, come fa il tab XY Plots (casella spuntata ma senza min e max = nessun filtro).
+  ''' Se il canale non esiste nel dataset (o non ha dati) la condizione e' ignorata, come nel tab XY Plots, e finisce in Ignorate per segnalarlo.
+  ''' </summary>
+  Private Shared Sub Aggiungi(Lista As List(Of clsCondizione), Ignorate As List(Of String), Attivo As Boolean, Canale As clsChannel2020, NomeCanale As String, AbsVal As Boolean, UsaMin As Boolean, UsaMax As Boolean, Min As Double, Max As Double)
+    If Not Attivo OrElse Not (UsaMin OrElse UsaMax) Then Exit Sub
+    Dim Id As String = If(Canale Is Nothing, NomeCanale, Canale.ChannelId)
+    If String.IsNullOrWhiteSpace(Id) Then Exit Sub ' nessun canale scelto: nel tab XY Plots il filtro non si applica
+    ' il canale delle impostazioni puo' essere quello di un altro dataset: si usa quello caricato (lettura lazy, thread UI)
+    Dim Ch As clsChannel2020 = DataProvider2020.CanaleDbl(Id)
+    If Ch Is Nothing OrElse Ch.Valori Is Nothing OrElse Ch.Valori.Length = 0 Then
+      Ignorate.Add("'" & Id & "'")
+      Exit Sub
+    End If
+    Lista.Add(New clsCondizione With {.Canale = Ch, .AbsVal = AbsVal, .UsaMin = UsaMin, .UsaMax = UsaMax, .Min = Min, .Max = Max})
+  End Sub
+
+  ''' <summary>Fotografia delle condizioni attuali: valori copiati, quindi maschera e descrizione restano coerenti anche se poi si cambia il filtro.</summary>
+  Private Shared Function Condizioni(Ignorate As List(Of String)) As List(Of clsCondizione)
+    Dim Lista As New List(Of clsCondizione)
+    If DataProvider2020 Is Nothing Then Return Lista
+    Dim S As clsXYPlotSettings = Impostazioni()
+    If S Is Nothing Then Return Lista
+    Aggiungi(Lista, Ignorate, S.ApplyFilter1, S.FilterChannel, S.FilterChannelName, S.ApplyFilterAbsVal, S.ApplyFilterMin, S.ApplyFilterMax, S.FilterValueMin, S.FilterValueMax)
+    Aggiungi(Lista, Ignorate, S.ApplyFilter2, S.Filter2Channel, S.Filter2ChannelName, S.ApplyFilter2AbsVal, S.ApplyFilter2Min, S.ApplyFilter2Max, S.Filter2ValueMin, S.Filter2ValueMax)
+    Return Lista
+  End Function
+
+  ''' <summary>
+  ''' Funzione che dice se il campione (indice di riga) passa il filtro, con le stesse regole del tab XY Plots: valore NaN = scartato,
+  ''' eventuale valore assoluto, minimo e massimo inclusi, le due condizioni in AND. Nothing se non c'e' nessun filtro attivo.
+  ''' Descrizione e' costruita dalla stessa fotografia delle impostazioni.
+  ''' </summary>
+  Public Shared Function Crea(ByRef Descrizione As String, Optional ByRef Firma As String = Nothing) As Func(Of Integer, Boolean)
+    Dim Ignorate As New List(Of String)
+    Dim C As List(Of clsCondizione) = Condizioni(Ignorate)
+    Descrizione = Descrivi(C, Ignorate)
+    Firma = String.Join("|", C.Select(Function(x) x.Canale.ChannelId & ";" & x.AbsVal & ";" & x.UsaMin & ";" & x.UsaMax & ";" &
+                                                  x.Min.ToString("R", Globalization.CultureInfo.InvariantCulture) & ";" &
+                                                  x.Max.ToString("R", Globalization.CultureInfo.InvariantCulture))) &
+            "#" & String.Join(",", Ignorate)
+    If C.Count = 0 Then Return Nothing
+    Dim Cond As clsCondizione() = C.ToArray
+    Dim Vals As Double()() = Cond.Select(Function(x) x.Canale.Valori).ToArray
+    Return Function(i As Integer) As Boolean
+             For k As Integer = 0 To Cond.Length - 1
+               If i < 0 OrElse i >= Vals(k).Length Then Return False
+               If Not ValoreValido(Vals(k)(i), Cond(k).AbsVal, Cond(k).UsaMin, Cond(k).UsaMax, Cond(k).Min, Cond(k).Max) Then Return False
+             Next
+             Return True
+           End Function
+  End Function
+
+  ''' <summary>
+  ''' La regola del filtro XY su un singolo valore, unica per tutta l'applicazione: la usano il tab XY Plots (refresh, show e stampa
+  ''' dei report XY, ciascuno con le sue impostazioni) e i tab straight line. NaN = scartato; eventuale valore assoluto;
+  ''' minimo e massimo inclusi.
+  ''' </summary>
+  Public Shared Function ValoreValido(Valore As Double, AbsVal As Boolean, UsaMin As Boolean, UsaMax As Boolean, Min As Double, Max As Double) As Boolean
+    If Double.IsNaN(Valore) Then Return False
+    If AbsVal Then Valore = System.Math.Abs(Valore)
+    If UsaMin AndAlso Valore < Min Then Return False
+    If UsaMax AndAlso Valore > Max Then Return False
+    Return True
+  End Function
+
+  ''' <summary>Descrizione del filtro impostato in questo momento nel tab XY Plots.</summary>
+  Public Shared Function Descrizione() As String
+    Dim D As String = ""
+    Crea(D)
+    Return D
+  End Function
+
+  ''' <summary>Firma esatta del filtro impostato in questo momento (valori non arrotondati): serve a capire se e' cambiato.</summary>
+  Public Shared Function Firma() As String
+    Dim D As String = ""
+    Dim F As String = ""
+    Crea(D, F)
+    Return F
+  End Function
+
+  Private Shared Function Testo(C As clsCondizione) As String
+    Dim F As String = "F" & System.Math.Max(0, C.Canale.Decimals).ToString
+    Dim T As String = If(C.AbsVal, "abs value of ", "") & "'" & C.Canale.ShortName & "' "
+    If C.UsaMin AndAlso C.UsaMax Then
+      Return T & "between " & C.Min.ToString(F) & " and " & C.Max.ToString(F)
+    ElseIf C.UsaMin Then
+      Return T & ">= " & C.Min.ToString(F)
+    End If
+    Return T & "<= " & C.Max.ToString(F)
+  End Function
+
+  Private Shared Function Descrivi(C As List(Of clsCondizione), Ignorate As List(Of String)) As String
+    Dim D As String
+    If C.Count = 0 Then
+      D = "No XY Plots filter is set in the profile: all the samples are used."
+    Else
+      D = "XY Plots filter (profile): only the samples with " & String.Join(" and ", C.Select(Function(x) Testo(x))) & "."
+    End If
+    If Ignorate.Count > 0 Then D &= " Ignored (channel not available in this dataset): " & String.Join(", ", Ignorate) & "."
+    Return D
+  End Function
+
+  ''' <summary>
+  ''' Minuti del periodo che passano il filtro: durata del periodo per la frazione di righe valide (senza filtro = durata intera).
+  ''' Usati al posto della durata nei grafici "Minutes" e nei report, cosi' i minuti sono coerenti con i campioni usati.
+  ''' </summary>
+  Public Shared Function MinutiValidi(TR As clsTimeRange, Msk As Func(Of Integer, Boolean)) As Double
+    Dim Durata As Double = TR.Durata.TotalMinutes
+    If Msk Is Nothing Then Return Durata
+    Dim i0 As Integer = TR.IdRigaIniziale
+    Dim i1 As Integer = TR.IdRigaFinale
+    If i1 < i0 Then Return 0
+    Dim Validi As Integer = 0
+    For i As Integer = i0 To i1
+      If Msk(i) Then Validi += 1
+    Next
+    Return Durata * Validi / (i1 - i0 + 1)
+  End Function
+
+End Class
 
 Public Class clsStraightLineStandardPlotViewModelXY
   Inherits clsStraightLineStandardPlotViewModel
@@ -390,6 +534,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
     Dim AtLeastOneUp As Boolean = False
     Dim AtLeastOneDn As Boolean = False
     Dim TL As New clsTrendLines
+    Dim Msk As Func(Of Integer, Boolean) = Maschera()
 
     ' --- strumentazione temporanea: separa il costo delle statistiche da quello
     '     della creazione degli oggetti grafici (una serie per periodo)
@@ -480,8 +625,10 @@ Public Class clsStraightLineStandardPlotViewModelXY
             LineaTmp.PointMarker.Stroke = ColoreDaOutputType(Period, OutputType)
             LineaTmp.PointMarker.Fill = ColoreDaOutputType(Period, OutputType)
           Case clsStraightLineVM2020.eOutputType.eColorByVmgTgtPerc, clsStraightLineVM2020.eOutputType.eColorByBsPolarPerc
-            LineaTmp.PointMarker.Stroke = ColoreDaOutputType(Period, OutputType)
-            LineaTmp.PointMarker.Fill = ColoreDaOutputType(Period, OutputType)
+            ' con il filtro XY il colore viene dalla performance dei soli campioni filtrati, come la posizione del punto
+            Dim ColorePerf As System.Windows.Media.Color = ColoreDaOutputType(Period, OutputType, Msk)
+            LineaTmp.PointMarker.Stroke = ColorePerf
+            LineaTmp.PointMarker.Fill = ColorePerf
           Case Else
             LineaTmp.PointMarker.Stroke = Period.Colore
             LineaTmp.PointMarker.Fill = Period.Colore
@@ -499,13 +646,16 @@ Public Class clsStraightLineStandardPlotViewModelXY
 
         TmrX = Now
         Dim MedieAscissa As New clsValoriPeriodoCanale2020(CanaleAscissa, Period.TR, CanaleAscissa.DataType = clsChannel2020.eDataType.e180)
+        MedieAscissa.Maschera = Msk
         MedieAscissa.AggiornaValori(CanaleAscissa.DataType = clsChannel2020.eDataType.e180)
         Dim MedieOrdinata As New clsValoriPeriodoCanale2020(Canale, Period.TR, Canale.DataType = clsChannel2020.eDataType.e180)
+        MedieOrdinata.Maschera = Msk
         MedieOrdinata.AggiornaValori(CanaleAscissa.DataType = clsChannel2020.eDataType.e180)
         MsStat += Now.Subtract(TmrX).TotalMilliseconds
+        ' con il filtro XY attivo un periodo senza campioni validi non ha punto
+        If Not Msk Is Nothing AndAlso Not (MedieAscissa.HaDati AndAlso MedieOrdinata.HaDati) Then Continue For
         NPeriodi += 1
         Dim X As Double = MedieAscissa.Avg
-        If X = 0 Then Stop
         Dim Y As Double = MedieOrdinata.Avg
 
         If MinX = Nothing Then
@@ -519,7 +669,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
           MaxX = System.Math.Max(MaxX, X)
         End If
         If CanaleOrdinata Is CanaleAscissa Then
-          Y = Period.TR.Durata.TotalMinutes
+          Y = clsFiltroCampioniXY.MinutiValidi(Period.TR, Msk) ' con il filtro XY: solo i minuti che lo passano
           TitoloPlot = "Minutes"
         End If
         If OutputType = clsStraightLineVM2020.eOutputType.eColorByKey Then
@@ -628,6 +778,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
     If CanaleAscissa Is Nothing Then Exit Sub
     If CanaleOrdinata Is Nothing Then Exit Sub
     Dim GBT As New List(Of PuntoGroupByTack)
+    Dim Msk As Func(Of Integer, Boolean) = Maschera()
 
     If CanaleOrdinata Is CanaleAscissa Then
       TitoloPlot = "Minutes"
@@ -638,10 +789,12 @@ Public Class clsStraightLineStandardPlotViewModelXY
       If Period.IsChecked Then
         AtLeastOneUp = AtLeastOneUp OrElse (Period.IsChecked AndAlso Period.IsUpwindVmgRange)
         AtLeastOneDn = AtLeastOneDn OrElse (Period.IsChecked AndAlso Period.IsDownwindVmgRange)
+        Dim MinutiPeriodo As Double = clsFiltroCampioniXY.MinutiValidi(Period.TR, Msk)
         For i As Integer = Period.TR.IdRigaIniziale To Period.TR.IdRigaFinale
+          If Not Msk Is Nothing AndAlso Not Msk(i) Then Continue For
           If Not Double.IsNaN(CanaleOrdinata.Valori(i)) Then
             If CanaleOrdinata Is CanaleAscissa Then
-              GBT.Add(New PuntoGroupByTack(CanaleAscissa.Valori(i), Period.TR.Durata.TotalMinutes, Period.IsStbd, Math.Abs(Period.AvgTwa) < 90))
+              GBT.Add(New PuntoGroupByTack(CanaleAscissa.Valori(i), MinutiPeriodo, Period.IsStbd, Math.Abs(Period.AvgTwa) < 90))
             Else
               Dim y = CanaleOrdinata.Valori(i)
               Select Case CanaleOrdinata.DataType
@@ -743,6 +896,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
       End If
     Next
 
+    If TwsVals.Count = 0 Then Exit Sub ' nessun campione (per esempio tutti scartati dal filtro XY)
     If ParentVM.PlotTargetsIfAvailable Then DisegnaTarget(CanaleOrdinata.PolarHeader, AtLeastOneUp, AtLeastOneDn, TwsVals.Min, TwsVals.Max)
     Dim TwsRange As New DoubleRange(Int(TwsVals.Min), Int(TwsVals.Max + 0.5) + 1)
     StraightLineChartSync.SharedXVisibleRange = TwsRange
@@ -764,6 +918,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
     Dim TwsStbd As New List(Of Double)
     Dim ValsPort As New List(Of Double)
     Dim ValsStbd As New List(Of Double)
+    Dim Msk As Func(Of Integer, Boolean) = Maschera()
 
     Dim GBT As New List(Of PuntoGroupByTack)
 
@@ -774,14 +929,16 @@ Public Class clsStraightLineStandardPlotViewModelXY
     Dim AtLeastOneDn As Boolean = False
     For Each Period In StraightLines ' PeriodsManager.ListaStraightLineVmg
       If Period.IsChecked Then
+        Dim MinutiPeriodo As Double = clsFiltroCampioniXY.MinutiValidi(Period.TR, Msk)
+        If Not Msk Is Nothing AndAlso MinutiPeriodo <= 0 Then Continue For ' nessun campione passa il filtro XY
         AtLeastOneUp = AtLeastOneUp OrElse (Period.IsChecked AndAlso Period.StraightLineVmgDetails.IsTWAinRange(New clsDoubleRange(60, 30)))
         AtLeastOneDn = AtLeastOneDn OrElse (Period.IsChecked AndAlso Period.StraightLineVmgDetails.IsTWAinRange(New clsDoubleRange(160, 120)))
         If Period.IsStbd Then
-          TwsStbd.AddRange(DataProvider2020.ValoriIntervallo(CanaleAscissa.Valori, Period.TR))
+          TwsStbd.AddRange(DataProvider2020.ValoriIntervallo(CanaleAscissa.Valori, Period.TR, Msk))
           If CanaleOrdinata Is CanaleAscissa Then
-            ValsStbd.Add(Period.TR.Durata.TotalMinutes)
+            ValsStbd.Add(MinutiPeriodo)
           Else
-            Dim Rtmp As List(Of Double) = DataProvider2020.ValoriIntervallo(CanaleOrdinata.Valori, Period.TR).ToList
+            Dim Rtmp As List(Of Double) = DataProvider2020.ValoriIntervallo(CanaleOrdinata.Valori, Period.TR, Msk).ToList
             If CanaleOrdinata.DataType = clsChannel2020.eDataType.e180 Then
               ValsStbd.AddRange(Rtmp.Select(Function(x) System.Math.Abs(x)).ToList)
             Else
@@ -789,11 +946,11 @@ Public Class clsStraightLineStandardPlotViewModelXY
             End If
           End If
         Else
-          TwsPort.AddRange(DataProvider2020.ValoriIntervallo(CanaleAscissa.Valori, Period.TR))
+          TwsPort.AddRange(DataProvider2020.ValoriIntervallo(CanaleAscissa.Valori, Period.TR, Msk))
           If CanaleOrdinata Is CanaleAscissa Then
-            ValsPort.Add(Period.TR.Durata.TotalMinutes)
+            ValsPort.Add(MinutiPeriodo)
           Else
-            Dim Rtmp As List(Of Double) = DataProvider2020.ValoriIntervallo(CanaleOrdinata.Valori, Period.TR).ToList
+            Dim Rtmp As List(Of Double) = DataProvider2020.ValoriIntervallo(CanaleOrdinata.Valori, Period.TR, Msk).ToList
             If CanaleOrdinata.DataType = clsChannel2020.eDataType.e180 Then
               ValsPort.AddRange(Rtmp.Select(Function(x) System.Math.Abs(x)).ToList)
             Else
@@ -898,6 +1055,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
     Dim contatore As Integer = 0
     Dim AtLeastOneUp As Boolean = False
     Dim AtLeastOneDn As Boolean = False
+    Dim Msk As Func(Of Integer, Boolean) = Maschera()
 
     For Each Period In StraightLines
       If Period.IsChecked Then
@@ -946,7 +1104,9 @@ Public Class clsStraightLineStandardPlotViewModelXY
           Canale = CanaleOpposite
         End If
 
+        Dim MinutiPeriodo As Double = clsFiltroCampioniXY.MinutiValidi(Period.TR, Msk)
         For i As Integer = Period.TR.IdRigaIniziale To Period.TR.IdRigaFinale
+          If Not Msk Is Nothing AndAlso Not Msk(i) Then Continue For
           Dim x As Double = CanaleAscissa.Valori(i)
           Dim y As Double = Canale.Valori(i)
           Select Case Canale.DataType
@@ -954,7 +1114,7 @@ Public Class clsStraightLineStandardPlotViewModelXY
               y = System.Math.Abs(Canale.Valori(i))
           End Select
           If CanaleAscissa.ChannelId = CanaleOrdinata.ChannelId Then
-            y = Period.TR.Durata.TotalMinutes
+            y = MinutiPeriodo
           End If
 
           If Gruppi.ContainsKey(Chiave) Then
@@ -1058,7 +1218,9 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
     End If
 
     Dim ValoriStat As New clsValoriPeriodoCanale2020(Canale, Period.TR, False)
+    ValoriStat.Maschera = Maschera()
     Dim VNN As Double() = ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180)
+    If Not ValoriStat.Maschera Is Nothing AndAlso Not ValoriStat.HaDati Then Exit Sub ' tutti i campioni scartati dal filtro XY
     Dim e As Integer = Canale.Decimals - 1
     Dim MaxVal As Double = ValoriStat.Max
     Dim MinVal As Double = ValoriStat.Min
@@ -1096,7 +1258,6 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
       Case clsStraightLineVM2020.eOutputType.eColorByKey
         LineaTmp.Stroke = ColoreDaOutputType(Period, OutputType)
       Case clsStraightLineVM2020.eOutputType.eColorByVmgTgtPerc, clsStraightLineVM2020.eOutputType.eColorByBsPolarPerc
-        Stop
         LineaTmp.Stroke = Period.Colore
       Case Else
         LineaTmp.Stroke = Period.Colore
@@ -1142,9 +1303,11 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
 
     Dim AtLeastOneUp As Boolean = False
     Dim AtLeastOneDn As Boolean = False
+    Dim Msk As Func(Of Integer, Boolean) = Maschera()
     For Each Period In StraightLines ' PeriodsManager.ListaStraightLineVmg
       If Period.IsChecked Then
         For i As Integer = Period.TR.IdRigaIniziale To Period.TR.IdRigaFinale
+          If Not Msk Is Nothing AndAlso Not Msk(i) Then Continue For
           If Not Double.IsNaN(CanaleAscissa.Valori(i)) Then
             Dim y = CanaleAscissa.Valori(i)
             Select Case CanaleAscissa.DataType
@@ -1390,10 +1553,13 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
 
 
         Dim ValoriStat As New clsValoriPeriodoCanale2020(Canale, Period.TR, False)
+        ValoriStat.Maschera = Maschera()
+        Dim ValoriPeriodo As Double() = ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180)
+        If Not ValoriStat.Maschera Is Nothing AndAlso Not ValoriStat.HaDati Then Continue For ' tutti scartati dal filtro XY
         If Period.IsStbd Then
-          ValsNotNanStbd.Add(ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180))
+          ValsNotNanStbd.Add(ValoriPeriodo)
         Else
-          ValsNotNanPort.Add(ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180))
+          ValsNotNanPort.Add(ValoriPeriodo)
         End If
         If PnSmax = Nothing Then
           PnSmax = ValoriStat.Max
@@ -1561,7 +1727,10 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
 
 
       Dim ValoriStat As New clsValoriPeriodoCanale2020(Canale, Period.TR, False)
-      ValsNotNan.Add(Period, ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180))
+      ValoriStat.Maschera = Maschera()
+      Dim ValoriPeriodo As Double() = ValoriStat.AggiornaValori(Canale.DataType = clsChannel2020.eDataType.e180)
+      If Not ValoriStat.Maschera Is Nothing AndAlso Not ValoriStat.HaDati Then Continue For ' tutti scartati dal filtro XY
+      ValsNotNan.Add(Period, ValoriPeriodo)
       If PnSmax = Nothing Then
         PnSmax = ValoriStat.Max
         PnSmin = ValoriStat.Min
@@ -1689,7 +1858,9 @@ Public Class clsStraightLineStandardPlotViewModelDistributions
           End If
 
 
+          Dim Msk As Func(Of Integer, Boolean) = Maschera()
           For i As Integer = periodo.TR.IdRigaIniziale To periodo.TR.IdRigaFinale
+            If Not Msk Is Nothing AndAlso Not Msk(i) Then Continue For
             Dim x As Double = Canale.Valori(i)
             Select Case Canale.DataType
               Case clsChannel2020.eDataType.e180, clsChannel2020.eDataType.eAbs180, clsChannel2020.eDataType.eAbsLinear
@@ -1799,6 +1970,12 @@ Public MustInherit Class clsStraightLineStandardPlotViewModel
     Me.StraightLineChartSync = ChartSync
     Me.ParentVM = ParentVM
   End Sub
+
+  ''' <summary>Filtro sui campioni del tab XY Plots (Nothing = nessun filtro: opzione spenta o filtro non impostato).</summary>
+  Protected Function Maschera() As Func(Of Integer, Boolean)
+    If ParentVM Is Nothing Then Return Nothing
+    Return ParentVM.MascheraFiltro()
+  End Function
 
   Public MustOverride Sub DrawChart(StraightLines As List(Of clsPeriod2021), OutputType As clsStraightLineVM2020.eOutputType)
 

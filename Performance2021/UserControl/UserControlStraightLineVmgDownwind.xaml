@@ -168,6 +168,11 @@
               <CheckBox Margin="14,0,0,0" Content="Create table csv" IsChecked="{Binding ReportOptions.CreateTableCsv, Mode=TwoWay}" ToolTip="Also create a csv file with the full data table, next to the pdf" Click="ReportOption_Click"></CheckBox>
             </MenuItem.Header>
           </MenuItem>
+          <MenuItem StaysOpenOnClick="True">
+            <MenuItem.Header>
+              <CheckBox Margin="14,0,0,0" Content="Apply XY Plots filter" IsChecked="{Binding ReportOptions.ApplyXyFilter, Mode=TwoWay}" ToolTip="Charts, tables and reports use only the samples that pass the filter set in the XY Plots tab" ToolTipOpening="XyFilter_ToolTipOpening" Click="ApplyXyFilter_Click"></CheckBox>
+            </MenuItem.Header>
+          </MenuItem>
           <MenuItem>
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal" Margin="14,0,0,0" ToolTip="Min and Max of the values in the reports (tables) are the percentiles at the ends of this central band: 90 = P5 and P95, 100 = true min and max. The charts always show everything.">

@@ -76,7 +76,6 @@ Public Class UserControlStraightLine
   End Sub
 
   Private Sub SeriesSelectionModifier_SelectionChanged(sender As Object, e As EventArgs)
-    Stop
     Dim Selezione As ObjectModel.ObservableCollection(Of SciChart.Charting.Visuals.RenderableSeries.IRenderableSeries) = DirectCast(DirectCast(sender, SciChart.Charting.ChartModifiers.SeriesSelectionModifier).ParentSurface.SelectedRenderableSeries, ObjectModel.ObservableCollection(Of SciChart.Charting.Visuals.RenderableSeries.IRenderableSeries))
     StraightLineVM2020.AggiornaControlli(Me, Selezione)
   End Sub
@@ -1079,6 +1078,56 @@ Public Class clsStraightLineVM2020
     End Get
   End Property
 
+  ' filtro XY applicato ai grafici a video: una sola fotografia per disegno, riusata da tutti i grafici e dal report
+  Dim _Maschera As Func(Of Integer, Boolean) = Nothing
+  Dim _MascheraPronta As Boolean = False
+  Dim _MascheraProvider As clsDataProvider2020 = Nothing
+  Dim _DescrizioneFiltro As String = ""
+  Dim _FirmaFiltro As String = ""
+
+  ''' <summary>
+  ''' Filtro sui campioni del tab XY Plots, se l'opzione del tab e' attiva e nel tab XY Plots c'e' un filtro impostato (altrimenti Nothing).
+  ''' Si fotografa una volta per disegno (AggiornaGrafici azzera la fotografia): tutti i grafici e il report usano la stessa,
+  ''' quindi cambiare il filtro nel tab XY Plots ha effetto solo dopo un Refresh.
+  ''' </summary>
+  Public Function MascheraFiltro() As Func(Of Integer, Boolean)
+    If Not _MascheraPronta OrElse Not _MascheraProvider Is DataProvider2020 Then
+      Dim Descr As String = ""
+      Dim Firma As String = ""
+      _Maschera = If(ReportOptions.ApplyXyFilter, clsFiltroCampioniXY.Crea(Descr, Firma), Nothing)
+      _DescrizioneFiltro = If(ReportOptions.ApplyXyFilter, Descr, "")
+      _FirmaFiltro = If(ReportOptions.ApplyXyFilter, Firma, "")
+      _MascheraProvider = DataProvider2020
+      _MascheraPronta = True
+    End If
+    Return _Maschera
+  End Function
+
+  ''' <summary>Descrizione del filtro applicato ai grafici a video (vuota con l'opzione spenta): e' quella da scrivere nel report.</summary>
+  Public Function DescrizioneFiltroApplicato() As String
+    MascheraFiltro()
+    Return _DescrizioneFiltro
+  End Function
+
+  ''' <summary>True se l'opzione e' attiva e il filtro del tab XY Plots e' cambiato rispetto a quello applicato ai grafici a video.</summary>
+  Public Function FiltroXyCambiato() As Boolean
+    If Not ReportOptions.ApplyXyFilter Then Return False
+    MascheraFiltro()
+    Return Not _FirmaFiltro = clsFiltroCampioniXY.Firma()
+  End Function
+
+  ''' <summary>Testo del tooltip dell'opzione "Apply XY Plots filter": cosa e' applicato ora e se il tab XY Plots e' cambiato.</summary>
+  Public Function TestoToolTipFiltroXy() As String
+    Dim T As String = "Charts, tables and reports of this tab use only the samples that pass the XY Plots filter of the profile" & vbCrLf &
+                      "(not the filter of an XY report plot, which is used only to print that report)." & vbCrLf &
+                      "Periods with no sample passing the filter are left out; durations count only the samples that pass." & vbCrLf &
+                      "The XY track per minute and the period list are not filtered." & vbCrLf & vbCrLf
+    If Not ReportOptions.ApplyXyFilter Then Return T & "Off. XY Plots filter of the profile now: " & clsFiltroCampioniXY.Descrizione()
+    T &= "Applied to the charts on screen: " & DescrizioneFiltroApplicato()
+    If FiltroXyCambiato() Then T &= vbCrLf & vbCrLf & "The XY Plots filter of the profile has changed since, click Refresh to apply it: " & clsFiltroCampioniXY.Descrizione()
+    Return T
+  End Function
+
   ''' <summary>
   ''' Conta i grafici del report (medie per Tws e distribuzioni) e quanti contengono dati.
   ''' False se la struttura non e' ancora completa (contenitori vuoti o plot non ancora creati).
@@ -1205,6 +1254,14 @@ Public Class clsStraightLineVM2020
       MsgBox("No channel is enabled for the report: tick 'Choose pdf/html reports channels' and select at least one.", MsgBoxStyle.Exclamation, "Straight Line report")
       Exit Function
     End If
+    ' il report usa lo stesso filtro dei grafici a video: se nel frattempo il filtro XY e' cambiato lo si dice
+    If FiltroXyCambiato() Then
+      If MsgBox("The XY Plots filter of the profile has changed since the charts were drawn." & vbCrLf & vbCrLf &
+                "The report will use the filter applied to the charts on screen:" & vbCrLf & DescrizioneFiltroApplicato() & vbCrLf & vbCrLf &
+                "XY Plots filter of the profile now:" & vbCrLf & clsFiltroCampioniXY.Descrizione() & vbCrLf & vbCrLf &
+                "Continue? (No: click Refresh to apply the new filter, then make the report again)",
+                MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation, "Straight Line report") <> MsgBoxResult.Yes Then Exit Function
+    End If
 
     ' finestra di avanzamento: la creazione gira sul thread UI e puo' durare minuti con molti dati
     Dim Av As New FinestraAvanzamento(If(Html, "Creating the html report", "Creating the pdf report"))
@@ -1237,6 +1294,9 @@ Public Class clsStraightLineVM2020
       End If
       Av.Fase("Preparing the report", 5, 5)
       Av.Passo(0, 0, "")
+      ' stesso filtro dei grafici a video
+      clsStraightLineReport.FiltroMaschera = MascheraFiltro()
+      clsStraightLineReport.FiltroDescrizione = DescrizioneFiltroApplicato()
 
       If Html Then
         Dim Report As New clsStraightLineReport
@@ -1248,6 +1308,9 @@ Public Class clsStraightLineVM2020
     Catch ex As OperationCanceledException
       ' annullato dall'utente: niente file (pdf e html si scrivono solo alla fine)
     Finally
+      ' la maschera tiene i canali del dataset: non deve restare nei campi condivisi dopo il report
+      clsStraightLineReport.FiltroMaschera = Nothing
+      clsStraightLineReport.FiltroDescrizione = ""
       Av.Close()
     End Try
   End Function
@@ -1472,6 +1535,7 @@ Public Class clsStraightLineVM2020
 
   Public Sub AggiornaGrafici()
     Dim TmrAG As DateTime = Now
+    _MascheraPronta = False ' rilegge opzione e filtro del tab XY Plots
     If RicaricaListaCanali() Then AggiornaCanali()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " AG.1 - RicaricaListaCanali/AggiornaCanali " & Now.Subtract(TmrAG).TotalMilliseconds.ToString("F0") & " ms")
     ' vengono aggiornati i grafici
