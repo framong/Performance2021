@@ -909,7 +909,20 @@ Public Class clsGestioneMapsui
     If Alto - Basso < 0.01 Then Alto = Basso + 0.01
   End Sub
 
-  ''' <summary>Valori da mappare in colore per il modo scelto (Nothing = andatura o dato non disponibile) e relativa legenda.</summary>
+  ''' <summary>Porzione dell'array compresa nei limiti della traccia disegnata (tutto il file o solo il periodo visualizzato).</summary>
+  Private Function PorzioneTraccia(v As Double()) As Double()
+    Dim iDa As Integer, iA As Integer
+    LimitiTraccia(iDa, iA)
+    If iDa = 0 AndAlso iA = v.Length - 1 Then Return v
+    iA = System.Math.Min(iA, v.Length - 1)
+    If iA < iDa Then Return New Double() {}
+    Dim p As Double() = New Double(iA - iDa) {}
+    Array.Copy(v, iDa, p, 0, p.Length)
+    Return p
+  End Function
+
+  ''' <summary>Valori da mappare in colore per il modo scelto (Nothing = andatura o dato non disponibile) e relativa legenda.
+  ''' Scala, percentili e media Twd sono calcolati solo sui campioni della traccia disegnata (con Sel il solo periodo visualizzato).</summary>
   Private Function PreparaValoriColore() As Double()
     LegendaTesto = ""
     LegendaColori = New List(Of Color)
@@ -931,21 +944,21 @@ Public Class clsGestioneMapsui
         v = ValoriCanale(clsChannels2020.eCanaliChiave.eCurrRateRec)
         _RampTipo = 0
         If v IsNot Nothing Then
-          PercentiliValidi(v, _RampMin, _RampMax)
+          PercentiliValidi(PorzioneTraccia(v), _RampMin, _RampMax)
           Testo = _RampMin.ToString("F2") & " → " & _RampMax.ToString("F2") & " kts current"
         End If
       Case 4
         v = ValoriCanale(clsChannels2020.eCanaliChiave.eTWS)
         _RampTipo = 0
         If v IsNot Nothing Then
-          PercentiliValidi(v, _RampMin, _RampMax)
+          PercentiliValidi(PorzioneTraccia(v), _RampMin, _RampMax)
           Testo = _RampMin.ToString("F1") & " → " & _RampMax.ToString("F1") & " kts Tws"
         End If
       Case 5
         Dim twd = ValoriCanale(clsChannels2020.eCanaliChiave.eTWD)
         If twd IsNot Nothing Then
           Dim ss As Double = 0, cc As Double = 0
-          For Each x In twd
+          For Each x In PorzioneTraccia(twd)
             If Not Double.IsNaN(x) Then
               ss += System.Math.Sin(Radians(x))
               cc += System.Math.Cos(Radians(x))
@@ -958,7 +971,7 @@ Public Class clsGestioneMapsui
             v(i) = If(Double.IsNaN(twd(i)), Double.NaN, DifferenzaTraAngoli360_PositivoSeSecondoADestraDelPrimo(_MediaTwd, twd(i)))
           Next
           Dim Basso, Alto As Double
-          PercentiliValidi(v.Select(Function(x) System.Math.Abs(x)).ToArray, Basso, Alto)
+          PercentiliValidi(PorzioneTraccia(v).Select(Function(x) System.Math.Abs(x)).ToArray, Basso, Alto)
           Dim R As Double = System.Math.Max(5, System.Math.Ceiling(Alto))
           _RampTipo = 2 : _RampMin = -R : _RampMax = R
           Testo = "-" & R.ToString("F0") & "° ← " & _MediaTwd.ToString("F0") & "° → +" & R.ToString("F0") & "° Twd"
