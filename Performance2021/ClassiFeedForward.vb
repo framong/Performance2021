@@ -106,6 +106,38 @@ Public Class clsFfFascia
   Public Property Messaggio As String = ""
 End Class
 
+''' <summary>Esito del test lead-lag tra un canale Y e X.</summary>
+Public Enum eFfLeadLag
+  ''' <summary>Nessuna relazione significativa tra le variazioni.</summary>
+  Indefinito = 0
+  ''' <summary>Y cambia prima e X segue: compatibile con Y che produce la prestazione.</summary>
+  Precede = 1
+  ''' <summary>X cambia prima e Y segue: l'equipaggio reagisce alla prestazione.</summary>
+  Segue = 2
+  ''' <summary>Cambiano insieme: non si puo' dire chi venga prima.</summary>
+  Insieme = 3
+  ''' <summary>Picchi simili prima e dopo: entrambe le cose.</summary>
+  Misto = 4
+End Enum
+
+''' <summary>Risultato del test lead-lag: correlazione delle variazioni di Y con quelle di X spostate nel tempo.</summary>
+Public Class clsFfLeadLag
+  ''' <summary>Ritardi in secondi: positivo = la variazione di X viene dopo quella di Y.</summary>
+  Public Property Lag As New List(Of Double)
+  Public Property R As New List(Of Double)
+  Public Property LagMigliore As Double = Double.NaN
+  Public Property RMigliore As Double = Double.NaN
+  ''' <summary>Correlazione piu' forte dall'altra parte dello zero (per riconoscere i casi misti).</summary>
+  Public Property ROpposto As Double = Double.NaN
+  ''' <summary>Coppie di variazioni usate a ritardo zero e soglia di significativita' (2/sqrt(coppie indipendenti)).</summary>
+  Public Property Coppie As Integer
+  Public Property Soglia As Double = Double.NaN
+  ''' <summary>Passo dei ritardi in secondi (serie ricampionate a circa mezzo secondo).</summary>
+  Public Property Passo As Double
+  Public Property Esito As eFfLeadLag = eFfLeadLag.Indefinito
+  Public Property Messaggio As String = ""
+End Class
+
 ''' <summary>
 ''' Motore del report feed forward. Per ogni fascia di vento: i campioni validi sono divisi in bin della variabile X da ottimizzare,
 ''' di ogni bin si calcola la media di Y, poi un modello (retta, parabola o curva monotona) sulle medie dei bin, pesate per il numero di campioni,
@@ -494,6 +526,201 @@ Public Class clsFeedForward
       F.CurvaY.Add(yOpt)
     End If
   End Sub
+
+  ' ---------------------------------------------------------------- lead-lag
+
+  ''' <summary>
+  ''' Test lead-lag: le variazioni di Y vengono prima o dopo quelle di X?
+  ''' Si usano le righe della sorgente che passano il filtro e stanno nel range delle fasce (TwsMin-TwsMax), con qualsiasi valore di X
+  ''' (le reazioni dell'equipaggio avvengono proprio quando la barca rallenta). Le righe consecutive senza buchi di tempo formano i tratti;
+  ''' in ogni tratto le serie sono ricampionate a circa 0.5 s (medie a blocchi), lisciate con una media mobile di LisciaS secondi e
+  ''' trasformate in variazioni su LisciaS secondi. Poi r(lag) = correlazione tra la variazione di Y al tempo t e quella di X al tempo t + lag,
+  ''' sulle coppie dello stesso tratto, per lag da -MaxLagS a +MaxLagS. Lag positivo = X cambia dopo Y.
+  ''' Tempi = secondi di ogni riga (stessa indicizzazione dei canali).
+  ''' </summary>
+  Public Shared Function LeadLag(X() As Double, Y() As Double, Tws() As Double, Tempi() As Double, Righe As IEnumerable(Of Integer),
+                                 Maschera As Func(Of Integer, Boolean), P As clsFfParametri, MaxLagS As Double, LisciaS As Double) As clsFfLeadLag
+    Dim Ris As New clsFfLeadLag
+    If X Is Nothing OrElse Y Is Nothing OrElse Tws Is Nothing OrElse Tempi Is Nothing OrElse Righe Is Nothing OrElse P Is Nothing Then
+      Ris.Messaggio = "No data"
+      Return Ris
+    End If
+    Dim n As Integer = System.Math.Min(System.Math.Min(X.Length, Y.Length), System.Math.Min(Tws.Length, Tempi.Length))
+
+    ' righe valide, in ordine
+    Dim Val As New List(Of Integer)
+    For Each i As Integer In Righe.Where(Function(q) q >= 0 AndAlso q < n).Distinct.OrderBy(Function(q) q)
+      If Double.IsNaN(X(i)) OrElse Double.IsNaN(Y(i)) OrElse Double.IsNaN(Tws(i)) OrElse Double.IsNaN(Tempi(i)) Then Continue For
+      If Tws(i) < P.TwsMin OrElse Tws(i) >= P.TwsMax Then Continue For
+      If Maschera IsNot Nothing AndAlso Not Maschera(i) Then Continue For
+      Val.Add(i)
+    Next
+    If Val.Count < 60 Then
+      Ris.Messaggio = "Not enough samples (" & Val.Count & ")"
+      Return Ris
+    End If
+
+    ' passo di campionamento: mediana delle differenze di tempo tra righe consecutive
+    Dim Dts As New List(Of Double)
+    For k As Integer = 1 To Val.Count - 1
+      If Val(k) = Val(k - 1) + 1 Then
+        Dim d As Double = Tempi(Val(k)) - Tempi(Val(k - 1))
+        If d > 0 Then Dts.Add(d)
+      End If
+    Next
+    If Dts.Count < 30 Then
+      Ris.Messaggio = "Not enough consecutive samples"
+      Return Ris
+    End If
+    Dts.Sort()
+    Dim Dt As Double = Dts(Dts.Count \ 2)
+
+    ' tratti continui
+    Dim Tratti As New List(Of List(Of Integer))
+    Dim Corrente As New List(Of Integer) From {Val(0)}
+    For k As Integer = 1 To Val.Count - 1
+      Dim Continuo As Boolean = Val(k) = Val(k - 1) + 1 AndAlso Tempi(Val(k)) - Tempi(Val(k - 1)) <= 1.5 * Dt
+      If Not Continuo Then
+        Tratti.Add(Corrente)
+        Corrente = New List(Of Integer)
+      End If
+      Corrente.Add(Val(k))
+    Next
+    Tratti.Add(Corrente)
+
+    Dim Blocco As Integer = System.Math.Max(1, CInt(System.Math.Round(0.5 / Dt)))
+    Dim Passo As Double = Dt * Blocco
+    Dim W As Integer = System.Math.Max(1, CInt(System.Math.Round(System.Math.Max(Passo, LisciaS) / Passo)))
+    Dim PassiMax As Integer = System.Math.Max(1, CInt(System.Math.Round(System.Math.Max(Passo, MaxLagS) / Passo)))
+    Ris.Passo = Passo
+
+    ' variazioni lisciate per tratto (NaN dove non definite)
+    Dim VarX As New List(Of Double()), VarY As New List(Of Double())
+    For Each Tr As List(Of Integer) In Tratti
+      Dim Nb As Integer = Tr.Count \ Blocco
+      If Nb < 2 * W + 2 Then Continue For
+      Dim Bx(Nb - 1) As Double, By(Nb - 1) As Double
+      For b As Integer = 0 To Nb - 1
+        Dim Sx As Double = 0, Sy As Double = 0
+        For j As Integer = b * Blocco To b * Blocco + Blocco - 1
+          Sx += X(Tr(j))
+          Sy += Y(Tr(j))
+        Next
+        Bx(b) = Sx / Blocco
+        By(b) = Sy / Blocco
+      Next
+      ' media mobile all'indietro (stesso ritardo per X e Y: non sposta il confronto)
+      Dim Mx(Nb - 1) As Double, My(Nb - 1) As Double
+      Dim Ax As Double = 0, Ay As Double = 0
+      For b As Integer = 0 To Nb - 1
+        Ax += Bx(b)
+        Ay += By(b)
+        If b >= W Then
+          Ax -= Bx(b - W)
+          Ay -= By(b - W)
+        End If
+        Mx(b) = If(b >= W - 1, Ax / W, Double.NaN)
+        My(b) = If(b >= W - 1, Ay / W, Double.NaN)
+      Next
+      Dim Dx(Nb - 1) As Double, Dy(Nb - 1) As Double
+      For b As Integer = 0 To Nb - 1
+        If b >= W AndAlso Not Double.IsNaN(Mx(b - W)) Then
+          Dx(b) = Mx(b) - Mx(b - W)
+          Dy(b) = My(b) - My(b - W)
+        Else
+          Dx(b) = Double.NaN
+          Dy(b) = Double.NaN
+        End If
+      Next
+      VarX.Add(Dx)
+      VarY.Add(Dy)
+    Next
+    If VarX.Count = 0 Then
+      Ris.Messaggio = "Continuous stretches too short"
+      Return Ris
+    End If
+
+    ' correlazione per ogni ritardo
+    Dim Coppie0 As Integer = 0
+    For Lg As Integer = -PassiMax To PassiMax
+      Dim Sx As Double = 0, Sy As Double = 0, Sxx As Double = 0, Syy As Double = 0, Sxy As Double = 0
+      Dim Cnt As Integer = 0
+      For s As Integer = 0 To VarX.Count - 1
+        Dim Dx() As Double = VarX(s), Dy() As Double = VarY(s)
+        For t As Integer = 0 To Dy.Length - 1
+          Dim u As Integer = t + Lg
+          If u < 0 OrElse u >= Dx.Length Then Continue For
+          Dim a As Double = Dy(t), c As Double = Dx(u)
+          If Double.IsNaN(a) OrElse Double.IsNaN(c) Then Continue For
+          Sx += c
+          Sy += a
+          Sxx += c * c
+          Syy += a * a
+          Sxy += a * c
+          Cnt += 1
+        Next
+      Next
+      Dim Den As Double = (Cnt * Sxx - Sx * Sx) * (Cnt * Syy - Sy * Sy)
+      Dim Rr As Double = If(Cnt > 10 AndAlso Den > 0, (Cnt * Sxy - Sx * Sy) / System.Math.Sqrt(Den), Double.NaN)
+      Ris.Lag.Add(Lg * Passo)
+      Ris.R.Add(Rr)
+      If Lg = 0 Then Coppie0 = Cnt
+    Next
+    Ris.Coppie = Coppie0
+    ' le variazioni su W passi si sovrappongono: coppie indipendenti circa Coppie / W
+    Ris.Soglia = If(Coppie0 > W, 2 / System.Math.Sqrt(Coppie0 / CDbl(W)), Double.NaN)
+
+    Dim Migliore As Integer = -1
+    For j As Integer = 0 To Ris.R.Count - 1
+      If Double.IsNaN(Ris.R(j)) Then Continue For
+      If Migliore < 0 OrElse System.Math.Abs(Ris.R(j)) > System.Math.Abs(Ris.R(Migliore)) Then Migliore = j
+    Next
+    If Migliore < 0 Then
+      Ris.Messaggio = "Correlation not computable (channel constant?)"
+      Return Ris
+    End If
+    Ris.LagMigliore = Ris.Lag(Migliore)
+    Ris.RMigliore = Ris.R(Migliore)
+    Dim Tolleranza As Double = System.Math.Max(1.0, Passo)
+    Dim Opp As Double = 0
+    For j As Integer = 0 To Ris.R.Count - 1
+      If Double.IsNaN(Ris.R(j)) Then Continue For
+      If System.Math.Abs(Ris.Lag(j)) <= Tolleranza Then Continue For
+      If System.Math.Sign(Ris.Lag(j)) = System.Math.Sign(Ris.LagMigliore) Then Continue For
+      Opp = System.Math.Max(Opp, System.Math.Abs(Ris.R(j)))
+    Next
+    Ris.ROpposto = Opp
+
+    Dim Ra As Double = System.Math.Abs(Ris.RMigliore)
+    If Ra < System.Math.Max(0.1, If(Double.IsNaN(Ris.Soglia), 0.1, Ris.Soglia)) Then
+      Ris.Esito = eFfLeadLag.Indefinito
+    ElseIf System.Math.Abs(Ris.LagMigliore) <= Tolleranza Then
+      Ris.Esito = eFfLeadLag.Insieme
+    ElseIf Opp >= 0.8 * Ra Then
+      Ris.Esito = eFfLeadLag.Misto
+    ElseIf Ris.LagMigliore > 0 Then
+      Ris.Esito = eFfLeadLag.Precede
+    Else
+      Ris.Esito = eFfLeadLag.Segue
+    End If
+    Return Ris
+  End Function
+
+  ''' <summary>Testo breve del lead-lag: leads / follows con i secondi, together, mixed, unclear; tra parentesi la correlazione.</summary>
+  Public Shared Function TestoLeadLag(L As clsFfLeadLag) As String
+    If L Is Nothing Then Return ""
+    If L.Messaggio <> "" Then Return "n/a"
+    Dim Ci As Globalization.CultureInfo = Globalization.CultureInfo.InvariantCulture
+    Dim Rt As String = "  (r " & If(L.RMigliore >= 0, "+", "") & L.RMigliore.ToString("0.00", Ci) & ")"
+    Dim Sec As String = System.Math.Abs(L.LagMigliore).ToString("0.#", Ci) & " s"
+    Select Case L.Esito
+      Case eFfLeadLag.Precede : Return "leads " & Sec & Rt
+      Case eFfLeadLag.Segue : Return "follows " & Sec & Rt
+      Case eFfLeadLag.Insieme : Return "together" & Rt
+      Case eFfLeadLag.Misto : Return "mixed" & Rt
+      Case Else : Return "unclear"
+    End Select
+  End Function
 
   ' ---------------------------------------------------------------- minimi quadrati pesati
 

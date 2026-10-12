@@ -105,6 +105,16 @@
             <TextBox Name="txt_XRif" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" Width="60" HorizontalAlignment="Left" />
           </StackPanel>
         </GroupBox>
+
+        <GroupBox Header="Lead-lag" Margin="0,6,0,0" ToolTip="Do the changes of each Y channel come before or after the changes of X? Before = consistent with an effect; after = the crew reacts to the speed">
+          <Grid Margin="4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Max lag (s)" ToolTip="Largest time shift searched, before and after" /><TextBox Name="txt_LLMax" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Column="1"><TextBlock Text="Smoothing (s)" ToolTip="Seconds of smoothing and length of the changes compared" /><TextBox Name="txt_LLLiscia" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+          </Grid>
+        </GroupBox>
             </StackPanel>
           </ScrollViewer>
         </TabItem>
@@ -156,7 +166,10 @@
         <RowDefinition Height="210" />
       </Grid.RowDefinitions>
 
-      <TextBlock Grid.Row="0" Name="txt_Ottimo" FontSize="14" FontWeight="Bold" Margin="6,4,6,2" TextWrapping="Wrap" />
+      <StackPanel Grid.Row="0">
+        <TextBlock Name="txt_Ottimo" FontSize="14" FontWeight="Bold" Margin="6,4,6,0" TextWrapping="Wrap" />
+        <TextBlock Name="txt_LeadLag" FontSize="12" Margin="6,0,6,2" TextWrapping="Wrap" Foreground="#FF30406A" />
+      </StackPanel>
 
       <sc:SciChartSurface Grid.Row="1" x:Name="Plot" sc:ThemeManager.Theme="BrightSpark" Margin="3">
         <sc:SciChartSurface.XAxes>
