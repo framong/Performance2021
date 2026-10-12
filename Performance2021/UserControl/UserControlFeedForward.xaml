@@ -1,0 +1,228 @@
+<UserControl x:Class="UserControlFeedForward"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SPwpf"
+             xmlns:sc="http://schemas.abtsoftware.co.uk/scichart"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1200">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="320" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <!-- impostazioni -->
+    <DockPanel Grid.Column="0" Margin="8">
+      <StackPanel DockPanel.Dock="Top">
+        <GroupBox Header="Report">
+          <StackPanel Margin="4">
+            <ComboBox Name="cmb_Report" Margin="0,0,0,4" SelectionChanged="cmb_Report_SelectionChanged" />
+            <UniformGrid Rows="1">
+              <Button Content="Save" Margin="0,0,3,0" Click="btn_SalvaReport_Click" ToolTip="Save the report in the profile (the filter is saved as a copy)" />
+              <Button Content="Save as..." Margin="0,0,3,0" Click="btn_SalvaComeReport_Click" />
+              <Button Content="Delete" Click="btn_EliminaReport_Click" />
+            </UniformGrid>
+          </StackPanel>
+        </GroupBox>
+        <Button Name="btn_Calcola" Content="Calculate" Margin="0,8,0,0" Height="30" Background="LightGreen" Click="btn_Calcola_Click" />
+        <UniformGrid Rows="1" Margin="0,4,0,0">
+          <Button Name="btn_Pdf" Content="Print PDF" Height="26" Margin="0,0,2,0" Click="btn_Pdf_Click" ToolTip="One page per Y channel (selected bands together) or one chart per band, see the Layout tab" />
+          <Button Name="btn_Copia" Content="Copy table" Height="26" Margin="2,0,0,0" Click="btn_Copia_Click" ToolTip="Copy the table of the selected Y channel" />
+        </UniformGrid>
+        <TextBlock Name="txt_Stato" Margin="0,6,0,4" TextWrapping="Wrap" Foreground="Gray" />
+      </StackPanel>
+      <TabControl Margin="0,2,0,0">
+        <TabItem Header="Analysis">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="4">
+        <GroupBox Header="Data" Margin="0,6,0,0">
+          <StackPanel Margin="4">
+            <TextBlock Text="Source" />
+            <ComboBox Name="cmb_Sorgente" Margin="0,0,0,4" />
+            <TextBlock Text="X: variable to optimize" />
+            <local:ChannelPicker x:Name="pck_X" Margin="0,0,0,4" />
+            <TextBlock Text="Band channel (splits the data, e.g. TWS)" TextWrapping="Wrap" />
+            <local:ChannelPicker x:Name="pck_Tws" Margin="0,0,0,4" />
+            <TextBlock Text="Valid data filter" />
+            <DockPanel Margin="0,0,0,2">
+              <Button DockPanel.Dock="Right" Content="Filters..." Margin="4,0,0,0" Padding="6,0,6,0" Click="btn_Filtri_Click" />
+              <ComboBox Name="cmb_Filtro" SelectedValuePath="Valore" DisplayMemberPath="Testo" DropDownOpened="cmb_Filtro_DropDownOpened" />
+            </DockPanel>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Y: efficiency channels" Margin="0,6,0,0">
+          <StackPanel Margin="4">
+            <ListBox Name="lst_Y" Height="110" DisplayMemberPath="Nome" SelectionChanged="lst_Y_SelectionChanged" ToolTip="Select a channel to see its results. The report prints one set of charts per channel." />
+            <local:ChannelPicker x:Name="pck_YNuovo" Margin="0,4,0,4" />
+            <UniformGrid Rows="1">
+              <Button Content="Add" Margin="0,0,3,0" Click="btn_AggiungiY_Click" />
+              <Button Content="Remove" Margin="0,0,3,0" Click="btn_RimuoviY_Click" />
+              <Button Content="Up" Margin="0,0,3,0" Click="btn_SuY_Click" />
+              <Button Content="Down" Click="btn_GiuY_Click" />
+            </UniformGrid>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Bands" Margin="0,6,0,0">
+          <Grid Margin="4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Band min" /><TextBox Name="txt_TwsMin" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Band max" /><TextBox Name="txt_TwsMax" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Column="2"><TextBlock Text="Band width" /><TextBox Name="txt_TwsStep" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+          </Grid>
+        </GroupBox>
+
+        <GroupBox Header="X bins" Margin="0,6,0,0">
+          <Grid Margin="4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,4,4"><TextBlock Text="From" /><TextBox Name="txt_XStart" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,4,4"><TextBlock Text="To (0 = open)" /><TextBox Name="txt_XEnd" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,0,4"><TextBlock Text="Bin width" /><TextBox Name="txt_XWidth" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Min samples" ToolTip="Samples needed for a bin to enter the fit" /><TextBox Name="txt_MinCamp" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Min bins" ToolTip="Bins needed to compute the optimum of a band" /><TextBox Name="txt_MinBin" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+          </Grid>
+        </GroupBox>
+
+        <GroupBox Header="Model" Margin="0,6,0,0">
+          <StackPanel Margin="4">
+            <TextBlock Text="Model" />
+            <ComboBox Name="cmb_Modello" Margin="0,0,0,4" />
+            <TextBlock Text="Goal" />
+            <ComboBox Name="cmb_Obiettivo" Margin="0,0,0,4" />
+            <TextBlock Text="Bins beyond the data the optimum may reach" ToolTip="0 = never extrapolate; 1 = one bin after the last bin with data" TextWrapping="Wrap" />
+            <TextBox Name="txt_Extra" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" Width="60" HorizontalAlignment="Left" />
+            <TextBlock Text="Reference X (mean shown in brackets in the summary)" ToolTip="For example 100 for Vmg%: next to each suggested value the summary shows the mean observed at this X" TextWrapping="Wrap" Margin="0,4,0,0" />
+            <TextBox Name="txt_XRif" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" Width="60" HorizontalAlignment="Left" />
+          </StackPanel>
+        </GroupBox>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="Layout">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="4">
+        <GroupBox Header="Chart" Margin="0,6,0,0">
+          <Grid Margin="4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Dot size" /><TextBox Name="txt_PuntiDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Opacity %" ToolTip="5 = almost transparent, 100 = solid" /><TextBox Name="txt_PuntiOpacita" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+            <StackPanel Grid.Column="2"><TextBlock Text="Mean size" ToolTip="Size of the bin mean markers" /><TextBox Name="txt_MedieDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,4,0"><TextBlock Text="Pdf rows" ToolTip="Charts per page: rows" /><TextBox Name="txt_RighePdf" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,4,0"><TextBlock Text="Pdf columns" ToolTip="Charts per page: columns" /><TextBox Name="txt_ColonnePdf" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+            <CheckBox Grid.Row="2" Grid.ColumnSpan="3" Name="chk_PdfInsieme" Margin="0,6,0,0" Content="Pdf: selected bands together" ToolTip="Checked: one chart per Y channel with the bands selected in the table (Show). Unchecked: one chart per band." Click="chk_PdfInsieme_Click" />
+          </Grid>
+        </GroupBox>
+              <GroupBox Header="Axes" Margin="0,6,0,0">
+                <Grid Margin="4">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Name size" ToolTip="Size of the axis names drawn in the background (reduced automatically if they do not fit)" /><TextBox Name="txt_NomiAssiDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+                  <StackPanel Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Name opacity %" ToolTip="5 = almost invisible, 100 = solid" /><TextBox Name="txt_NomiAssiOpacita" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+                  <StackPanel Grid.Column="2"><TextBlock Text="Values size" ToolTip="Font size of the numbers on the axes" /><TextBox Name="txt_ValoriAssiDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,4,0"><TextBlock Text="Extra decimals" ToolTip="Decimals on the axes = decimals of the channel + this value" /><TextBox Name="txt_DecimaliAssi" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,4,0"><TextBlock Text="Title size" ToolTip="Font size of the title inside the chart" /><TextBox Name="txt_TitoloDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
+                  <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                </Grid>
+              </GroupBox>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+    </DockPanel>
+
+    <!-- risultati -->
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" MinHeight="150" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="5" />
+        <RowDefinition Height="210" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Grid.Row="0" Name="txt_Ottimo" FontSize="14" FontWeight="Bold" Margin="6,4,6,2" TextWrapping="Wrap" />
+
+      <sc:SciChartSurface Grid.Row="1" x:Name="Plot" sc:ThemeManager.Theme="BrightSpark" Margin="3">
+        <sc:SciChartSurface.XAxes>
+          <sc:NumericAxis x:Name="AsseX" GrowBy="0.03,0.03" />
+        </sc:SciChartSurface.XAxes>
+        <sc:SciChartSurface.YAxes>
+          <sc:NumericAxis x:Name="AsseY" GrowBy="0.05,0.05" />
+        </sc:SciChartSurface.YAxes>
+        <sc:SciChartSurface.ChartModifier>
+          <sc:ModifierGroup>
+            <sc:MouseWheelZoomModifier XyDirection="XYDirection" />
+            <sc:ZoomPanModifier />
+            <sc:ZoomExtentsModifier ExecuteOn="MouseDoubleClick" IsAnimated="False" />
+            <sc:RubberBandXyZoomModifier IsEnabled="False" />
+          </sc:ModifierGroup>
+        </sc:SciChartSurface.ChartModifier>
+      </sc:SciChartSurface>
+
+      <WrapPanel Grid.Row="2" Name="pnl_Legenda" Margin="6,2,6,2" />
+
+      <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Background="#77000000" />
+
+      <DockPanel Grid.Row="4">
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="3,2,3,0">
+        <TextBlock Text="Bands in the chart:" VerticalAlignment="Center" Margin="0,0,6,0" />
+        <Button Content="All (this channel)" Padding="8,1,8,1" Margin="0,0,4,0" Click="btn_TutteFasce_Click" ToolTip="Select every band with an optimum for the Y channel shown" />
+        <Button Content="All channels" Padding="8,1,8,1" Margin="0,0,4,0" Click="btn_TuttiCanali_Click" ToolTip="Select every band with an optimum for every Y channel" />
+        <Button Content="None" Padding="8,1,8,1" Margin="0,0,4,0" Click="btn_NessunaFascia_Click" ToolTip="Deselect all the bands of the Y channel shown" />
+        <Button Content="Clear highlight" Padding="8,1,8,1" Click="btn_NoEvidenza_Click" ToolTip="Remove the highlighted (bold) row: all the drawn bands get the same weight in the chart" />
+      </StackPanel>
+      <DataGrid Name="grd_Fasce" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                CanUserAddRows="False" SelectionChanged="grd_Fasce_SelectionChanged" Margin="3">
+        <DataGrid.RowStyle>
+          <Style TargetType="DataGridRow">
+            <Style.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter Property="FontWeight" Value="Bold" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </DataGrid.RowStyle>
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Header="Show">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <CheckBox IsChecked="{Binding Visibile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="chk_Fascia_Click" ToolTip="Draw this band in the chart" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Band" Binding="{Binding Fascia}" />
+          <DataGridTextColumn Header="Samples" Binding="{Binding Campioni}" />
+          <DataGridTextColumn Header="Bins" Binding="{Binding Bin}" />
+          <DataGridTextColumn Header="Target X" Binding="{Binding OttimoX}" />
+          <DataGridTextColumn Header="Expected Y" Binding="{Binding OttimoY}" />
+          <DataGridTextColumn Header="±2 SE" Binding="{Binding Errore}" />
+          <DataGridTextColumn Header="Best bin X" Binding="{Binding MigliorX}" />
+          <DataGridTextColumn Header="Best bin Y" Binding="{Binding MigliorY}" />
+          <DataGridTextColumn Header="Gain vs best bin" Binding="{Binding Guadagno}" />
+          <DataGridTextColumn Header="R²" Binding="{Binding R2}" />
+          <DataGridTextColumn Header="Extrapolated" Binding="{Binding Estrapolato}" />
+          <DataGridTextColumn Header="Reliability" Binding="{Binding Affidabilita}" />
+          <DataGridTextColumn Header="Association" Binding="{Binding Associazione}" />
+          <DataGridTextColumn Header="Note" Binding="{Binding Nota}" Width="*" />
+        </DataGrid.Columns>
+      </DataGrid>
+      </DockPanel>
+    </Grid>
+  </Grid>
+</UserControl>

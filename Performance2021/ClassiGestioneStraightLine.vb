@@ -401,6 +401,14 @@ Public Class clsFiltroCampioniXY
   ''' Descrizione e' costruita dalla stessa fotografia delle impostazioni.
   ''' </summary>
   Public Shared Function Crea(ByRef Descrizione As String, Optional ByRef Firma As String = Nothing) As Func(Of Integer, Boolean)
+    ' filtro con nome scelto per il profilo: sostituisce filtro 1 e filtro 2
+    Dim Nominato As clsFiltroCompilato = clsFiltri.CompilaPerImpostazioni(Impostazioni())
+    If Nominato IsNot Nothing Then
+      Descrizione = Nominato.Descrizione
+      Firma = "NF:" & Nominato.Firma
+      Return Nominato.Maschera
+    End If
+
     Dim Ignorate As New List(Of String)
     Dim C As List(Of clsCondizione) = Condizioni(Ignorate)
     Descrizione = Descrivi(C, Ignorate)

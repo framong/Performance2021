@@ -1287,6 +1287,13 @@ Public Class clsXYPlotSettings
   'Dim _FilterChannelName As String
   <JsonIgnore>
   Public Property ChannelListUpdated As Boolean
+  ''' <summary>Nome del filtro (libreria del profilo) che sostituisce filtro 1 e filtro 2. Vuoto = si usano i due filtri classici.</summary>
+  Public Property NamedFilter As String = ""
+  ''' <summary>Copia del filtro con nome presa quando il plot e' stato aggiunto a un report: il report non cambia se poi si modifica o si cancella il filtro nel profilo. Nothing = si usa quello del profilo.</summary>
+  Public Property NamedFilterSnapshot As clsFiltroNominato
+  ''' <summary>True se l'auto filtro VMC ha impostato la finestra TWA nel filtro 1 (valido solo per l'ultimo grafico calcolato): va applicata in AND al filtro con nome.</summary>
+  <JsonIgnore>
+  Public Property VmcWindowActive As Boolean = False
   Public Property ApplyFilter1 As Boolean
   Public Property ApplyFilterMin As Boolean
   Public Property ApplyFilterMax As Boolean
@@ -1572,6 +1579,8 @@ Public Class clsXYPlotSettings
   Private Function TipoFiltro() As String
     Dim txttmp As String = ""
     If SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return ""
+    Dim Nominato As clsFiltroNominato = clsFiltri.RisolviPerImpostazioni(Me)
+    If Nominato IsNot Nothing Then Return " " & clsFiltri.DescrizioneBreve(Nominato)
     If Not ApplyFilter1 Then Return ""
     If Not FilterChannel Is Nothing Then
       txttmp &= " Filtered by:" & IIf(ApplyFilterAbsVal, " AbsVal of", "") & " '" & FilterChannel.ShortName & "' "
@@ -1588,6 +1597,7 @@ Public Class clsXYPlotSettings
 
   Private Function TipoFiltro2() As String
     If SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return ""
+    If clsFiltri.RisolviPerImpostazioni(Me) IsNot Nothing Then Return "" ' descritto tutto in TipoFiltro
     If Not ApplyFilter2 Then Return ""
     If Filter2Channel Is Nothing Then Return ""
     Dim txttmp As String = " and:" & IIf(ApplyFilter2AbsVal, " AbsVal of", "") & " '" & Filter2Channel.ShortName & "' "
@@ -1821,7 +1831,12 @@ Public Class clsXYPlotSettings
 
 
   Public Function Clone() As clsXYPlotSettings
-    Return Me.MemberwiseClone
+    Dim C As clsXYPlotSettings = DirectCast(Me.MemberwiseClone, clsXYPlotSettings)
+    ' il report tiene la sua copia del filtro con nome (fotografia di quello attuale)
+    C.NamedFilterSnapshot = Nothing
+    Dim F As clsFiltroNominato = clsFiltri.RisolviPerImpostazioni(Me)
+    If F IsNot Nothing Then C.NamedFilterSnapshot = F.Clona()
+    Return C
   End Function
 
 End Class
@@ -2134,6 +2149,12 @@ Public Class clsProfile2021
   Public Property StraightLineChartSettingsReaching As List(Of clsStraightLineChartSettings)
   Public Property PavarotChartSettings As List(Of clsPavarotChartSettings)
   Public Property XYPlotSettings As clsXYPlotSettings
+  ''' <summary>Impostazioni del tab Feed Forward (canali, filtro, fasce di vento, bin e modello). Nothing nei profili precedenti: si usano i default.</summary>
+  Public Property FeedForwardSettings As clsFeedForwardReport
+  ''' <summary>Report feed forward salvati con un nome (ognuno con le impostazioni comuni e la lista dei canali Y).</summary>
+  Public Property FeedForwardReports As List(Of clsFeedForwardReport)
+  ''' <summary>Filtri con nome del profilo (albero AND/OR di condizioni sui canali). Nothing nei profili precedenti: clsFiltri.Elenco li crea dai filtri XY attuali.</summary>
+  Public Property FiltriSalvati As List(Of clsFiltroNominato)
   Public Property StartReportSettings As clsStartReportSettings
   Public Property RaceReportSettings As clsRaceReportSettings
   Public Property PeriodsFinderSettings As clsPeriodsFinderSettings

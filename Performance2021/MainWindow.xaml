@@ -13,6 +13,32 @@
   <Window.Resources>
     <local:clsColorConverterLineUp x:Key="ConverterLineUp"></local:clsColorConverterLineUp>
     <local:clsColorConverter x:Key="converter"></local:clsColorConverter>
+    <!-- barra dei tab principale su una sola riga: se non entrano si scorre con le frecce o si sceglie dall'elenco -->
+    <Style x:Key="StileTabPrincipale" TargetType="TabControl">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabControl">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <DockPanel Grid.Row="0" Background="Transparent">
+                <Button DockPanel.Dock="Right" Content="&#9776;" Width="28" Focusable="False" Click="btn_ElencoTab_Click" ToolTip="All tabs" />
+                <RepeatButton DockPanel.Dock="Right" Content="&#9654;" Width="22" Focusable="False" Command="{x:Static ScrollBar.PageRightCommand}" CommandTarget="{Binding ElementName=PART_ScrollTab}" />
+                <RepeatButton DockPanel.Dock="Right" Content="&#9664;" Width="22" Focusable="False" Command="{x:Static ScrollBar.PageLeftCommand}" CommandTarget="{Binding ElementName=PART_ScrollTab}" />
+                <ScrollViewer x:Name="PART_ScrollTab" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Focusable="False">
+                  <TabPanel IsItemsHost="True" Background="Transparent" />
+                </ScrollViewer>
+              </DockPanel>
+              <Border Grid.Row="1" BorderBrush="#FF999999" BorderThickness="1" Background="{TemplateBinding Background}">
+                <ContentPresenter ContentSource="SelectedContent" />
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
   </Window.Resources>
 
   <Grid Name="GrigliaBase">
@@ -23,7 +49,7 @@
       <RowDefinition Height="*" />
       <RowDefinition Height="30" />
     </Grid.RowDefinitions>
-    <TabControl Name="MainTabControl" Grid.Row="0" >
+    <TabControl Name="MainTabControl" Grid.Row="0" Style="{StaticResource StileTabPrincipale}" SelectionChanged="MainTabControl_TabCambiato">
       <TabItem Name="LoadFile" Header="File Load">
         <Grid Name="BarraAlta" ShowGridLines="False" MinHeight="400">
           <Grid.ColumnDefinitions>
@@ -550,6 +576,10 @@
         <ContentControl x:Name="hostXYplot"/>
       </TabItem>
 
+
+      <TabItem Name="FeedForward" Header="Feed Forward" Width="90">
+        <ContentControl x:Name="hostFeedForward"/>
+      </TabItem>
 
       <TabItem Name="PolarChecks" Header="Polars"  Width="80">
         <ContentControl x:Name="hostPolars"/>

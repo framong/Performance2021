@@ -1,0 +1,65 @@
+<Window x:Class="FiltriForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPwpf"
+        mc:Ignorable="d"
+        Title="Data Source &amp; Filter" Height="640" Width="1020" MinHeight="420" MinWidth="760"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+  <Grid Margin="10">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="220" />
+      <ColumnDefinition Width="10" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <!-- elenco dei filtri salvati nel profilo -->
+    <Grid Grid.Column="0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <TextBlock Grid.Row="0" Text="Saved filters (profile)" FontWeight="Bold" Margin="0,0,0,4" />
+      <ListBox Grid.Row="1" Name="lst_Filtri" SelectionChanged="lst_Filtri_SelectionChanged" />
+      <StackPanel Grid.Row="2" Margin="0,6,0,0">
+        <Button Name="btn_Nuovo" Content="New" Margin="0,0,0,4" Click="btn_Nuovo_Click" />
+        <Button Name="btn_Duplica" Content="Duplicate" Margin="0,0,0,4" Click="btn_Duplica_Click" />
+        <Button Name="btn_Elimina" Content="Delete" Click="btn_Elimina_Click" />
+      </StackPanel>
+    </Grid>
+
+    <!-- editor del filtro selezionato -->
+    <Grid Grid.Column="2">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+        <Label Content="Name" Width="50" />
+        <TextBox Name="txt_Nome" Width="300" Height="24" VerticalContentAlignment="Center" />
+        <Label Content="Notes" Width="50" Margin="10,0,0,0" />
+        <TextBox Name="txt_Note" Width="320" Height="24" VerticalContentAlignment="Center" />
+      </StackPanel>
+
+      <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+          <StackPanel Name="pnl_Righe" Margin="6" />
+        </ScrollViewer>
+      </Border>
+
+      <TextBlock Grid.Row="2" Name="txt_Conteggio" FontWeight="Bold" Margin="0,8,0,0" />
+      <TextBlock Grid.Row="3" Name="txt_Descrizione" TextWrapping="Wrap" Foreground="Gray" Margin="0,2,0,0" />
+
+      <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+        <Button Name="btn_Salva" Content="Save" Width="100" Margin="5" Click="btn_Salva_Click" />
+        <Button Name="btn_Chiudi" Content="Close" Width="100" Margin="5" IsCancel="True" Click="btn_Chiudi_Click" />
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Window>

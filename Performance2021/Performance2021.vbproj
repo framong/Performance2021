@@ -140,6 +140,10 @@
     <Compile Include="clsChartEventiViewModel.vb" />
     <Compile Include="ClassiGestionePeriodi.vb" />
     <Compile Include="ClassiGestioneStraightLine.vb" />
+    <Compile Include="ClassiGestioneFiltri.vb" />
+    <Compile Include="ClassiFeedForward.vb" />
+    <Compile Include="ClassiFeedForwardReport.vb" />
+    <Compile Include="GestionePdfFeedForward.vb" />
     <Compile Include="ClassiGestionePavarot.vb" />
     <Compile Include="clsRatingUtilities.vb" />
     <Compile Include="clsSailShape2022.vb" />
@@ -181,6 +185,14 @@
     </Compile>
     <Compile Include="SelectProfileForm.xaml.vb">
       <DependentUpon>SelectProfileForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControl\UserControlFeedForward.xaml.vb">
+      <DependentUpon>UserControlFeedForward.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FiltriForm.xaml.vb">
+      <DependentUpon>FiltriForm.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="RenameProfileForm.xaml.vb">
       <DependentUpon>RenameProfileForm.xaml</DependentUpon>
@@ -302,6 +314,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SelectProfileForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControl\UserControlFeedForward.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FiltriForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -690,6 +690,34 @@ Public Class UserControlSciChartXYplot
     If Not Tws Is Nothing Then VM.CurrentPlotSettings.XAxisChannel = Tws
   End Sub
 
+  Private Class clsVoceFiltro
+    Public Property Valore As String
+    Public Property Testo As String
+  End Class
+
+  ''' <summary>Riempie la combo dei filtri con nome: la prima voce (valore vuoto) lascia i due filtri classici di Settings.</summary>
+  Private Sub cmb_NamedFilter_DropDownOpened(sender As Object, e As EventArgs)
+    If AppConfig Is Nothing OrElse AppConfig.ActiveProfile Is Nothing Then Exit Sub
+    Dim L As New List(Of clsVoceFiltro)
+    L.Add(New clsVoceFiltro With {.Valore = "", .Testo = "(none)"})
+    For Each F As clsFiltroNominato In clsFiltri.Elenco().OrderBy(Function(x) x.Nome)
+      L.Add(New clsVoceFiltro With {.Valore = F.Nome, .Testo = F.Nome})
+    Next
+    cmb_NamedFilter.ItemsSource = L
+  End Sub
+
+  ''' <summary>Apre la finestra modale dei filtri con nome del profilo.</summary>
+  Private Sub Button_Click_Filters(sender As Object, e As RoutedEventArgs)
+    If AppConfig Is Nothing OrElse AppConfig.ActiveProfile Is Nothing Then
+      MsgBox("No active profile.", MsgBoxStyle.Exclamation, "Filters")
+      Exit Sub
+    End If
+    Dim f As New FiltriForm
+    f.Owner = Window.GetWindow(Me)
+    f.ShowDialog()
+    cmb_NamedFilter_DropDownOpened(Nothing, Nothing)
+  End Sub
+
   Private Sub Button_Click_SwapAxes(sender As Object, e As RoutedEventArgs)
     Dim X = VM.CurrentPlotSettings.XAxisChannel
     Dim Y = VM.CurrentPlotSettings.YAxisChannel
@@ -1426,6 +1454,7 @@ Public Class clsSciChartXyPlotViewModel
     '  End If
     'End If
 
+    CurrentPlotSettings.VmcWindowActive = False
     Dim CheckVmc As Boolean = If(IsReport, CurrentPlotSettings.VmcAutoFilter, AppConfig.ActiveProfile.XYPlotSettings.VmcAutoFilter)
     Dim FilterRange As Integer = If(IsReport, CurrentPlotSettings.VmcAutoFilterRange, AppConfig.ActiveProfile.XYPlotSettings.VmcAutoFilterRange)
 
@@ -1467,6 +1496,7 @@ Public Class clsSciChartXyPlotViewModel
         CurrentPlotSettings.ApplyFilter1 = True
         CurrentPlotSettings.ApplyFilterMin = True
         CurrentPlotSettings.ApplyFilterMax = True
+        CurrentPlotSettings.VmcWindowActive = True ' con un filtro con nome la finestra TWA si somma al filtro
       End If
     End If
 
@@ -1725,6 +1755,12 @@ Public Class clsSciChartXyPlotViewModel
       Case Else
     End Select
 
+    ' filtro con nome: la sua descrizione sostituisce quella di filtro 1 e filtro 2; resta solo la finestra TWA dell'auto filtro VMC
+    Dim Nominato As clsFiltroNominato = clsFiltri.RisolviPerImpostazioni(CurrentPlotSettings)
+    If Nominato IsNot Nothing Then
+      SottoTitolo &= " " & clsFiltri.DescrizioneBreve(Nominato)
+      If Not CurrentPlotSettings.VmcWindowActive Then Return eTipoFiltro.eNone
+    End If
     If Not CurrentPlotSettings.ApplyFilter1 Then Return eTipoFiltro.eNone
     If Not CurrentPlotSettings.FilterChannel Is Nothing Then
       SottoTitolo &= " Filtered by:" & IIf(CurrentPlotSettings.ApplyFilterAbsVal, " AbsVal of", "") & " '" & CurrentPlotSettings.FilterChannel.ShortName & "' "
@@ -1748,6 +1784,7 @@ Public Class clsSciChartXyPlotViewModel
     'If Not CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRangeFiltered Then Return eTipoFiltro.eNone
     ' Current visible range = nessun filtro, come per il filtro 1 (prima il filtro 2 non si applicava ma finiva nel sottotitolo)
     If CurrentPlotSettings.SorgenteDati = clsXYPlotSettings.eDataSource.eCurrentVisibleRange Then Return eTipoFiltro.eNone
+    If clsFiltri.RisolviPerImpostazioni(CurrentPlotSettings) IsNot Nothing Then Return eTipoFiltro.eNone ' descritto tutto in TipoFiltro
     If Not CurrentPlotSettings.ApplyFilter2 Then Return eTipoFiltro.eNone
     If CurrentPlotSettings.Filter2Channel Is Nothing Then
       Return eTipoFiltro.eNone
@@ -9885,6 +9922,8 @@ Public Class clsSciChartXyPlotViewModel
     Public Periodo As clsPeriod2021
     Public PeriodiValidi As List(Of clsPeriod2021)
     Public ChannelValues As List(Of Double)
+    ''' <summary>Filtro con nome compilato nel costruttore (thread UI). Nothing = si usano i due filtri classici.</summary>
+    Public FiltroNominato As clsFiltroCompilato
 
     Public Sub New(CPS As clsXYPlotSettings, NSC As System.Windows.Media.Color, HF As Boolean,
                    F As clsSciChartXyPlotViewModel.eTipoFiltro, F2 As clsSciChartXyPlotViewModel.eTipoFiltro, TR As clsTimeRange, PV As List(Of clsPeriod2021))
@@ -9897,6 +9936,7 @@ Public Class clsSciChartXyPlotViewModel
       PeriodiValidi = PV
       If PeriodiValidi Is Nothing Then PeriodiValidi = New List(Of clsPeriod2021)
       ChTwa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
+      FiltroNominato = clsFiltri.CompilaPerImpostazioni(CPS)
       Periodo = New clsPeriod2021(TR, clsPeriod2021.ePeriodType.eStraightLineVmg)
     End Sub
 
@@ -11190,7 +11230,14 @@ Public Class clsSciChartXyPlotViewModel
       If Not CanaleTwa Is Nothing Then
         Valido = TwaValido(CanaleTwa.Valori(Indice))
       End If
-      If Valido Then
+      If Valido AndAlso FiltroNominato IsNot Nothing Then
+        ' filtro con nome al posto di filtro 1 e filtro 2 (Maschera Nothing = nessuna condizione attiva)
+        If FiltroNominato.Maschera IsNot Nothing Then Valido = FiltroNominato.Maschera(Indice)
+        ' finestra TWA dell'auto filtro VMC (filtro 1), in AND con il filtro con nome
+        If Valido AndAlso CurrentPlotSettings.VmcWindowActive AndAlso CurrentPlotSettings.FilterChannel IsNot Nothing AndAlso Filtro <> eTipoFiltro.eNone Then
+          Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
+        End If
+      ElseIf Valido Then
         If Not (CurrentPlotSettings.FilterChannel Is Nothing OrElse Filtro = eTipoFiltro.eNone) Then
           Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
         End If
@@ -11250,6 +11297,8 @@ Public Class clsSciChartXyPlotViewModel
     Public Filtro2 As clsSciChartXyPlotViewModel.eTipoFiltro
     Public PeriodiValidi As List(Of clsPeriod2021)
     Public ChannelValues As List(Of Double)
+    ''' <summary>Filtro con nome compilato nel costruttore (thread UI). Nothing = si usano i due filtri classici.</summary>
+    Public FiltroNominato As clsFiltroCompilato
 
     Public Sub New(CPS As clsXYPlotSettings, NSC As System.Windows.Media.Color, HF As Boolean,
                    F As clsSciChartXyPlotViewModel.eTipoFiltro, F2 As clsSciChartXyPlotViewModel.eTipoFiltro, PV As List(Of clsPeriod2021))
@@ -11260,6 +11309,7 @@ Public Class clsSciChartXyPlotViewModel
       Filtro2 = F2
       PeriodiValidi = PV
       ChTwa = DataProvider2020.CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
+      FiltroNominato = clsFiltri.CompilaPerImpostazioni(CPS)
 
     End Sub
 
@@ -12159,7 +12209,14 @@ Public Class clsSciChartXyPlotViewModel
       If Not CanaleTwa Is Nothing Then
         Valido = TwaValido(CanaleTwa.Valori(Indice))
       End If
-      If Valido Then
+      If Valido AndAlso FiltroNominato IsNot Nothing Then
+        ' filtro con nome al posto di filtro 1 e filtro 2 (Maschera Nothing = nessuna condizione attiva)
+        If FiltroNominato.Maschera IsNot Nothing Then Valido = FiltroNominato.Maschera(Indice)
+        ' finestra TWA dell'auto filtro VMC (filtro 1), in AND con il filtro con nome
+        If Valido AndAlso CurrentPlotSettings.VmcWindowActive AndAlso CurrentPlotSettings.FilterChannel IsNot Nothing AndAlso Filtro <> eTipoFiltro.eNone Then
+          Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
+        End If
+      ElseIf Valido Then
         If Not (CurrentPlotSettings.FilterChannel Is Nothing OrElse Filtro = eTipoFiltro.eNone) Then
           Valido = DatoValido(Filtro, CurrentPlotSettings.FilterChannel.Valori(Indice), CurrentPlotSettings.ApplyFilterAbsVal)
         End If

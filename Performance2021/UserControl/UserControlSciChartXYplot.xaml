@@ -276,62 +276,11 @@
           <MenuItem>
             <MenuItem.Header>
               <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter1,UpdateSourceTrigger=PropertyChanged}" Width="145">Visible Range Filter by</CheckBox>
-                <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels,UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding CurrentPlotSettings.FilterChannel,UpdateSourceTrigger=PropertyChanged}"  MinWidth="160" Margin="3,0,0,0" >
-                </ComboBox>
+                <Label Content="Filter" Width="50" Padding="0,3,0,0" ToolTip="Named filter of the profile (replaces the former Visible Range filter and And filter)"></Label>
+                <ComboBox Name="cmb_NamedFilter" FontSize="12" MinWidth="170" SelectedValuePath="Valore" DisplayMemberPath="Testo" SelectedValue="{Binding CurrentPlotSettings.NamedFilter}" DropDownOpened="cmb_NamedFilter_DropDownOpened" Loaded="cmb_NamedFilter_DropDownOpened" ToolTip="Named filter of the profile. The first item keeps the former hidden filters of the profile (if any)"></ComboBox>
+                <Button Content="Filters..." Click="Button_Click_Filters" ToolTip="Open the Data Source &amp; Filter window (named filters of the profile)" Margin="5,0,0,0" Padding="6,0,6,0"></Button>
               </StackPanel>
             </MenuItem.Header>
-            <MenuItem>
-              <MenuItem.Header>
-                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilterAbsVal,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Absolute Value"></CheckBox>
-              </MenuItem.Header>
-            </MenuItem>
-            <MenuItem>
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMin,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMin}"></TextBox>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
-            <MenuItem IsCheckable="True">
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox  IsChecked="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilterMax,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.FilterValueMax}"></TextBox>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
-          </MenuItem>
-          <MenuItem>
-            <MenuItem.Header>
-              <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2,UpdateSourceTrigger=PropertyChanged}" Width="145">And Filter by</CheckBox>
-                <ComboBox DisplayMemberPath="LongName" FontSize="12" ItemsSource="{Binding CurrentPlotSettings.AvailableChannels,UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding CurrentPlotSettings.Filter2Channel,UpdateSourceTrigger=PropertyChanged}"  MinWidth="160" Margin="3,0,0,0" >
-                </ComboBox>
-              </StackPanel>
-            </MenuItem.Header>
-            <MenuItem>
-              <MenuItem.Header>
-                <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2AbsVal,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Absolute Value"></CheckBox>
-              </MenuItem.Header>
-            </MenuItem>
-            <MenuItem>
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Min" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Min,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMin}"></TextBox>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
-            <MenuItem>
-              <MenuItem.Header>
-                <StackPanel Orientation="Horizontal">
-                  <CheckBox IsChecked="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Content="Max" Width="50"></CheckBox>
-                  <TextBox MinWidth="40" local:NumericInput.Kind="Decimal" IsEnabled="{Binding CurrentPlotSettings.ApplyFilter2Max,UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Text="{Binding CurrentPlotSettings.Filter2ValueMax}"></TextBox>
-                </StackPanel>
-              </MenuItem.Header>
-            </MenuItem>
           </MenuItem>
           <MenuItem >
             <MenuItem.Header>

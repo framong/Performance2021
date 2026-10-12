@@ -83,7 +83,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 10 01"
+    Versione = "v02 - 2026 10 12 32"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -383,6 +383,7 @@ Class MainWindow
     ctrlXover = Nothing : hostXover.Content = Nothing
     ctrlXYplot = Nothing : hostXYplot.Content = Nothing
     ctrlBenchmarks = Nothing : hostBenchmarks.Content = Nothing
+    ctrlFeedForward = Nothing : hostFeedForward.Content = Nothing
     ' la tab Polars dipende dal profilo e non dal dataset: si lascia com'e'
   End Sub
 
@@ -1325,6 +1326,7 @@ Class MainWindow
   Public ctrlXYplot As UserControlSciChartXYplot
   Public ctrlPolars As UserControlPolarManager
   Public ctrlBenchmarks As UserControlBenchmarks
+  Public ctrlFeedForward As UserControlFeedForward
 
   Private Sub AssicuraCtrlRaceReport()
     If ctrlRaceReport IsNot Nothing Then Exit Sub
@@ -1402,6 +1404,38 @@ Class MainWindow
     If ctrlPolars IsNot Nothing Then Exit Sub
     ctrlPolars = New UserControlPolarManager
     hostPolars.Content = ctrlPolars
+  End Sub
+
+  ''' <summary>Elenco di tutti i tab (quelli visibili) per saltare direttamente a uno, anche se la barra e' scorsa.</summary>
+  Private Sub btn_ElencoTab_Click(sender As Object, e As RoutedEventArgs)
+    Dim Menu As New ContextMenu
+    For Each Tab As TabItem In MainTabControl.Items.OfType(Of TabItem)()
+      If Tab.Visibility <> Visibility.Visible Then Continue For
+      Dim Scelto As TabItem = Tab
+      Dim Voce As New MenuItem With {.Header = Tab.Header, .IsChecked = Tab.IsSelected}
+      AddHandler Voce.Click, Sub() MainTabControl.SelectedItem = Scelto
+      Menu.Items.Add(Voce)
+    Next
+    Menu.PlacementTarget = TryCast(sender, UIElement)
+    Menu.Placement = Primitives.PlacementMode.Bottom
+    Menu.IsOpen = True
+  End Sub
+
+  ''' <summary>Tiene visibile nella barra il tab scelto (anche quando lo si sceglie dall'elenco).</summary>
+  Private Sub MainTabControl_TabCambiato(sender As Object, e As SelectionChangedEventArgs)
+    If Not Object.ReferenceEquals(e.OriginalSource, MainTabControl) Then Exit Sub ' i TabControl annidati non contano
+    Dim Tab As TabItem = TryCast(MainTabControl.SelectedItem, TabItem)
+    If Tab IsNot Nothing Then Tab.BringIntoView()
+  End Sub
+
+  Private Sub AssicuraCtrlFeedForward()
+    If ctrlFeedForward IsNot Nothing Then Exit Sub
+    ctrlFeedForward = New UserControlFeedForward
+    hostFeedForward.Content = ctrlFeedForward
+  End Sub
+
+  Private Sub FeedForward_GotFocus(sender As Object, e As RoutedEventArgs) Handles FeedForward.GotFocus
+    AssicuraCtrlFeedForward()
   End Sub
 
   Private Sub AssicuraCtrlBenchmarks()
