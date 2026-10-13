@@ -298,8 +298,7 @@ Public Class clsPdfFeedForward
       Dim Fondo As Double = Pagina.Height.Value - Margine * 0.5 - AltezzaPiede - 4
       Dim HNote As Double = If(RigheNote.Count = 0, 0, RigheNote.Count * AltezzaRigaNote + 2 * PaddingNote)
       Dim YNote As Double = Fondo - HNote
-      Dim Ht As Double = 0
-      If T IsNot Nothing Then Ht = AltezzaRiga * ((If(T.Gruppi.Count > 0, 1, 0)) + 1 + T.Righe.Count)
+      Dim Ht As Double = AltezzaTabella(Gfx, W, T) ' righe piu' alte dove il testo va su due righe
       ' il grafico prende lo spazio che resta tra il titolo e la tabella, che resta staccata dal riquadro delle note
       Dim HGraf As Double = YNote - DistaccoNote - Ht - Spazio - Y
 
@@ -338,82 +337,256 @@ Public Class clsPdfFeedForward
     Return True
   End Function
 
+  ' ---------------------------------------------------------------- testo adattato alla cella
+
+  ''' <summary>Corpo minimo del carattere nelle celle e passo con cui lo si riduce.</summary>
+  Private Const CorpoMinimo As Double = 5.5
+  Private Const PassoCorpo As Double = 0.5
+  ''' <summary>Di quanto si riduce al massimo il carattere su una riga prima di passare a due righe (oltre il testo diventerebbe troppo piccolo).</summary>
+  Private Const RiduzioneUnaRiga As Double = 1.5
+  ''' <summary>Spazio libero ai lati del testo nella cella.</summary>
+  Private Const MargineCella As Double = 2.5
+
+  ''' <summary>Come sta un testo nella sua cella: carattere usato e righe (una o due; l'ultima eventualmente con i puntini).</summary>
+  Private Class clsTestoCella
+    Public Font As XFont
+    Public Righe As New List(Of String)
+    Public ReadOnly Property AltezzaRigaTesto As Double
+      Get
+        Return Font.Size * 1.22
+      End Get
+    End Property
+    ''' <summary>Altezza minima della riga della tabella perche' il testo stia dentro.</summary>
+    Public ReadOnly Property AltezzaNecessaria As Double
+      Get
+        Return If(Righe.Count <= 1, AltezzaRiga, Righe.Count * AltezzaRigaTesto + 3)
+      End Get
+    End Property
+  End Class
+
+  Private Shared ReadOnly CacheFont As New Dictionary(Of String, XFont)
+
+  Private Shared Function FontCorpo(Base As XFont, Corpo As Double) As XFont
+    Dim Chiave As String = Base.FontFamily.Name & "|" & Corpo.ToString("0.0", Globalization.CultureInfo.InvariantCulture) & "|" & CInt(Base.Style)
+    Dim F As XFont = Nothing
+    If Not CacheFont.TryGetValue(Chiave, F) Then
+      F = New XFont(Base.FontFamily.Name, Corpo, Base.Style)
+      CacheFont(Chiave) = F
+    End If
+    Return F
+  End Function
+
   ''' <summary>
-  ''' Tabella compatta: griglia leggera, cornice marcata, righe alternate con sfondo, note sotto. Le righe che non entrano si perdono (la pagina e' dimensionata prima).
-  ''' Restituisce la Y sotto la tabella (le note vanno nel riquadro in fondo alla pagina, vedi CreaPagine).
+  ''' Adatta il testo alla larghezza L: prima il carattere normale, poi ridotto a passi di al massimo RiduzioneUnaRiga, poi su due righe
+  ''' (al corpo piu' grande con cui entrambe stanno nella cella, a capo tra le parole), e solo nei casi estremi due righe al minimo con i puntini.
   ''' </summary>
-  Private Shared Function DisegnaTabellaSuPagina(Gfx As XGraphics, Y As Double, W As Double, Fondo As Double, T As clsFfPdfTabella) As Double
+  Private Shared Function Adatta(Gfx As XGraphics, Testo As String, Base As XFont, L As Double) As clsTestoCella
+    Dim Ris As New clsTestoCella With {.Font = Base}
+    If String.IsNullOrEmpty(Testo) Then
+      Ris.Righe.Add("")
+      Return Ris
+    End If
+    ' 1-2: una riga, carattere normale o poco ridotto
+    Dim Corpo As Double = Base.Size
+    Dim MinimoUnaRiga As Double = Math.Max(CorpoMinimo, Base.Size - RiduzioneUnaRiga)
+    While Corpo >= MinimoUnaRiga - 0.001
+      Dim F As XFont = FontCorpo(Base, Corpo)
+      If Gfx.MeasureString(Testo, F).Width <= L Then
+        Ris.Font = F
+        Ris.Righe.Add(Testo)
+        Return Ris
+      End If
+      Corpo -= PassoCorpo
+    End While
+    ' 3: due righe, a capo nello spazio che bilancia meglio le due righe
+    Dim Parole() As String = Testo.Split(" "c)
+    If Parole.Length > 1 Then
+      Corpo = Base.Size
+      While Corpo >= CorpoMinimo - 0.001
+        Dim F As XFont = FontCorpo(Base, Corpo)
+        Dim Migliore As Double = Double.MaxValue, R1 As String = Nothing, R2 As String = Nothing
+        For k As Integer = 1 To Parole.Length - 1
+          Dim A As String = String.Join(" ", Parole, 0, k).Trim
+          Dim B As String = String.Join(" ", Parole, k, Parole.Length - k).Trim
+          If A = "" OrElse B = "" Then Continue For
+          Dim La As Double = Gfx.MeasureString(A, F).Width, Lb As Double = Gfx.MeasureString(B, F).Width
+          If La <= L AndAlso Lb <= L AndAlso Math.Max(La, Lb) < Migliore Then
+            Migliore = Math.Max(La, Lb)
+            R1 = A
+            R2 = B
+          End If
+        Next
+        If R1 IsNot Nothing Then
+          Ris.Font = F
+          Ris.Righe.Add(R1)
+          Ris.Righe.Add(R2)
+          Return Ris
+        End If
+        Corpo -= PassoCorpo
+      End While
+    End If
+    ' una sola parola troppo lunga: una riga al corpo minimo, se entra
+    Dim Fm As XFont = FontCorpo(Base, CorpoMinimo)
+    If Gfx.MeasureString(Testo, Fm).Width <= L Then
+      Ris.Font = Fm
+      Ris.Righe.Add(Testo)
+      Return Ris
+    End If
+    ' 4: casi estremi, due righe al corpo minimo e puntini sull'ultima
+    Ris.Font = Fm
+    Dim Righe As List(Of String) = ACapo(Gfx, Testo, Fm, L)
+    If Parole.Length <= 1 OrElse Righe.Count <= 1 Then
+      Ris.Righe.Add(Tronca(Gfx, Testo, Fm, L))
+    Else
+      Ris.Righe.Add(Righe(0))
+      Ris.Righe.Add(Tronca(Gfx, String.Join(" ", Righe.Skip(1)), Fm, L))
+    End If
+    Return Ris
+  End Function
+
+  ''' <summary>Disegna il testo adattato, centrato in verticale nella cella (a sinistra o al centro in orizzontale).</summary>
+  Private Shared Sub DisegnaCella(Gfx As XGraphics, Tc As clsTestoCella, Pennello As XBrush, X As Double, Y As Double, L As Double, H As Double, ASinistra As Boolean)
+    Dim Hl As Double = If(Tc.Righe.Count <= 1, H, Tc.AltezzaRigaTesto)
+    Dim Y0 As Double = If(Tc.Righe.Count <= 1, Y, Y + (H - Tc.Righe.Count * Hl) / 2)
+    For i As Integer = 0 To Tc.Righe.Count - 1
+      Gfx.DrawString(Tc.Righe(i), Tc.Font, Pennello, New XRect(X + MargineCella, Y0 + i * Hl, L - 2 * MargineCella, Hl),
+                     If(ASinistra, XStringFormats.CenterLeft, XStringFormats.Center))
+    Next
+  End Sub
+
+  ''' <summary>Impaginazione di una tabella: larghezze delle colonne, testo adattato di ogni cella e altezza di ogni riga.</summary>
+  Private Class clsLayoutTabella
+    Public Largh() As Double
+    Public Gruppi As New List(Of clsTestoCella)
+    Public HGruppi As Double
+    Public Intestazioni As New List(Of clsTestoCella)
+    Public HIntestazione As Double
+    Public Celle As New List(Of clsTestoCella())
+    Public HRighe As New List(Of Double)
+    Public ReadOnly Property Altezza As Double
+      Get
+        Return HGruppi + HIntestazione + HRighe.Sum
+      End Get
+    End Property
+  End Class
+
+  Private Shared Function Impagina(Gfx As XGraphics, W As Double, T As clsFfPdfTabella) As clsLayoutTabella
+    Dim Lo As New clsLayoutTabella
     Dim n As Integer = T.Intestazioni.Count
-    If n = 0 Then Return Y
-    Dim Largh(n - 1) As Double
+    If n = 0 Then
+      Lo.Largh = New Double() {}
+      Return Lo
+    End If
+    ReDim Lo.Largh(n - 1)
     Dim Rel(n - 1) As Double
     For c As Integer = 0 To n - 1
       Rel(c) = If(T.Larghezze.Count = n, T.Larghezze(c), If(c = 0, 2.0, 1.0))
     Next
     For c As Integer = 0 To n - 1
-      Largh(c) = W * Rel(c) / Rel.Sum
+      Lo.Largh(c) = W * Rel(c) / Rel.Sum
     Next
+    If T.Gruppi.Count > 0 Then
+      Dim Col As Integer = 0
+      For Each G As KeyValuePair(Of String, Integer) In T.Gruppi
+        Dim Lg As Double = 0
+        For k As Integer = Col To Math.Min(n - 1, Col + G.Value - 1)
+          Lg += Lo.Largh(k)
+        Next
+        Lo.Gruppi.Add(Adatta(Gfx, G.Key, FTabB, Lg - 2 * MargineCella))
+        Col += G.Value
+      Next
+      Lo.HGruppi = Lo.Gruppi.Max(Function(q) q.AltezzaNecessaria)
+    End If
+    For c As Integer = 0 To n - 1
+      Lo.Intestazioni.Add(Adatta(Gfx, T.Intestazioni(c), FTabB, Lo.Largh(c) - 2 * MargineCella))
+    Next
+    Lo.HIntestazione = Lo.Intestazioni.Max(Function(q) q.AltezzaNecessaria)
+    For r As Integer = 0 To T.Righe.Count - 1
+      Dim Riga() As String = T.Righe(r)
+      Dim Celle(n - 1) As clsTestoCella
+      For c As Integer = 0 To n - 1
+        Dim F As XFont = If(r < T.RigheEvidenza OrElse T.CelleGrassetto.Contains(r & "," & c), FTabB, FTab)
+        Celle(c) = Adatta(Gfx, If(c < Riga.Length, Riga(c), ""), F, Lo.Largh(c) - 2 * MargineCella)
+      Next
+      Lo.Celle.Add(Celle)
+      Lo.HRighe.Add(Celle.Max(Function(q) q.AltezzaNecessaria))
+    Next
+    Return Lo
+  End Function
+
+  ''' <summary>Altezza che la tabella occupera' sulla pagina (stesso calcolo del disegno).</summary>
+  Private Shared Function AltezzaTabella(Gfx As XGraphics, W As Double, T As clsFfPdfTabella) As Double
+    If T Is Nothing OrElse T.Intestazioni.Count = 0 Then Return 0
+    Return Impagina(Gfx, W, T).Altezza
+  End Function
+
+  ''' <summary>
+  ''' Tabella compatta: griglia leggera, cornice marcata, righe alternate con sfondo. Il testo di ogni cella si adatta (carattere ridotto,
+  ''' poi due righe con la riga piu' alta, poi puntini). Le righe che non entrano si perdono (la pagina e' dimensionata prima).
+  ''' Restituisce la Y sotto la tabella (le note vanno nel riquadro in fondo alla pagina, vedi CreaPagine).
+  ''' </summary>
+  Private Shared Function DisegnaTabellaSuPagina(Gfx As XGraphics, Y As Double, W As Double, Fondo As Double, T As clsFfPdfTabella) As Double
+    Dim n As Integer = T.Intestazioni.Count
+    If n = 0 Then Return Y
+    Dim Lo As clsLayoutTabella = Impagina(Gfx, W, T)
     Dim Y0 As Double = Y
     Dim PennaLeggera As New XPen(XColor.FromArgb(205, 205, 205), 0.3)
 
     ' gruppi (le linee verticali interne si limitano ai confini dei gruppi)
-    Dim YGruppi As Double = -1
     If T.Gruppi.Count > 0 Then
-      YGruppi = Y
       Dim Xg As Double = Margine
       Dim Col As Integer = 0
-      For Each G As KeyValuePair(Of String, Integer) In T.Gruppi
+      For g As Integer = 0 To T.Gruppi.Count - 1
         Dim Lg As Double = 0
-        For k As Integer = Col To System.Math.Min(n - 1, Col + G.Value - 1)
-          Lg += Largh(k)
+        For k As Integer = Col To Math.Min(n - 1, Col + T.Gruppi(g).Value - 1)
+          Lg += Lo.Largh(k)
         Next
-        Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(214, 224, 238)), Xg, Y, Lg, AltezzaRiga)
-        Gfx.DrawString(Tronca(Gfx, G.Key, FTabB, Lg - 3), FTabB, XBrushes.Black, New XRect(Xg, Y, Lg, AltezzaRiga), XStringFormats.Center)
-        Gfx.DrawLine(PennaLeggera, Xg, Y, Xg, Y + AltezzaRiga)
+        Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(214, 224, 238)), Xg, Y, Lg, Lo.HGruppi)
+        DisegnaCella(Gfx, Lo.Gruppi(g), XBrushes.Black, Xg, Y, Lg, Lo.HGruppi, False)
+        Gfx.DrawLine(PennaLeggera, Xg, Y, Xg, Y + Lo.HGruppi)
         Xg += Lg
-        Col += G.Value
+        Col += T.Gruppi(g).Value
       Next
-      Y += AltezzaRiga
+      Y += Lo.HGruppi
     End If
 
     ' intestazione
+    Dim YIntestazione As Double = Y
     Dim X As Double = Margine
     For c As Integer = 0 To n - 1
-      Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(232, 232, 232)), X, Y, Largh(c), AltezzaRiga)
-      Gfx.DrawString(Tronca(Gfx, T.Intestazioni(c), FTabB, Largh(c) - 2), FTabB, XBrushes.Black, New XRect(X, Y, Largh(c), AltezzaRiga), XStringFormats.Center)
-      X += Largh(c)
+      Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(232, 232, 232)), X, Y, Lo.Largh(c), Lo.HIntestazione)
+      DisegnaCella(Gfx, Lo.Intestazioni(c), XBrushes.Black, X, Y, Lo.Largh(c), Lo.HIntestazione, False)
+      X += Lo.Largh(c)
     Next
-    Y += AltezzaRiga
+    Y += Lo.HIntestazione
     Dim YCorpo As Double = Y
 
-    ' corpo: righe alternate con sfondo
-    Dim NVisibili As Integer = 0
+    ' corpo: righe alternate con sfondo, altezza secondo il testo
+    Dim Bordi As New List(Of Double) From {YCorpo}
     For r As Integer = 0 To T.Righe.Count - 1
-      If Y + AltezzaRiga > Fondo Then Exit For
-      Dim Riga() As String = T.Righe(r)
+      Dim H As Double = Lo.HRighe(r)
+      If Y + H > Fondo Then Exit For
       Dim Xr As Double = Margine
-      If r Mod 2 = 1 Then Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(240, 242, 246)), Xr, Y, W, AltezzaRiga)
+      If r Mod 2 = 1 Then Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(240, 242, 246)), Xr, Y, W, H)
       For c As Integer = 0 To n - 1
-        Dim Testo As String = If(c < Riga.Length, Riga(c), "")
-        Dim F As XFont = If(r < T.RigheEvidenza OrElse T.CelleGrassetto.Contains(r & "," & c), FTabB, FTab)
         Dim Pennello As XBrush = If(T.CelleGrigie.Contains(r & "," & c), XBrushes.Gray, XBrushes.Black)
-        Gfx.DrawString(Tronca(Gfx, Testo, F, Largh(c) - 2), F, Pennello, New XRect(Xr + If(c = 0, 3, 0), Y, Largh(c), AltezzaRiga), If(c = 0, XStringFormats.CenterLeft, XStringFormats.Center))
-        Xr += Largh(c)
+        DisegnaCella(Gfx, Lo.Celle(r)(c), Pennello, Xr, Y, Lo.Largh(c), H, c = 0)
+        Xr += Lo.Largh(c)
       Next
-      Y += AltezzaRiga
-      NVisibili += 1
+      Y += H
+      Bordi.Add(Y)
     Next
 
     ' griglia leggera (verticali e orizzontali) e cornice marcata
     Dim Xv As Double = Margine
     For c As Integer = 1 To n - 1
-      Xv += Largh(c - 1)
-      Gfx.DrawLine(PennaLeggera, Xv, YCorpo - AltezzaRiga, Xv, Y)
+      Xv += Lo.Largh(c - 1)
+      Gfx.DrawLine(PennaLeggera, Xv, YIntestazione, Xv, Y)
     Next
-    For r As Integer = 0 To NVisibili
-      Gfx.DrawLine(PennaLeggera, Margine, YCorpo + r * AltezzaRiga, Margine + W, YCorpo + r * AltezzaRiga)
+    For Each Yb As Double In Bordi
+      Gfx.DrawLine(PennaLeggera, Margine, Yb, Margine + W, Yb)
     Next
-    Gfx.DrawLine(PennaLeggera, Margine, YCorpo - AltezzaRiga, Margine + W, YCorpo - AltezzaRiga)
+    Gfx.DrawLine(PennaLeggera, Margine, YIntestazione, Margine + W, YIntestazione)
     Gfx.DrawRectangle(New XPen(XColors.DimGray, 1.4), Margine, Y0, W, Y - Y0)
     Return Y
   End Function
