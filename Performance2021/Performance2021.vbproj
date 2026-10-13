@@ -164,6 +164,7 @@
     <Compile Include="LeewayModel.vb" />
     <Compile Include="SeaStateNorm.vb" />
     <Compile Include="ClassiInerzia.vb" />
+    <Compile Include="EsportaRiferimenti.vb" />
     <Compile Include="InerziaForm.xaml.vb">
       <DependentUpon>InerziaForm.xaml</DependentUpon>
     </Compile>

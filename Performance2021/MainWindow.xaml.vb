@@ -83,7 +83,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 13 13"
+    Versione = "v02 - 2026 10 13 14"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1864,6 +1864,32 @@ Class MainWindow
     f.Owner = Me
     If f.ShowDialog() <> True Then Exit Sub
     RicalcolaInerziali()
+  End Sub
+
+  ''' <summary>Migrazione a Performance2027: esporta i risultati di riferimento del dataset caricato (vedi clsEsportaRiferimenti).</summary>
+  Private Sub btn_EsportaRiferimenti_Click(sender As Object, e As RoutedEventArgs)
+    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then
+      MsgBox("Load a dataset first.", MsgBoxStyle.Exclamation, "Export reference data")
+      Exit Sub
+    End If
+    Dim Risposta As MsgBoxResult = MsgBox("Export only the visible range?" & vbCrLf & vbCrLf & "Yes = visible range (smaller files)" & vbCrLf & "No = the whole dataset",
+                                          MsgBoxStyle.YesNoCancel Or MsgBoxStyle.Question, "Export reference data")
+    If Risposta = MsgBoxResult.Cancel Then Exit Sub
+    ' NB: Me.Cursor non e' utilizzabile, in MainWindow.xaml esiste una Label di nome "Cursor"
+    Dim Cursore As Input.Cursor = Input.Mouse.OverrideCursor
+    Input.Mouse.OverrideCursor = Input.Cursors.Wait
+    Try
+      Dim Cartella As String = clsEsportaRiferimenti.Esporta(Versione, Risposta = MsgBoxResult.Yes)
+      If Cartella Is Nothing Then
+        MsgBox("Nothing to export.", MsgBoxStyle.Exclamation, "Export reference data")
+      Else
+        Process.Start(Cartella)
+      End If
+    Catch ex As Exception
+      MsgBox("Error while exporting:" & vbCrLf & ex.Message, MsgBoxStyle.Critical, "Export reference data")
+    Finally
+      Input.Mouse.OverrideCursor = Cursore
+    End Try
   End Sub
 
   Private Sub mnu_FileUtilities_SubmenuOpened(sender As Object, e As RoutedEventArgs)

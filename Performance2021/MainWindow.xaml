@@ -83,6 +83,12 @@
                 </MenuItem>
                 <MenuItem >
                   <MenuItem.Header>
+                    <Button x:Name="btn_EsportaRiferimenti" Content="Export reference data" HorizontalContentAlignment="Left" Width="160"
+                            ToolTip="Migration to Performance2027: export all the channels (raw and math), periods and Feed Forward results of the loaded dataset, to verify the new application" Click="btn_EsportaRiferimenti_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
                     <CheckBox x:Name="chk_InertialLegacy" Content="Inertial: old windows method" Width="160" Click="chk_InertialLegacy_Click"
                               ToolTip="Checked: Inertial channels with the old windows (TWA averaged 15 to 5 s before, Sow averaged over the next seconds). Unchecked (default): equilibrium speed Sow + tau x dSow/dt with the current TWA. Saved in the profile." />
                   </MenuItem.Header>
