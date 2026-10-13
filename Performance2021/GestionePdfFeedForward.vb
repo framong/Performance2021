@@ -20,6 +20,11 @@ Public Class clsFfPdfTabella
   Public Property CelleGrigie As New HashSet(Of String)
   ''' <summary>Celle da stampare in grassetto ("riga,colonna", come CelleGrigie).</summary>
   Public Property CelleGrassetto As New HashSet(Of String)
+  ''' <summary>Sfondo di singole celle ("riga,colonna" come CelleGrigie): colore ARGB.</summary>
+  Public Property Sfondi As New Dictionary(Of String, Integer)
+  ''' <summary>Celle con il bordo marcato ("riga,colonna"), colore BordoColore.</summary>
+  Public Property CelleBordo As New HashSet(Of String)
+  Public Property BordoColore As Integer = &HFF2A7F72
 End Class
 
 ''' <summary>Una sezione del PDF feed forward: un canale Y con le sue tabelle e i suoi grafici (uno per fascia di vento).</summary>
@@ -577,13 +582,18 @@ Public Class clsPdfFeedForward
 
     ' corpo: righe alternate con sfondo, altezza secondo il testo
     Dim Bordi As New List(Of Double) From {YCorpo}
+    Dim Riquadri As New List(Of XRect)
     For r As Integer = 0 To T.Righe.Count - 1
       Dim H As Double = Lo.HRighe(r)
       If Y + H > Fondo Then Exit For
       Dim Xr As Double = Margine
       If r Mod 2 = 1 Then Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(240, 242, 246)), Xr, Y, W, H)
       For c As Integer = 0 To n - 1
-        Dim Pennello As XBrush = If(T.CelleGrigie.Contains(r & "," & c), XBrushes.Gray, XBrushes.Black)
+        Dim Chiave As String = r & "," & c
+        Dim Argb As Integer
+        If T.Sfondi.TryGetValue(Chiave, Argb) Then Gfx.DrawRectangle(New XSolidBrush(XColor.FromArgb(Argb)), Xr, Y, Lo.Largh(c), H)
+        If T.CelleBordo.Contains(Chiave) Then Riquadri.Add(New XRect(Xr + 0.8, Y + 0.8, Lo.Largh(c) - 1.6, H - 1.6))
+        Dim Pennello As XBrush = If(T.CelleGrigie.Contains(Chiave), XBrushes.Gray, XBrushes.Black)
         DisegnaCella(Gfx, Lo.Celle(r)(c), Pennello, Xr, Y, Lo.Largh(c), H, c = 0)
         Xr += Lo.Largh(c)
       Next
@@ -602,6 +612,11 @@ Public Class clsPdfFeedForward
     Next
     Gfx.DrawLine(PennaLeggera, Margine, YIntestazione, Margine + W, YIntestazione)
     Gfx.DrawRectangle(New XPen(XColors.DimGray, 1.4), Margine, Y0, W, Y - Y0)
+    ' bordi marcati sopra la griglia
+    Dim PennaBordo As New XPen(XColor.FromArgb(T.BordoColore), 1.6)
+    For Each Rq As XRect In Riquadri
+      Gfx.DrawRectangle(PennaBordo, Rq)
+    Next
     Return Y
   End Function
 

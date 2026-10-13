@@ -37,6 +37,12 @@ Public Class clsFeedForwardReport
   Public Property PdfInsieme As Boolean = False
   ''' <summary>Mostra nel grafico (app e PDF) la nuvola e le medie dei bin radi, che non entrano nel calcolo.</summary>
   Public Property MostraBinRadi As Boolean = True
+  ''' <summary>Evidenziazione del feed forward: guadagno potenziale (punti di X) da cui una cella e' "da intervenire" o "da considerare".</summary>
+  Public Property GuadagnoForte As Double = 1
+  Public Property GuadagnoDebole As Double = 0.5
+  ''' <summary>Evidenziazione della sensitivita': quota spiegata (%) da cui un canale "conta" o "conta molto".</summary>
+  Public Property QuotaMediaPerc As Double = 5
+  Public Property QuotaFortePerc As Double = 15
   ''' <summary>Dimensione dei nomi degli assi disegnati sullo sfondo del grafico.</summary>
   Public Property NomiAssiDimensione As Integer = 40
   ''' <summary>Opacita' (5-100) dei nomi degli assi.</summary>

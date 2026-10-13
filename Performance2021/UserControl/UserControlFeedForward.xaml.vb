@@ -40,6 +40,12 @@ Public Class UserControlFeedForward
     Public Property Affidabilita As String
     ''' <summary>Sensitivita' della prestazione X al canale nella fascia (testo per la tabella).</summary>
     Public Property Sensitivita As String
+    ''' <summary>Guadagno potenziale di X seguendo il suggerimento (testo) e colori delle celle da guardare.</summary>
+    Public Property GuadagnoPot As String
+    Public Property SfondoY As Brush
+    Public Property SfondoSens As Brush
+    Public Property BordoSens As Brush
+    Public Property SpessoreBordoSens As Thickness
     Public Property Nota As String
     Public Property Dati As clsFfFascia
     ''' <summary>Se la fascia e' disegnata nel grafico (checkbox della tabella).</summary>
@@ -173,6 +179,10 @@ Public Class UserControlFeedForward
     txt_ValoriAssiDim.Text = S.ValoriAssiDimensione.ToString
     txt_DecimaliAssi.Text = S.DecimaliAssiExtra.ToString
     txt_TitoloDim.Text = S.TitoloDimensione.ToString
+    txt_GuadForte.Text = Testo(S.GuadagnoForte)
+    txt_GuadDebole.Text = Testo(S.GuadagnoDebole)
+    txt_QuotaMedia.Text = Testo(S.QuotaMediaPerc)
+    txt_QuotaForte.Text = Testo(S.QuotaFortePerc)
     cmb_Filtro_DropDownOpened(Nothing, Nothing)
     cmb_Filtro.SelectedValue = If(S.NamedFilter, "")
     AggiornaElencoReport()
@@ -252,6 +262,22 @@ Public Class UserControlFeedForward
     txt_ValoriAssiDim.Text = S.ValoriAssiDimensione.ToString
     txt_DecimaliAssi.Text = S.DecimaliAssiExtra.ToString
     txt_TitoloDim.Text = S.TitoloDimensione.ToString
+    S.GuadagnoForte = Math.Max(0, Numero(txt_GuadForte.Text, S.GuadagnoForte))
+    S.GuadagnoDebole = Math.Max(0, Math.Min(S.GuadagnoForte, Numero(txt_GuadDebole.Text, S.GuadagnoDebole)))
+    S.QuotaFortePerc = Math.Max(0, Math.Min(100, Numero(txt_QuotaForte.Text, S.QuotaFortePerc)))
+    S.QuotaMediaPerc = Math.Max(0, Math.Min(S.QuotaFortePerc, Numero(txt_QuotaMedia.Text, S.QuotaMediaPerc)))
+    txt_GuadForte.Text = Testo(S.GuadagnoForte)
+    txt_GuadDebole.Text = Testo(S.GuadagnoDebole)
+    txt_QuotaMedia.Text = Testo(S.QuotaMediaPerc)
+    txt_QuotaForte.Text = Testo(S.QuotaFortePerc)
+  End Sub
+
+  ''' <summary>Soglie dell'evidenziazione cambiate: si rifanno i colori della tabella senza ricalcolare.</summary>
+  Private Sub Evidenze_Cambiate(sender As Object, e As RoutedEventArgs)
+    If Not Inizializzato OrElse Caricando Then Exit Sub
+    LeggiGrafica()
+    SalvaProfilo()
+    If Risultati.Count > 0 Then MostraY(TryCast(lst_Y.SelectedItem, clsVoceY))
   End Sub
 
   ''' <summary>Dimensione o trasparenza cambiate: si ridisegna la fascia senza ricalcolare.</summary>
@@ -699,9 +725,97 @@ Public Class UserControlFeedForward
     Return Dec(S.ValoreMigliore, ChY) & If(S.MiglioreAlBordo, " edge", "") & "  (+" & S.GuadagnoMigliore.ToString("0.0", CultureInfo.InvariantCulture) & Um & ")"
   End Function
 
+  ' ---------------------------------------------------------------- evidenziazione delle celle da guardare
+
+  Private Shared ReadOnly ColAgire As Color = Color.FromRgb(141, 184, 232)       ' blu: intervenire
+  Private Shared ReadOnly ColConsiderare As Color = Color.FromRgb(211, 229, 247) ' blu chiaro: da considerare
+  Private Shared ReadOnly ColPochiDati As Color = Color.FromRgb(255, 210, 166)   ' arancione: promettente, servono piu' dati
+  Private Shared ReadOnly ColConta As Color = Color.FromRgb(213, 240, 236)       ' verde acqua chiaro: il canale conta
+  Private Shared ReadOnly ColContaMolto As Color = Color.FromRgb(158, 217, 207)  ' verde acqua: conta molto
+  Private Shared ReadOnly ColBordo As Color = Color.FromRgb(42, 127, 114)        ' bordo: il canale piu' importante della fascia
+
+  Private Shared Function Argb(C As Color) As Integer
+    Return (CInt(C.A) << 24) Or (CInt(C.R) << 16) Or (CInt(C.G) << 8) Or CInt(C.B)
+  End Function
+
+  ''' <summary>
+  ''' Guadagno potenziale di X seguendo il suggerimento: (valore suggerito - media osservata al riferimento) per l'effetto del canale su X
+  ''' (pendenza della sensitivita'). Zero se il canale praticamente non conta, NaN se manca un dato.
+  ''' </summary>
+  Private Function GuadagnoPotenziale(F As clsFfFascia, Sf As clsFfSensitivita) As Double
+    If F Is Nothing OrElse F.Ottimo Is Nothing OrElse Sf Is Nothing OrElse Not Sf.Valida Then Return Double.NaN
+    If Sf.QuotaSpiegata < clsFeedForward.QuotaSpiegataMinima OrElse Sf.VariazioneTipica <= 0 Then Return 0
+    Dim Rif As Double = MediaA(F, Rep().XRiferimento)
+    If Double.IsNaN(Rif) Then Return Double.NaN
+    Return Sf.Sensitivita / Sf.VariazioneTipica * (F.Ottimo.Y - Rif)
+  End Function
+
+  ''' <summary>Colore della cella feed forward: blu = intervenire, blu chiaro = da considerare, arancione = promettente con affidabilita' bassa.</summary>
+  Private Function ColoreFF(Guadagno As Double, Affidabilita As String) As Color?
+    Dim S As clsFeedForwardReport = Rep()
+    If Double.IsNaN(Guadagno) OrElse Guadagno < S.GuadagnoDebole OrElse Guadagno <= 0 Then Return Nothing
+    If Affidabilita IsNot Nothing AndAlso Affidabilita.StartsWith("L") Then Return ColPochiDati
+    Return If(Guadagno >= S.GuadagnoForte, ColAgire, ColConsiderare)
+  End Function
+
+  ''' <summary>Colore della cella di sensitivita': verde acqua chiaro = il canale conta, verde acqua = conta molto.</summary>
+  Private Function ColoreSens(Sf As clsFfSensitivita) As Color?
+    If Sf Is Nothing OrElse Not Sf.Valida OrElse Double.IsNaN(Sf.QuotaSpiegata) Then Return Nothing
+    Dim S As clsFeedForwardReport = Rep()
+    If Sf.QuotaSpiegata * 100 >= S.QuotaFortePerc Then Return ColContaMolto
+    If Sf.QuotaSpiegata * 100 >= S.QuotaMediaPerc Then Return ColConta
+    Return Nothing
+  End Function
+
+  ''' <summary>Canale Y (ChannelId) con la quota spiegata piu' alta nella fascia, tra quelli calcolati (Nothing se nessuno conta).</summary>
+  Private Function CanaleTopFascia(TwsLow As Double) As String
+    Dim Top As String = Nothing, Migliore As Double = clsFeedForward.QuotaSpiegataMinima
+    For Each kv As KeyValuePair(Of String, List(Of clsFfSensitivita)) In Sensibilita
+      Dim Sf As clsFfSensitivita = SensitivitaFascia(kv.Value, TwsLow)
+      If Sf Is Nothing OrElse Not Sf.Valida OrElse Double.IsNaN(Sf.QuotaSpiegata) Then Continue For
+      If Sf.QuotaSpiegata >= Migliore Then
+        Migliore = Sf.QuotaSpiegata
+        Top = kv.Key
+      End If
+    Next
+    Return Top
+  End Function
+
+  Private Function IdDiCanale(ChY As clsChannel2020) As String
+    Return CanaliY.Where(Function(c) c.Value Is ChY).Select(Function(c) c.Key).FirstOrDefault
+  End Function
+
+  Private Function TestoGuadagno(G As Double) As String
+    If Double.IsNaN(G) Then Return ""
+    Dim Um As String = If(String.IsNullOrWhiteSpace(CanaleX.ShortUM), "", " " & CanaleX.ShortUM)
+    Return If(G >= 0, "+", "") & G.ToString("0.0", CultureInfo.InvariantCulture) & Um
+  End Function
+
+  Private Function NotaEvidenzaFF() As String
+    Dim S As clsFeedForwardReport = Rep()
+    Return "Colours:  blue = act here (potential gain at least " & Testo(S.GuadagnoForte) & " points of " & CanaleX.ShortName & ", reliability H or M),  light blue = to consider (at least " & Testo(S.GuadagnoDebole) &
+           " points),  orange = promising but reliability L (more data needed).  Potential gain = (suggested value - mean observed at the reference " & TestoRiferimento() & ") x effect of the channel on " & CanaleX.ShortName & " from the sensitivity."
+  End Function
+
+  Private Function NotaEvidenzaSens() As String
+    Dim S As clsFeedForwardReport = Rep()
+    Return "Colours:  light teal = the channel matters (explained share at least " & Testo(S.QuotaMediaPerc) & "%),  teal = it matters a lot (at least " & Testo(S.QuotaFortePerc) & "%),  thick border = the most important channel of the band."
+  End Function
+
   Private Function RigaTabella(F As clsFfFascia, ChY As clsChannel2020, Optional Sens As clsFfSensitivita = Nothing) As clsFfRiga
     Dim R As New clsFfRiga With {.Fascia = F.TwsLow.ToString("0.#") & " - " & F.TwsHigh.ToString("0.#"), .Campioni = F.Campioni, .Dati = F}
     R.Sensitivita = TestoSensitivita(Sens, ChY)
+    Dim Gp As Double = GuadagnoPotenziale(F, Sens)
+    R.GuadagnoPot = TestoGuadagno(Gp)
+    Dim Cf As Color? = ColoreFF(Gp, If(F.Ottimo Is Nothing, Nothing, F.Ottimo.Affidabilita))
+    If Cf.HasValue Then R.SfondoY = New SolidColorBrush(Cf.Value)
+    Dim Cs As Color? = ColoreSens(Sens)
+    If Cs.HasValue Then R.SfondoSens = New SolidColorBrush(Cs.Value)
+    Dim IdY As String = IdDiCanale(ChY)
+    If IdY IsNot Nothing AndAlso Sens IsNot Nothing AndAlso CanaleTopFascia(F.TwsLow) = IdY Then
+      R.BordoSens = New SolidColorBrush(ColBordo)
+      R.SpessoreBordoSens = New Thickness(2)
+    End If
     R.Bin = F.Bins.Where(Function(b) b.UsatoNelFit).Count & " / " & F.Bins.Count
     If F.Ottimo Is Nothing Then
       R.Nota = F.Messaggio
@@ -724,12 +838,12 @@ Public Class UserControlFeedForward
     If Righe.Count = 0 Then Exit Sub
     Dim Sb As New System.Text.StringBuilder
     Sb.AppendLine(If(CanaleYVista Is Nothing, "", CanaleYVista.LongName))
-    Dim Testa As New List(Of String) From {"Band", "Samples", "Bins", "Target X", "Expected Y", "+-2 SE", "Best bin X", "Best bin Y", "Gain vs best bin", "R2", "Extrapolated", "Reliability", "Sensitivity"}
+    Dim Testa As New List(Of String) From {"Band", "Samples", "Bins", "Target X", "Expected Y", "+-2 SE", "Best bin X", "Best bin Y", "Gain vs best bin", "R2", "Extrapolated", "Reliability", "Sensitivity", "Potential gain"}
     Testa.AddRange(IntestazioniBin.Select(Function(q) q.Value))
     Testa.Add("Note")
     Sb.AppendLine(String.Join(vbTab, Testa))
     For Each R As clsFfRiga In Righe
-      Dim Cel As New List(Of String) From {R.Fascia, R.Campioni.ToString, R.Bin, R.OttimoX, R.OttimoY, R.Errore, R.MigliorX, R.MigliorY, R.Guadagno, R.R2, R.Estrapolato, R.Affidabilita, R.Sensitivita}
+      Dim Cel As New List(Of String) From {R.Fascia, R.Campioni.ToString, R.Bin, R.OttimoX, R.OttimoY, R.Errore, R.MigliorX, R.MigliorY, R.Guadagno, R.R2, R.Estrapolato, R.Affidabilita, R.Sensitivita, R.GuadagnoPot}
       For Each Kb As KeyValuePair(Of Integer, String) In IntestazioniBin
         Dim Mv As String = Nothing
         Dim Us As Boolean = True
@@ -1146,6 +1260,8 @@ Public Class UserControlFeedForward
     ' canali in ordine di influenza
     Dim Righe As New List(Of KeyValuePair(Of Double, String()))
     Dim Grigie As New List(Of List(Of Integer))
+    Dim Colori As New List(Of Dictionary(Of Integer, Integer))
+    Dim BordiR As New List(Of List(Of Integer))
     For Each kv As KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)) In Canali
       Dim ChY As clsChannel2020 = kv.Key
       Dim IdY As String = CanaliY.Where(Function(c) c.Value Is ChY).Select(Function(c) c.Key).FirstOrDefault
@@ -1154,9 +1270,14 @@ Public Class UserControlFeedForward
       Dim Um As String = If(String.IsNullOrWhiteSpace(ChY.ShortUM), "", " [" & ChY.ShortUM & "]")
       Dim Cella As New List(Of String) From {ChY.ShortName & Um}
       Dim G As New List(Of Integer)
+      Dim Cc As New Dictionary(Of Integer, Integer)
+      Dim Bb As New List(Of Integer)
       Dim Somma As Double = 0, Pesi As Double = 0
       For Each B As Double In Bande.Keys
         Dim Sf As clsFfSensitivita = SensitivitaFascia(Sl, B)
+        Dim Cs As Color? = ColoreSens(Sf)
+        If Cs.HasValue Then Cc(Cella.Count) = Argb(Cs.Value)
+        If Sf IsNot Nothing AndAlso Sf.Valida AndAlso CanaleTopFascia(B) = IdY Then Bb.Add(Cella.Count)
         Cella.Add(TestoSensitivita(Sf, ChY))
         If Sf IsNot Nothing AndAlso Sf.Valida Then
           If Sf.QuotaSpiegata < clsFeedForward.QuotaSpiegataMinima Then G.Add(Cella.Count - 1)
@@ -1166,16 +1287,26 @@ Public Class UserControlFeedForward
       Next
       Righe.Add(New KeyValuePair(Of Double, String())(If(Pesi > 0, Somma / Pesi, -1), Cella.ToArray))
       Grigie.Add(G)
+      Colori.Add(Cc)
+      BordiR.Add(Bb)
     Next
     Dim Ordine As List(Of Integer) = Enumerable.Range(0, Righe.Count).OrderByDescending(Function(q) Righe(q).Key).ToList
     For Each k As Integer In Ordine
       For Each c As Integer In Grigie(k)
         T.CelleGrigie.Add(T.Righe.Count & "," & c)
       Next
+      For Each kc As KeyValuePair(Of Integer, Integer) In Colori(k)
+        T.Sfondi(T.Righe.Count & "," & kc.Key) = kc.Value
+      Next
+      For Each c As Integer In BordiR(k)
+        T.CelleBordo.Add(T.Righe.Count & "," & c)
+      Next
+      T.BordoColore = Argb(ColBordo)
       T.Righe.Add(Righe(k).Value)
     Next
     T.Note.Add(NotaSensitivita())
     T.Note.Add("Channels sorted from the most to the least influential (mean explained share over the bands).")
+    T.Note.Add(NotaEvidenzaSens())
     Return T
   End Function
 
@@ -1237,12 +1368,18 @@ Public Class UserControlFeedForward
         If Bersaglio.ContainsKey(B) AndAlso Dec(O.X, CanaleX) <> Dec(Bersaglio(B), CanaleX) Then Testo &= " @ " & Dec(O.X, CanaleX)
         Dim Rif As Double = MediaA(F, Rep().XRiferimento)
         If Not Double.IsNaN(Rif) Then Testo &= "  (" & Dec(Rif, ChY) & ")"
+        Dim SlR As List(Of clsFfSensitivita) = Nothing
+        Dim IdR As String = IdDiCanale(ChY)
+        If IdR IsNot Nothing Then Sensibilita.TryGetValue(IdR, SlR)
+        Dim Cf As Color? = ColoreFF(GuadagnoPotenziale(F, SensitivitaFascia(SlR, F.TwsLow)), O.Affidabilita)
+        If Cf.HasValue Then T.Sfondi(T.Righe.Count & "," & Cella.Count) = Argb(Cf.Value)
         Cella.Add(O.Affidabilita.Substring(0, 1) & "   " & Testo)
       Next
       T.Righe.Add(Cella.ToArray)
     Next
     T.Note.Add("FF = feed forward: value suggested for each channel at the target " & CanaleX.ShortName & " of the band;  (value) = mean observed at the reference " & CanaleX.ShortName & " " & TestoRiferimento() & ";  '@ x' = the channel has a different target.")
     T.Note.Add("Letter before the value = reliability of the suggestion:  H = high,  M = medium,  L = low.  It measures how precise the value at the target is (2 standard errors) compared with the natural scatter of the channel inside the bins; with Maximize/Minimize Y it measures the quality of the fit (R2).")
+    T.Note.Add(NotaEvidenzaFF())
     T.Note.Add("Details, charts and bins in the following pages, one per channel.")
     Return T
   End Function
@@ -1281,9 +1418,19 @@ Public Class UserControlFeedForward
     If IdY IsNot Nothing Then Sensibilita.TryGetValue(IdY, Sl)
     Dim Rs As New List(Of String) From {"Sensitivity of " & CanaleX.ShortName}
     Dim Rb As New List(Of String) From {"Best " & ChY.ShortName & " (gain)"}
+    Dim Rg As New List(Of String) From {"Potential gain of " & CanaleX.ShortName}
     Dim GrigieS As New List(Of Integer)
+    Dim ColoriE As New Dictionary(Of Integer, Integer), ColoriS As New Dictionary(Of Integer, Integer)
+    Dim BordiS As New List(Of Integer)
     For Each F As clsFfFascia In Scelte
       Dim Sf As clsFfSensitivita = SensitivitaFascia(Sl, F.TwsLow)
+      Dim Gp As Double = GuadagnoPotenziale(F, Sf)
+      Dim Cf As Color? = ColoreFF(Gp, If(F.Ottimo Is Nothing, Nothing, F.Ottimo.Affidabilita))
+      If Cf.HasValue Then ColoriE(Rs.Count) = Argb(Cf.Value)
+      Dim Cs As Color? = ColoreSens(Sf)
+      If Cs.HasValue Then ColoriS(Rs.Count) = Argb(Cs.Value)
+      If Sf IsNot Nothing AndAlso Sf.Valida AndAlso IdY IsNot Nothing AndAlso CanaleTopFascia(F.TwsLow) = IdY Then BordiS.Add(Rs.Count)
+      Rg.Add(TestoGuadagno(Gp))
       Rs.Add(TestoSensitivita(Sf, ChY))
       Rb.Add(TestoMigliore(Sf, ChY))
       If Sf IsNot Nothing AndAlso Sf.Valida AndAlso Sf.QuotaSpiegata < clsFeedForward.QuotaSpiegataMinima Then GrigieS.Add(Rs.Count - 1)
@@ -1297,6 +1444,9 @@ Public Class UserControlFeedForward
       Rc.Add(F.Campioni.ToString("N0"))
     Next
     T.Righe.Add(Rt.ToArray)
+    For Each kc As KeyValuePair(Of Integer, Integer) In ColoriE
+      T.Sfondi(T.Righe.Count & "," & kc.Key) = kc.Value
+    Next
     T.Righe.Add(Re.ToArray)
     T.Righe.Add(Ra.ToArray)
     T.Righe.Add(Rc.ToArray)
@@ -1304,8 +1454,21 @@ Public Class UserControlFeedForward
       For Each c As Integer In GrigieS
         T.CelleGrigie.Add(T.Righe.Count & "," & c)
       Next
+      If Rx Is Rs Then
+        For Each kc As KeyValuePair(Of Integer, Integer) In ColoriS
+          T.Sfondi(T.Righe.Count & "," & kc.Key) = kc.Value
+        Next
+        For Each c As Integer In BordiS
+          T.CelleBordo.Add(T.Righe.Count & "," & c)
+        Next
+        T.BordoColore = Argb(ColBordo)
+      End If
       T.Righe.Add(Rx.ToArray)
     Next
+    For Each kc As KeyValuePair(Of Integer, Integer) In ColoriE
+      T.Sfondi(T.Righe.Count & "," & kc.Key) = kc.Value
+    Next
+    T.Righe.Add(Rg.ToArray)
     T.RigheEvidenza = 3
 
     ' bin dal piu' alto al piu' basso
@@ -1325,6 +1488,8 @@ Public Class UserControlFeedForward
       T.Righe.Add(Cella.ToArray)
     Next
     T.Note.Add(NotaSensitivita())
+    T.Note.Add(NotaEvidenzaFF())
+    T.Note.Add(NotaEvidenzaSens())
     T.Note.Add("Best = mean " & ChY.ShortName & " of the eighth of the samples with the highest " & CanaleX.ShortName & "; 'edge' = it is the lowest or the highest eighth, the best may be beyond the values sailed.")
     T.Note.Add("Rows below the sensitivity = mean of " & ChY.ShortName & " in each " & CanaleX.ShortName & " bin;  gray = bin not used in the fit (too few samples).")
     T.Note.Add("FF = feed forward: suggested " & CanaleX.ShortName & ", expected " & ChY.ShortName & ";  (value) = reference " & CanaleX.ShortName & " " & TestoRiferimento() & " and mean " & ChY.ShortName & " observed there;  * = extrapolated;  H / M / L = reliability.")

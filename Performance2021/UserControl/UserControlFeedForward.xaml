@@ -142,6 +142,19 @@
                   <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 </Grid>
               </GroupBox>
+
+              <GroupBox Header="Highlights" Margin="0,6,0,0" ToolTip="Colours of the cells to look at: feed forward by potential gain and reliability, sensitivity by explained share">
+                <Grid Margin="4">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                  <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Gain: act (points)" ToolTip="Potential gain of X from which a feed forward cell is blue (reliability H or M)" /><TextBox Name="txt_GuadForte" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" LostFocus="Evidenze_Cambiate" /></StackPanel>
+                  <StackPanel Grid.Column="1"><TextBlock Text="Gain: consider (points)" ToolTip="Potential gain of X from which a feed forward cell is light blue (orange with reliability L)" /><TextBox Name="txt_GuadDebole" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" LostFocus="Evidenze_Cambiate" /></StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,4,0"><TextBlock Text="Share: matters (%)" ToolTip="Explained share from which a sensitivity cell is light teal" /><TextBox Name="txt_QuotaMedia" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" LostFocus="Evidenze_Cambiate" /></StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"><TextBlock Text="Share: matters a lot (%)" ToolTip="Explained share from which a sensitivity cell is teal" /><TextBox Name="txt_QuotaForte" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" LostFocus="Evidenze_Cambiate" /></StackPanel>
+                </Grid>
+              </GroupBox>
             </StackPanel>
           </ScrollViewer>
         </TabItem>
@@ -212,7 +225,11 @@
           <DataGridTextColumn Header="Samples" Binding="{Binding Campioni}" />
           <DataGridTextColumn Header="Bins" Binding="{Binding Bin}" />
           <DataGridTextColumn Header="Target X" Binding="{Binding OttimoX}" />
-          <DataGridTextColumn Header="Expected Y" Binding="{Binding OttimoY}" />
+          <DataGridTextColumn Header="Expected Y" Binding="{Binding OttimoY}">
+            <DataGridTextColumn.CellStyle>
+              <Style TargetType="DataGridCell"><Setter Property="Background" Value="{Binding SfondoY}" /></Style>
+            </DataGridTextColumn.CellStyle>
+          </DataGridTextColumn>
           <DataGridTextColumn Header="±2 SE" Binding="{Binding Errore}" />
           <DataGridTextColumn Header="Best bin X" Binding="{Binding MigliorX}" />
           <DataGridTextColumn Header="Best bin Y" Binding="{Binding MigliorY}" />
@@ -220,7 +237,20 @@
           <DataGridTextColumn Header="R²" Binding="{Binding R2}" />
           <DataGridTextColumn Header="Extrapolated" Binding="{Binding Estrapolato}" />
           <DataGridTextColumn Header="Reliability" Binding="{Binding Affidabilita}" />
-          <DataGridTextColumn Header="Sensitivity" Binding="{Binding Sensitivita}" />
+          <DataGridTextColumn Header="Sensitivity" Binding="{Binding Sensitivita}">
+            <DataGridTextColumn.CellStyle>
+              <Style TargetType="DataGridCell">
+                <Setter Property="Background" Value="{Binding SfondoSens}" />
+                <Setter Property="BorderBrush" Value="{Binding BordoSens}" />
+                <Setter Property="BorderThickness" Value="{Binding SpessoreBordoSens}" />
+              </Style>
+            </DataGridTextColumn.CellStyle>
+          </DataGridTextColumn>
+          <DataGridTextColumn Header="Potential gain" Binding="{Binding GuadagnoPot}">
+            <DataGridTextColumn.CellStyle>
+              <Style TargetType="DataGridCell"><Setter Property="Background" Value="{Binding SfondoY}" /></Style>
+            </DataGridTextColumn.CellStyle>
+          </DataGridTextColumn>
           <DataGridTextColumn Header="Note" Binding="{Binding Nota}" Width="*" />
         </DataGrid.Columns>
       </DataGrid>
