@@ -83,7 +83,7 @@ Class MainWindow
     AggiornaEtichettaMappa()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startG - mapsui")
 
-    Versione = "v02 - 2026 10 13 02"
+    Versione = "v02 - 2026 10 13 07"
 
     Application.CloseLoadingForm()
     If dbg Then Console.WriteLine(Now.ToString("mm:ss.fff") & " startH - fine")
@@ -1856,6 +1856,41 @@ Class MainWindow
     If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
     clsDataCorrections.ClearChannelValues(clsChannels2020.eCanaliChiave.eLeewayModel)
     RidisegnaPlot(False)
+  End Sub
+
+  ''' <summary>Apre l'inerzia della barca; al salvataggio ricalcola i canali Inertial (con il nuovo metodo usano il Tau).</summary>
+  Private Sub btn_BoatInertia_Click(sender As Object, e As RoutedEventArgs)
+    Dim f As New InerziaForm
+    f.Owner = Me
+    If f.ShowDialog() <> True Then Exit Sub
+    RicalcolaInerziali()
+  End Sub
+
+  Private Sub mnu_FileUtilities_SubmenuOpened(sender As Object, e As RoutedEventArgs)
+    chk_InertialLegacy.IsChecked = AppConfig IsNot Nothing AndAlso AppConfig.ActiveProfile IsNot Nothing AndAlso AppConfig.ActiveProfile.InertialLegacyWindows
+  End Sub
+
+  ''' <summary>Metodo dei canali Inertial: salvato nel profilo, i canali sono ricalcolati subito.</summary>
+  Private Sub chk_InertialLegacy_Click(sender As Object, e As RoutedEventArgs)
+    If AppConfig Is Nothing OrElse AppConfig.ActiveProfile Is Nothing Then Exit Sub
+    AppConfig.ActiveProfile.InertialLegacyWindows = chk_InertialLegacy.IsChecked = True
+    AppConfig.Salva()
+    RicalcolaInerziali()
+  End Sub
+
+  Private Sub RicalcolaInerziali()
+    If DataProvider2020 Is Nothing OrElse Not DataProvider2020.ValoriCaricati Then Exit Sub
+    ' NB: Me.Cursor non e' utilizzabile, in MainWindow.xaml esiste una Label di nome "Cursor"
+    Dim Cursore As Input.Cursor = Input.Mouse.OverrideCursor
+    Input.Mouse.OverrideCursor = Input.Cursors.Wait
+    Try
+      clsDataCorrections.RicalcolaCanaliInerziali()
+      RidisegnaPlot(False)
+    Catch ex As Exception
+      MsgBox("Error while recalculating the inertial channels:" & vbCrLf & ex.Message, MsgBoxStyle.Critical, "Inertial channels")
+    Finally
+      Input.Mouse.OverrideCursor = Cursore
+    End Try
   End Sub
 
   ''' <summary>Apre la tabella TWS / SeaState atteso; al salvataggio ricalcola i canali SeaStateNorm e SeaStateNormDelta.</summary>

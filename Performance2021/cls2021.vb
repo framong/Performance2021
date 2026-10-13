@@ -2173,7 +2173,15 @@ Public Class clsProfile2021
   Public Property StraightLineReportOptionsVmgDn As clsStraightLineReportOptions
   Public Property StraightLineReportOptionsReaching As clsStraightLineReportOptions
   Public Property BoatLenghtInMeters As Double
+  ''' <summary>Secondi della finestra in avanti della Sow Inertial, solo con il metodo vecchio (InertialLegacyWindows).</summary>
   Public Property InertialSowSeconds As Double = 5
+  ''' <summary>
+  ''' False (default) = canali Inertial con la velocita' di equilibrio: Sow Inertial = Sow + Tau * dSow/dt e TWA istantanea (Tau in Inerzia).
+  ''' True = metodo vecchio a finestre: TWA media da 15 a 5 s prima, Sow media dei successivi InertialSowSeconds secondi.
+  ''' </summary>
+  Public Property InertialLegacyWindows As Boolean = False
+  ''' <summary>Inerzia della barca per i canali Inertial (dislocamento, riferimenti, Tau in uso). Nothing nei profili precedenti: Tau di default.</summary>
+  Public Property Inerzia As clsInerziaSettings
   Public Property WindGradientAlpha As Double = 0.1
   Public Property WindGradientAlphaMin As Double = 0.15
   Public Property WindGradientAlphaMax As Double = 0.05

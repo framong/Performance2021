@@ -53,6 +53,11 @@ Public Class clsPdfFeedForward
   Private Shared ReadOnly FTit As New XFont("Verdana", 14, XFontStyle.Bold)
   Private Shared ReadOnly FSez As New XFont("Verdana", 11, XFontStyle.Bold)
   Private Shared ReadOnly FTesto As New XFont("Verdana", 8)
+  ''' <summary>Note delle pagine verticali: carattere piccolo, in un riquadro in fondo alla pagina staccato dalla tabella.</summary>
+  Private Shared ReadOnly FNote As New XFont("Verdana", 6.5)
+  Private Const AltezzaRigaNote As Double = 9
+  Private Const PaddingNote As Double = 5
+  Private Const DistaccoNote As Double = 16
   Private Shared ReadOnly FTab As New XFont("Verdana", 7.5)
   Private Shared ReadOnly FTabB As New XFont("Verdana", 7.5, XFontStyle.Bold)
   Private Shared ReadOnly FPiede As New XFont("Verdana", 7)
@@ -279,22 +284,24 @@ Public Class clsPdfFeedForward
       Gfx.DrawString(Tronca(Gfx, Pg.Titolo, FTitPagina, W), FTitPagina, XBrushes.Black, New XRect(Margine, 26, W, 22), XStringFormats.Center)
       Dim Y As Double = 62
 
-      ' altezza di note e tabella, riservata sotto il grafico
+      ' note (legenda della tabella, sorgente, filtro, impostazioni) in un riquadro con cornice, largo come la tabella, in fondo alla pagina
       Dim T As clsFfPdfTabella = Pg.Tabella
       Dim RigheNote As New List(Of String)
-      For Each R As String In Pg.Righe
-        RigheNote.AddRange(ACapo(Gfx, R, FTesto, W))
-      Next
-      Dim Ht As Double = 11 * RigheNote.Count + 6
       If T IsNot Nothing Then
-        Dim NNote As Integer = 0
         For Each Nota As String In T.Note.Where(Function(q) Not q.StartsWith("#"))
-          NNote += ACapo(Gfx, Nota, FTesto, W).Count
+          RigheNote.AddRange(ACapo(Gfx, Nota, FNote, W - 2 * PaddingNote))
         Next
-        Ht += AltezzaRiga * ((If(T.Gruppi.Count > 0, 1, 0)) + 1 + T.Righe.Count) + 4 + 11 * NNote
       End If
+      For Each R As String In Pg.Righe
+        RigheNote.AddRange(ACapo(Gfx, R, FNote, W - 2 * PaddingNote))
+      Next
       Dim Fondo As Double = Pagina.Height.Value - Margine * 0.5 - AltezzaPiede - 4
-      Dim HGraf As Double = Fondo - Y - Ht - Spazio * 2
+      Dim HNote As Double = If(RigheNote.Count = 0, 0, RigheNote.Count * AltezzaRigaNote + 2 * PaddingNote)
+      Dim YNote As Double = Fondo - HNote
+      Dim Ht As Double = 0
+      If T IsNot Nothing Then Ht = AltezzaRiga * ((If(T.Gruppi.Count > 0, 1, 0)) + 1 + T.Righe.Count)
+      ' il grafico prende lo spazio che resta tra il titolo e la tabella, che resta staccata dal riquadro delle note
+      Dim HGraf As Double = YNote - DistaccoNote - Ht - Spazio - Y
 
       If Pg.Immagine IsNot Nothing AndAlso HGraf > 40 Then
         Try
@@ -311,13 +318,19 @@ Public Class clsPdfFeedForward
         End Try
       End If
 
-      ' tabella sotto il grafico, poi tutte le note (legenda della tabella, sorgente, filtro, impostazioni)
-      If T IsNot Nothing Then Y = DisegnaTabellaSuPagina(Gfx, Y, W, Fondo, T)
-      For Each R As String In RigheNote
-        If Y + 11 > Fondo + AltezzaPiede Then Exit For
-        Gfx.DrawString(R, FTesto, XBrushes.DimGray, New XRect(Margine, Y, W, 11), XStringFormats.CenterLeft)
-        Y += 11
-      Next
+      If T IsNot Nothing Then Y = DisegnaTabellaSuPagina(Gfx, Y, W, YNote - DistaccoNote, T)
+      If RigheNote.Count > 0 Then
+        ' se la pagina e' piena il riquadro non sale sopra la tabella: le righe che non entrano si perdono
+        Dim YBox As Double = Math.Max(YNote, Y + DistaccoNote)
+        Dim HBox As Double = Math.Min(HNote, Fondo - YBox)
+        Gfx.DrawRectangle(New XPen(XColors.Gray, 0.7), New XSolidBrush(XColor.FromArgb(250, 250, 252)), Margine, YBox, W, HBox)
+        Dim Yr As Double = YBox + PaddingNote
+        For Each R As String In RigheNote
+          If Yr + AltezzaRigaNote > YBox + HBox - PaddingNote + 0.5 Then Exit For
+          Gfx.DrawString(R, FNote, XBrushes.DimGray, New XRect(Margine + PaddingNote, Yr, W - 2 * PaddingNote, AltezzaRigaNote), XStringFormats.CenterLeft)
+          Yr += AltezzaRigaNote
+        Next
+      End If
       Gfx.Dispose()
     Next
     NumeraPagine(Doc)
@@ -327,9 +340,9 @@ Public Class clsPdfFeedForward
 
   ''' <summary>
   ''' Tabella compatta: griglia leggera, cornice marcata, righe alternate con sfondo, note sotto. Le righe che non entrano si perdono (la pagina e' dimensionata prima).
-  ''' Restituisce la Y sotto l'ultima nota.
+  ''' Restituisce la Y sotto la tabella (le note vanno nel riquadro in fondo alla pagina, vedi CreaPagine).
   ''' </summary>
-  Private Shared Function DisegnaTabellaSuPagina(Gfx As XGraphics, Y As Double, W As Double, Fondo As Double, T As clsFfPdfTabella)
+  Private Shared Function DisegnaTabellaSuPagina(Gfx As XGraphics, Y As Double, W As Double, Fondo As Double, T As clsFfPdfTabella) As Double
     Dim n As Integer = T.Intestazioni.Count
     If n = 0 Then Return Y
     Dim Largh(n - 1) As Double
@@ -402,15 +415,6 @@ Public Class clsPdfFeedForward
     Next
     Gfx.DrawLine(PennaLeggera, Margine, YCorpo - AltezzaRiga, Margine + W, YCorpo - AltezzaRiga)
     Gfx.DrawRectangle(New XPen(XColors.DimGray, 1.4), Margine, Y0, W, Y - Y0)
-
-    Y += 4
-    For Each Nota As String In T.Note.Where(Function(q) Not q.StartsWith("#"))
-      For Each R As String In ACapo(Gfx, Nota, FTesto, W)
-        If Y + 11 > Fondo + AltezzaPiede Then Exit For
-        Gfx.DrawString(R, FTesto, XBrushes.DimGray, New XRect(Margine, Y, W, 11), XStringFormats.CenterLeft)
-        Y += 11
-      Next
-    Next
     Return Y
   End Function
 

@@ -163,6 +163,10 @@
     <Compile Include="FinestraAvanzamento.vb" />
     <Compile Include="LeewayModel.vb" />
     <Compile Include="SeaStateNorm.vb" />
+    <Compile Include="ClassiInerzia.vb" />
+    <Compile Include="InerziaForm.xaml.vb">
+      <DependentUpon>InerziaForm.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CampiNumerici.vb" />
     <Compile Include="LogTempi.vb" />
     <Compile Include="SeaStateNormForm.xaml.vb">
@@ -334,6 +338,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="QualitySettingsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="InerziaForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

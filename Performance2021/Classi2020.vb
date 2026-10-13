@@ -2671,6 +2671,154 @@ Public Class clsDataProvider2020
     End Get
   End Property
 
+  ''' <summary>TWA inerziale: la finestra media l'angolo da (Ritardo + Finestra) a Ritardo secondi prima dell'istante.</summary>
+  Public Const RitardoTwaInerzialeSec As Double = 5
+  Public Const FinestraTwaInerzialeSec As Double = 10
+
+  ''' <summary>
+  ''' Media di Valori nella finestra di tempo [t + DaSec, t + ASec] di ogni campione, solo dentro il tratto continuo del campione:
+  ''' un buco di tempo (piu' di 3 passi di campionamento e almeno 1 s), un salto all'indietro o un istante mancante chiudono il tratto,
+  ''' cosi' la media non scavalca le pause tra file o sessioni. I NaN sono esclusi; finestra senza valori = NaN. Assoluto = media dei valori assoluti.
+  ''' Somme cumulative e due indici che avanzano soltanto: un solo passaggio sui dati.
+  ''' </summary>
+  Public Function MediaFinestraTemporale(Valori() As Double, DaSec As Double, ASec As Double, Assoluto As Boolean) As Double()
+    Dim Out(Valori.Length - 1) As Double
+    For i As Integer = 0 To Out.Length - 1
+      Out(i) = Double.NaN
+    Next
+    Dim n As Integer = Math.Min(Valori.Length, If(_TimeStamps Is Nothing, 0, _TimeStamps.Length))
+    If n = 0 Then Return Out
+
+    Dim T(n - 1) As Double
+    Dim T0 As DateTime = _TimeStamps(0)
+    For i As Integer = 0 To n - 1
+      T(i) = If(_TimeStamps(i).Ticks = 0, Double.NaN, (_TimeStamps(i) - T0).TotalSeconds)
+    Next
+    ' passo tipico di campionamento: mediana delle differenze positive tra istanti consecutivi
+    Dim Passi As New List(Of Double)
+    Dim Salto As Integer = Math.Max(1, n \ 20000)
+    For i As Integer = Salto To n - 1 Step Salto
+      Dim d As Double = T(i) - T(i - 1)
+      If d > 0 Then Passi.Add(d)
+    Next
+    If Passi.Count = 0 Then Return Out
+    Passi.Sort()
+    Dim Buco As Double = Math.Max(3 * Passi(Passi.Count \ 2), 1.0)
+
+    ' somme cumulative dei valori validi
+    Dim Somma(n) As Double
+    Dim Conta(n) As Integer
+    For i As Integer = 0 To n - 1
+      Dim v As Double = Valori(i)
+      Dim Valido As Boolean = Not Double.IsNaN(v) AndAlso Not Double.IsInfinity(v)
+      Somma(i + 1) = Somma(i) + If(Valido, If(Assoluto, Math.Abs(v), v), 0)
+      Conta(i + 1) = Conta(i) + If(Valido, 1, 0)
+    Next
+
+    Dim Ini As Integer = 0
+    While Ini < n
+      If Double.IsNaN(T(Ini)) Then
+        Ini += 1
+        Continue While
+      End If
+      Dim Fin As Integer = Ini
+      While Fin + 1 < n AndAlso Not Double.IsNaN(T(Fin + 1)) AndAlso T(Fin + 1) - T(Fin) > 0 AndAlso T(Fin + 1) - T(Fin) <= Buco
+        Fin += 1
+      End While
+      Dim Lo As Integer = Ini, Hi As Integer = Ini - 1
+      For k As Integer = Ini To Fin
+        While Lo <= Fin AndAlso T(Lo) < T(k) + DaSec - 0.000001
+          Lo += 1
+        End While
+        While Hi + 1 <= Fin AndAlso T(Hi + 1) <= T(k) + ASec + 0.000001
+          Hi += 1
+        End While
+        If Hi >= Lo Then
+          Dim c As Integer = Conta(Hi + 1) - Conta(Lo)
+          If c > 0 Then Out(k) = (Somma(Hi + 1) - Somma(Lo)) / c
+        End If
+      Next
+      Ini = Fin + 1
+    End While
+    Return Out
+  End Function
+
+  ''' <summary>
+  ''' Pendenza (unita' al secondo) di Valori con una retta ai minimi quadrati sui campioni in [t - MezzaFinestraSec, t + MezzaFinestraSec],
+  ''' solo dentro il tratto continuo (stessa regola dei buchi di MediaFinestraTemporale). NaN esclusi; meno di 3 valori = NaN.
+  ''' </summary>
+  Public Function PendenzaFinestraTemporale(Valori() As Double, MezzaFinestraSec As Double) As Double()
+    Dim Out(Valori.Length - 1) As Double
+    For i As Integer = 0 To Out.Length - 1
+      Out(i) = Double.NaN
+    Next
+    Dim n As Integer = Math.Min(Valori.Length, If(_TimeStamps Is Nothing, 0, _TimeStamps.Length))
+    If n = 0 Then Return Out
+    Dim T(n - 1) As Double
+    Dim T0 As DateTime = _TimeStamps(0)
+    For i As Integer = 0 To n - 1
+      T(i) = If(_TimeStamps(i).Ticks = 0, Double.NaN, (_TimeStamps(i) - T0).TotalSeconds)
+    Next
+    Dim Passi As New List(Of Double)
+    Dim Salto As Integer = Math.Max(1, n \ 20000)
+    For i As Integer = Salto To n - 1 Step Salto
+      Dim d As Double = T(i) - T(i - 1)
+      If d > 0 Then Passi.Add(d)
+    Next
+    If Passi.Count = 0 Then Return Out
+    Passi.Sort()
+    Dim Buco As Double = Math.Max(3 * Passi(Passi.Count \ 2), 1.0)
+
+    Dim Ini As Integer = 0
+    While Ini < n
+      If Double.IsNaN(T(Ini)) Then
+        Ini += 1
+        Continue While
+      End If
+      Dim Fin As Integer = Ini
+      While Fin + 1 < n AndAlso Not Double.IsNaN(T(Fin + 1)) AndAlso T(Fin + 1) - T(Fin) > 0 AndAlso T(Fin + 1) - T(Fin) <= Buco
+        Fin += 1
+      End While
+      Dim Lo As Integer = Ini, Hi As Integer = Ini - 1
+      For k As Integer = Ini To Fin
+        While Lo <= Fin AndAlso T(Lo) < T(k) - MezzaFinestraSec - 0.000001
+          Lo += 1
+        End While
+        While Hi + 1 <= Fin AndAlso T(Hi + 1) <= T(k) + MezzaFinestraSec + 0.000001
+          Hi += 1
+        End While
+        ' retta sui campioni della finestra (tempi relativi al campione per la precisione)
+        Dim Sx As Double = 0, Sy As Double = 0, Sxx As Double = 0, Sxy As Double = 0
+        Dim c As Integer = 0
+        For j As Integer = Lo To Hi
+          Dim v As Double = Valori(j)
+          If Double.IsNaN(v) OrElse Double.IsInfinity(v) Then Continue For
+          Dim x As Double = T(j) - T(k)
+          Sx += x
+          Sy += v
+          Sxx += x * x
+          Sxy += x * v
+          c += 1
+        Next
+        If c >= 3 Then
+          Dim Den As Double = c * Sxx - Sx * Sx
+          If Den > 0.0000000001 Then Out(k) = (c * Sxy - Sx * Sy) / Den
+        End If
+      Next
+      Ini = Fin + 1
+    End While
+    Return Out
+  End Function
+
+  ''' <summary>Rimette alla media dei valori assoluti il segno attuale della TWA (+ dritta, - sinistra; senza segno valido resta positiva).</summary>
+  Private Shared Function ConSegno(MediaAssoluta() As Double, Segnati() As Double) As Double()
+    For i As Integer = 0 To MediaAssoluta.Length - 1
+      If Double.IsNaN(MediaAssoluta(i)) Then Continue For
+      If i < Segnati.Length AndAlso Not Double.IsNaN(Segnati(i)) AndAlso Segnati(i) < 0 Then MediaAssoluta(i) = -MediaAssoluta(i)
+    Next
+    Return MediaAssoluta
+  End Function
+
   Public ReadOnly Property VerificaCanaleTarget(CanaleRef As clsChannel2020) As clsChannel2020
     Get
       If VerificaCanaleTgtPol(CanaleRef, False) Then
@@ -3642,7 +3790,7 @@ Public Class clsDataProvider2020
         Dim chBs As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
         Dim chLwy3s As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eLwyK3s)
 
-        If Not chTwaRecLwy Is Nothing OrElse Not chTws Is Nothing OrElse Not chBs Is Nothing OrElse Not chLwy3s Is Nothing Then
+        If Not chTwaRecLwy Is Nothing AndAlso Not chTws Is Nothing AndAlso Not chBs Is Nothing AndAlso Not chLwy3s Is Nothing Then
           Dim chAwaRecLwy = Channels.Canale(clsChannels2020.eCanaliChiave.eAwaRecLwy)
           Dim chAwsRecLwy = Channels.Canale(clsChannels2020.eCanaliChiave.eAwsRecLwy)
           Dim chAwaRecNoLwy = Channels.Canale(clsChannels2020.eCanaliChiave.eAwaRecNoLwy)
@@ -3756,10 +3904,12 @@ Public Class clsDataProvider2020
           ReDim Canale.Valori(chVmgRL.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim VmgRL As Double = chVmgRL.Valori(i)
-            If Double.IsNaN(VmgRL) Then
+            Dim TgtRL As Double = If(i < CanaleTgt.Valori.Count, CanaleTgt.Valori(i), Double.NaN)
+            ' target mancante o quasi nullo: percentuale non definita (come per la Vmg% inertial)
+            If Double.IsNaN(VmgRL) OrElse Double.IsNaN(TgtRL) OrElse Math.Abs(TgtRL) < 0.01 Then
               Canale.Valori(i) = Double.NaN
             Else
-              Canale.Valori(i) = VmgRL / CanaleTgt.Valori(i) * 100
+              Canale.Valori(i) = VmgRL / TgtRL * 100
             End If
           Next
         End If
@@ -3770,21 +3920,20 @@ Public Class clsDataProvider2020
         Dim chSow As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSowInertial)
         Dim chVmgInr As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgInertial)
         Dim chVmgInrRL As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgInertialRecLeeway)
-        ReDim chVmgInr.Valori(chTwaRL.Valori.Count - 1)
-        ReDim chVmgInrRL.Valori(chTwaRL.Valori.Count - 1)
-        For i As Long = 0 To chTwa.Valori.Count - 1
-          Dim Twa As Double = chTwa.Valori(i)
-          Dim TwaRL As Double = chTwaRL.Valori(i)
-          Dim Sow As Double = chSow.Valori(i)
-          If Double.IsNaN(Twa) OrElse Double.IsNaN(TwaRL) OrElse Double.IsNaN(Sow) Then
-            chVmgInr.Valori(i) = Double.NaN
-            chVmgInr.Valori(i) = Double.NaN
-          Else
-            chVmgInr.Valori(i) = System.Math.Abs(Sow * Math.Cos(Radians(Twa)))
-            chVmgInrRL.Valori(i) = System.Math.Abs(Sow * Math.Cos(Radians(TwaRL)))
-          End If
+        ' stessa lunghezza per i due canali; oltre la lunghezza comune degli ingressi i valori restano NaN
+        Dim NVmg As Integer = chTwa.Valori.Count
+        Dim NComune As Integer = Math.Min(NVmg, Math.Min(chTwaRL.Valori.Count, chSow.Valori.Count))
+        ReDim chVmgInr.Valori(NVmg - 1)
+        ReDim chVmgInrRL.Valori(NVmg - 1)
+        For i As Integer = 0 To NVmg - 1
+          Dim Sow As Double = If(i < NComune, chSow.Valori(i), Double.NaN)
+          Dim Twa As Double = If(i < NComune, chTwa.Valori(i), Double.NaN)
+          Dim TwaRL As Double = If(i < NComune, chTwaRL.Valori(i), Double.NaN)
+          ' ognuno dei due canali e' NaN solo se mancano i suoi dati (prima il RecLeeway restava a 0)
+          chVmgInr.Valori(i) = If(Double.IsNaN(Twa) OrElse Double.IsNaN(Sow), Double.NaN, System.Math.Abs(Sow * Math.Cos(Radians(Twa))))
+          chVmgInrRL.Valori(i) = If(Double.IsNaN(TwaRL) OrElse Double.IsNaN(Sow), Double.NaN, System.Math.Abs(Sow * Math.Cos(Radians(TwaRL))))
         Next
-      Case clsChannels2020.eCanaliChiave.eVmc50, clsChannels2020.eCanaliChiave.eVmc60, clsChannels2020.eCanaliChiave.eVmc70,
+      Case clsChannels2020.eCanaliChiave.eVmc40, clsChannels2020.eCanaliChiave.eVmc50, clsChannels2020.eCanaliChiave.eVmc60, clsChannels2020.eCanaliChiave.eVmc70,
            clsChannels2020.eCanaliChiave.eVmc80, clsChannels2020.eCanaliChiave.eVmc90, clsChannels2020.eCanaliChiave.eVmc100,
            clsChannels2020.eCanaliChiave.eVmc110, clsChannels2020.eCanaliChiave.eVmc120, clsChannels2020.eCanaliChiave.eVmc130,
            clsChannels2020.eCanaliChiave.eVmc140, clsChannels2020.eCanaliChiave.eVmc150
@@ -3837,7 +3986,8 @@ Public Class clsDataProvider2020
           If Double.IsNaN(Twa) OrElse Double.IsNaN(Sow) Then
             chVmcInr.Valori(i) = Double.NaN
           Else
-            Dim d = Math.Abs(Twa - VmcTwa)
+            ' la TWA ha il segno (+ dritta, - sinistra): l'angolo dalla direzione Vmc si misura sul valore assoluto
+            Dim d = Math.Abs(Math.Abs(Twa) - VmcTwa)
             chVmcInr.Valori(i) = System.Math.Abs(Sow * Math.Cos(Radians(d)))
           End If
         Next
@@ -3849,18 +3999,17 @@ Public Class clsDataProvider2020
           Dim chVmgPercInr As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgPercInertial)
           Dim chVmgPercInrRL As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eVmgPercInertialRecLeeway)
           If CanaleTgt Is Nothing Then Exit Sub
-          ReDim chVmgPercInr.Valori(chVmgInr.Valori.Count - 1)
-          ReDim chVmgPercInrRL.Valori(chVmgInr.Valori.Count - 1)
-          For i As Long = 0 To chVmgInr.Valori.Count - 1
+          Dim NPerc As Integer = chVmgInr.Valori.Count
+          ReDim chVmgPercInr.Valori(NPerc - 1)
+          ReDim chVmgPercInrRL.Valori(NPerc - 1)
+          For i As Integer = 0 To NPerc - 1
             Dim VmgInr As Double = chVmgInr.Valori(i)
-            Dim VmgInrRL As Double = chVmgInr.Valori(i)
-            If Double.IsNaN(VmgInr) Then
-              chVmgPercInr.Valori(i) = Double.NaN
-              chVmgPercInrRL.Valori(i) = Double.NaN
-            Else
-              chVmgPercInr.Valori(i) = VmgInr / CanaleTgt.Valori(i) * 100
-              chVmgPercInrRL.Valori(i) = VmgInrRL / CanaleTgt.Valori(i) * 100
-            End If
+            Dim VmgInrRL As Double = If(i < chVmgInrRL.Valori.Count, chVmgInrRL.Valori(i), Double.NaN) ' prima si usava per errore il canale senza RecLeeway
+            Dim Tgt As Double = If(i < CanaleTgt.Valori.Count, CanaleTgt.Valori(i), Double.NaN)
+            ' target mancante o quasi nullo: percentuale non definita (evita valori infiniti che passano i filtri)
+            Dim TgtValido As Boolean = Not Double.IsNaN(Tgt) AndAlso Math.Abs(Tgt) >= 0.01
+            chVmgPercInr.Valori(i) = If(TgtValido AndAlso Not Double.IsNaN(VmgInr), VmgInr / Tgt * 100, Double.NaN)
+            chVmgPercInrRL.Valori(i) = If(TgtValido AndAlso Not Double.IsNaN(VmgInrRL), VmgInrRL / Tgt * 100, Double.NaN)
           Next
         End If
       Case clsChannels2020.eCanaliChiave.eSailSet
@@ -4008,10 +4157,12 @@ Public Class clsDataProvider2020
           ReDim Canale.Valori(chVmgRL.Valori.Count - 1)
           For i As Long = 0 To Canale.Valori.Count - 1
             Dim VmgRL As Double = chVmgRL.Valori(i)
-            If Double.IsNaN(VmgRL) Then
+            Dim TgtRL As Double = If(i < CanaleTgt.Valori.Count, CanaleTgt.Valori(i), Double.NaN)
+            ' target mancante o quasi nullo: percentuale non definita (come per la Vmg% inertial)
+            If Double.IsNaN(VmgRL) OrElse Double.IsNaN(TgtRL) OrElse Math.Abs(TgtRL) < 0.01 Then
               Canale.Valori(i) = Double.NaN
             Else
-              Canale.Valori(i) = VmgRL / CanaleTgt.Valori(i) * 100
+              Canale.Valori(i) = VmgRL / TgtRL * 100
             End If
           Next
         End If
@@ -5510,51 +5661,43 @@ Public Class clsDataProvider2020
         Next
       Case clsChannels2020.eCanaliChiave.eSowInertial
         Dim Bs As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eSOW)
-        Dim AvgSec As Integer = AppConfig.ActiveProfile.InertialSowSeconds
         Dim BsInr As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eSowInertial)
-        ReDim BsInr.Valori(Bs.Valori.Count - 1)
-        Dim LastBs As Double = 0
-        Dim MmBs = New clsMediaMobile(AvgSec * Hz, False)
-        Dim MaxIndex As Integer = Bs.Valori.Count - (AvgSec + 1)
-        'Console.WriteLine(Bs.Valori.Count)
-        For i As Long = 0 To Bs.Valori.Count - 1
-          'If i = 26058 Then Stop
-          If i > MaxIndex Then
-            LastBs = Bs.Valori(i)
-          Else
-            LastBs = MmBs.SetAndGet(Bs.Valori(i + AvgSec))
-          End If
-          BsInr.Valori(i) = LastBs
-          'Console.WriteLine(i)
-        Next
-        'Stop
+        If AppConfig.ActiveProfile.InertialLegacyWindows Then
+          ' metodo vecchio: media della velocita' da adesso ai prossimi InertialSowSeconds secondi (gli istanti successivi come ammortizzatore),
+          ' finestra in secondi e solo dentro il tratto continuo
+          Dim SecSow As Double = Math.Max(0, AppConfig.ActiveProfile.InertialSowSeconds)
+          BsInr.Valori = MediaFinestraTemporale(Bs.Valori, 0, SecSow, False)
+        Else
+          ' velocita' di equilibrio, cioe' quella verso cui la barca sta andando (modello del primo ordine, Tau dal profilo, vedi clsInerzia):
+          ' Sow + Tau * dSow/dt, con dSow/dt pendenza della Sow su +/- MezzaFinestraDerivataSec secondi; mai negativa.
+          ' Un'orzata che tiene la velocita' per qualche secondo fa rallentare la barca: dSow/dt < 0 e la velocita' di equilibrio cala subito.
+          Dim TauInr As Double = clsInerzia.TauCorrente()
+          Dim Pend() As Double = PendenzaFinestraTemporale(Bs.Valori, clsInerzia.MezzaFinestraDerivataSec)
+          Dim Veq(Bs.Valori.Length - 1) As Double
+          For i As Integer = 0 To Veq.Length - 1
+            Dim v As Double = Bs.Valori(i)
+            Veq(i) = If(Double.IsNaN(v) OrElse Double.IsNaN(Pend(i)), Double.NaN, Math.Max(0, v + TauInr * Pend(i)))
+          Next
+          BsInr.Valori = Veq
+        End If
       Case clsChannels2020.eCanaliChiave.eTwaInertial, clsChannels2020.eCanaliChiave.eTwaInertialRecLeeway
         Dim Twa As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTWA)
         Dim TwaRL As clsChannel2020 = CanaleDbl(clsChannels2020.eCanaliChiave.eTwaRecLeeway)
-        Dim AvgSec As Integer = 10
-        Dim Delta As Integer = 5 * Hz 'i secondi prima della media mobile da ignorare
+        ' metodo vecchio (InertialLegacyWindows): angolo tenuto nel periodo precedente, media della TWA da (RitardoTwaInerziale + FinestraTwaInerziale) a RitardoTwaInerziale secondi fa.
+        ' Si media il valore assoluto (la TWA ha il segno: mediata con il segno passava per 0 in virata e strambata e la Vmg diventava la Sow)
+        ' e si rimette il segno attuale; finestra in secondi, solo dentro il tratto continuo (NaN all'inizio di ogni tratto).
         Dim TwaInr As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eTwaInertial)
         Dim TwaInrRL As clsChannel2020 = Channels.Canale(clsChannels2020.eCanaliChiave.eTwaInertialRecLeeway)
-        ReDim TwaInr.Valori(Twa.Valori.Count - 1)
-        ReDim TwaInrRL.Valori(Twa.Valori.Count - 1)
-        Dim ActualIdx As Long = -1
-        Dim LastTwa As Double = 0
-        Dim LastTwaRL As Double = 0
-        Dim MmTwa = New clsMediaMobile(AvgSec * Hz, False)
-        Dim MmTwaRL = New clsMediaMobile(AvgSec * Hz, False)
-        For i As Long = 0 To Twa.Valori.Count - 1
-          If i > Delta Then
-            If i > ActualIdx Then
-              LastTwa = MmTwa.SetAndGet(Twa.Valori(i - Delta))
-              LastTwaRL = MmTwaRL.SetAndGet(TwaRL.Valori(i - Delta))
-            End If
-            TwaInr.Valori(i) = LastTwa
-            TwaInrRL.Valori(i) = LastTwaRL
-          Else
-            TwaInr.Valori(i) = Double.NaN
-            TwaInrRL.Valori(i) = Double.NaN
-          End If
-        Next
+        If AppConfig.ActiveProfile.InertialLegacyWindows Then
+          Dim Da As Double = -(RitardoTwaInerzialeSec + FinestraTwaInerzialeSec)
+          Dim A As Double = -RitardoTwaInerzialeSec
+          TwaInr.Valori = ConSegno(MediaFinestraTemporale(Twa.Valori, Da, A, True), Twa.Valori)
+          TwaInrRL.Valori = ConSegno(MediaFinestraTemporale(TwaRL.Valori, Da, A, True), TwaRL.Valori)
+        Else
+          ' con la velocita' di equilibrio l'inerzia e' gia' nella velocita': l'angolo e' quello attuale
+          TwaInr.Valori = DirectCast(Twa.Valori.Clone(), Double())
+          TwaInrRL.Valori = DirectCast(TwaRL.Valori.Clone(), Double())
+        End If
       Case clsChannels2020.eCanaliChiave.eJibTwistFromFoot_25
         ' Vela & "_" & Stripe.StripePercentageHeight & "_" & NomeCanale
         Dim TwistChannel As clsChannel2020 = CanaleDbl("Jib_25_dTwist")
@@ -6820,7 +6963,9 @@ Public Class clsChannels2020
         Case eCanaliChiave.eSowInertial
           pShortName = "SowInr"
           pLongName = "Sow Inertial"
-          pDataType = clsChannel2020.eDataType.e180
+          pDataType = clsChannel2020.eDataType.eLinear
+          pShortUM = "K"
+          pLongUM = "Kts"
           pPolarHeader = "bs"
           pBenchmarkHeader = "Bs"
           pIsMath = True
@@ -6833,7 +6978,7 @@ Public Class clsChannels2020
           pIsMath = True
         Case eCanaliChiave.eVmgInertial
           pShortName = "VmgInr"
-          pLongName = "Vmg Intertial"
+          pLongName = "Vmg Inertial"
           pDataType = clsChannel2020.eDataType.eLinear
           pPolarHeader = "vmg"
           pBenchmarkHeader = "Vmg"
@@ -6842,7 +6987,7 @@ Public Class clsChannels2020
           pIsMath = True
         Case eCanaliChiave.eVmgInertialRecLeeway
           pShortName = "VmgInrRL"
-          pLongName = "Vmg Intertial RecLeew"
+          pLongName = "Vmg Inertial RecLeew"
           pDataType = clsChannel2020.eDataType.eLinear
           pPolarHeader = "vmg"
           pBenchmarkHeader = "Vmg"
@@ -6851,13 +6996,17 @@ Public Class clsChannels2020
           pIsMath = True
         Case eCanaliChiave.eVmgPercInertial
           pShortName = "VmgInrPerc"
-          pLongName = "VmgPerc Intertial"
-          pDataType = clsChannel2020.eDataType.eLinear
+          pLongName = "VmgPerc Inertial"
+          pDataType = clsChannel2020.eDataType.ePercentage
+          pShortUM = "%"
+          pLongUM = "Perc"
           pIsMath = True
         Case eCanaliChiave.eVmgPercInertialRecLeeway
           pShortName = "VmgInrPercRL"
-          pLongName = "VmgPerc Intertial RecLeew"
-          pDataType = clsChannel2020.eDataType.eLinear
+          pLongName = "VmgPerc Inertial RecLeew"
+          pDataType = clsChannel2020.eDataType.ePercentage
+          pShortUM = "%"
+          pLongUM = "Perc"
           pIsMath = True
         Case eCanaliChiave.eSailSet
           pShortName = "SailSet"
@@ -7414,60 +7563,73 @@ Public Class clsDataCorrections
 
 
 
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVMG)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVMGp)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVmgShear)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVmgShearPerc)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eSowSogDelta)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eSowSogK)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eLeewayRecalc)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVmgRecLwy)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eVmgPercRecLwy)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTWAd)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTwaNoLeeway)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTwaRecLeeway)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAbsAwa)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAbsTwa)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwaRecLwy)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwsRecLwy)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwaRecNoLwy)
-
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eCurrRateRec)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eCurrDirRec)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eRtCurrRate)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eRtCurrDir)
-
-
-
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa2m)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwaTopMast)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwaWithLwy)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_J25)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_J50)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_J75)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_M25)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_M50)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_M75)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwa_M87)
-
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws2m)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAwsTopMast)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_J25)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_J50)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_J75)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_M25)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_M50)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_M75)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eAws_M87)
-
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTws10mAlfaConst)
-    ClearChannelValues(clsChannels2020.eCanaliChiave.eTws10mAlfaVar)
-
-
-
-
-
+    ' prima si svuotano tutti i canali derivati, poi si ricalcolano: ricalcolandoli uno per volta alcuni (per esempio VmgRecLwy prima di
+    ' TwaRecLeeway) venivano rifatti con gli ingressi vecchi. Sono compresi i canali Inertial e Vmc (prima esclusi) e i target della polare,
+    ' calcolati da TWS e TWA che le calibrazioni hanno appena cambiato.
+    RicalcolaDerivatiDopoCalibrazione()
   End Sub
+
+  ''' <summary>Canali derivati da Sow, TWA, TWS, AWA, AWS, HDG: da svuotare tutti insieme quando le calibrazioni cambiano gli ingressi.</summary>
+  Private Shared ReadOnly DerivatiCalibrazione As clsChannels2020.eCanaliChiave() = {
+    clsChannels2020.eCanaliChiave.eVMG, clsChannels2020.eCanaliChiave.eVMGp, clsChannels2020.eCanaliChiave.eBSPp, clsChannels2020.eCanaliChiave.eBSTp,
+    clsChannels2020.eCanaliChiave.eVmgShear, clsChannels2020.eCanaliChiave.eVmgShearPerc, clsChannels2020.eCanaliChiave.eSowSogDelta, clsChannels2020.eCanaliChiave.eSowSogK,
+    clsChannels2020.eCanaliChiave.eLeewayRecalc, clsChannels2020.eCanaliChiave.eLwyK, clsChannels2020.eCanaliChiave.eLwyK3s, clsChannels2020.eCanaliChiave.eLwyK30s,
+    clsChannels2020.eCanaliChiave.eLwyRec3s, clsChannels2020.eCanaliChiave.eLwyRec30s,
+    clsChannels2020.eCanaliChiave.eVmgRecLwy, clsChannels2020.eCanaliChiave.eVmgPercRecLwy, clsChannels2020.eCanaliChiave.eTWAd,
+    clsChannels2020.eCanaliChiave.eTwaNoLeeway, clsChannels2020.eCanaliChiave.eTwaRecLeeway, clsChannels2020.eCanaliChiave.eAbsAwa, clsChannels2020.eCanaliChiave.eAbsTwa,
+    clsChannels2020.eCanaliChiave.eAwaRecLwy, clsChannels2020.eCanaliChiave.eAwsRecLwy, clsChannels2020.eCanaliChiave.eAwaRecNoLwy,
+    clsChannels2020.eCanaliChiave.eCurrRateRec, clsChannels2020.eCanaliChiave.eCurrDirRec, clsChannels2020.eCanaliChiave.eRtCurrRate, clsChannels2020.eCanaliChiave.eRtCurrDir,
+    clsChannels2020.eCanaliChiave.eAwa2m, clsChannels2020.eCanaliChiave.eAwaTopMast, clsChannels2020.eCanaliChiave.eAwaWithLwy,
+    clsChannels2020.eCanaliChiave.eAwa_J25, clsChannels2020.eCanaliChiave.eAwa_J50, clsChannels2020.eCanaliChiave.eAwa_J75,
+    clsChannels2020.eCanaliChiave.eAwa_M25, clsChannels2020.eCanaliChiave.eAwa_M50, clsChannels2020.eCanaliChiave.eAwa_M75, clsChannels2020.eCanaliChiave.eAwa_M87,
+    clsChannels2020.eCanaliChiave.eAws2m, clsChannels2020.eCanaliChiave.eAwsTopMast,
+    clsChannels2020.eCanaliChiave.eAws_J25, clsChannels2020.eCanaliChiave.eAws_J50, clsChannels2020.eCanaliChiave.eAws_J75,
+    clsChannels2020.eCanaliChiave.eAws_M25, clsChannels2020.eCanaliChiave.eAws_M50, clsChannels2020.eCanaliChiave.eAws_M75, clsChannels2020.eCanaliChiave.eAws_M87,
+    clsChannels2020.eCanaliChiave.eTws10mAlfaConst, clsChannels2020.eCanaliChiave.eTws10mAlfaVar}
+
+  ''' <summary>Canali Inertial e Vmc (usano Sow e TWA inertial): da rifare quando cambiano gli ingressi, il metodo o il Tau della barca.</summary>
+  Public Shared ReadOnly CanaliInerziali As clsChannels2020.eCanaliChiave() = {
+    clsChannels2020.eCanaliChiave.eSowInertial, clsChannels2020.eCanaliChiave.eTwaInertial, clsChannels2020.eCanaliChiave.eTwaInertialRecLeeway,
+    clsChannels2020.eCanaliChiave.eVmgInertial, clsChannels2020.eCanaliChiave.eVmgInertialRecLeeway,
+    clsChannels2020.eCanaliChiave.eVmgPercInertial, clsChannels2020.eCanaliChiave.eVmgPercInertialRecLeeway,
+    clsChannels2020.eCanaliChiave.eVmc40, clsChannels2020.eCanaliChiave.eVmc50, clsChannels2020.eCanaliChiave.eVmc60, clsChannels2020.eCanaliChiave.eVmc70,
+    clsChannels2020.eCanaliChiave.eVmc80, clsChannels2020.eCanaliChiave.eVmc90, clsChannels2020.eCanaliChiave.eVmc100, clsChannels2020.eCanaliChiave.eVmc110,
+    clsChannels2020.eCanaliChiave.eVmc120, clsChannels2020.eCanaliChiave.eVmc130, clsChannels2020.eCanaliChiave.eVmc140, clsChannels2020.eCanaliChiave.eVmc150}
+
+  ''' <summary>Svuota e ricalcola i canali Inertial e Vmc (dopo un cambio di metodo o di Tau).</summary>
+  Public Shared Sub RicalcolaCanaliInerziali()
+    If DataProvider2020 Is Nothing OrElse DataProvider2020.Channels Is Nothing Then Exit Sub
+    For Each k As clsChannels2020.eCanaliChiave In CanaliInerziali
+      SvuotaSenzaRicalcolo(k)
+    Next
+    For Each k As clsChannels2020.eCanaliChiave In CanaliInerziali
+      Dim chTmp As clsChannel2020 = DataProvider2020.CanaleDbl(k)
+    Next
+  End Sub
+
+  Private Shared Sub RicalcolaDerivatiDopoCalibrazione()
+    If DataProvider2020 Is Nothing OrElse DataProvider2020.Channels Is Nothing Then Exit Sub
+    For Each k As clsChannels2020.eCanaliChiave In DerivatiCalibrazione.Concat(CanaliInerziali)
+      SvuotaSenzaRicalcolo(k)
+    Next
+    ' target della polare: ricalcolati sul posto con TWS e TWA calibrate (una volta per ogni PolarHeader che ne ha uno)
+    Dim Fatti As New HashSet(Of String)(StringComparer.CurrentCultureIgnoreCase)
+    For Each ch As clsChannel2020 In DataProvider2020.Channels.ListaCanali.ToList
+      If ch Is Nothing OrElse String.IsNullOrWhiteSpace(ch.PolarHeader) OrElse ch.ChannelId Is Nothing Then Continue For
+      If ch.ChannelId.EndsWith("_Tgt", StringComparison.CurrentCultureIgnoreCase) OrElse ch.ChannelId.EndsWith("_Pol", StringComparison.CurrentCultureIgnoreCase) Then Continue For
+      Dim Nome As String = ch.PolarHeader.ToLower
+      If Fatti.Contains(Nome) Then Continue For
+      Dim Tgt As clsChannel2020 = DataProvider2020.Channels.ListaCanali.FirstOrDefault(Function(c) c IsNot Nothing AndAlso String.Equals(c.ChannelId, Nome & "_Tgt", StringComparison.CurrentCultureIgnoreCase))
+      If Tgt Is Nothing OrElse Tgt.Valori Is Nothing OrElse Tgt.Valori.Count <= 1 Then Continue For
+      Fatti.Add(Nome)
+      DataProvider2020.VerificaCanaleTgtPol(ch, True)
+    Next
+    ' ricalcolo: ogni canale rifa' i suoi ingressi svuotati prima di usarli
+    For Each k As clsChannels2020.eCanaliChiave In DerivatiCalibrazione.Concat(CanaliInerziali)
+      Dim chTmp As clsChannel2020 = DataProvider2020.CanaleDbl(k)
+    Next
+  End Sub
+
 
 
   Public Shared Sub ClearChannelValues(CanaleChiave As clsChannels2020.eCanaliChiave)

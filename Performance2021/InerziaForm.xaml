@@ -1,0 +1,78 @@
+<Window x:Class="InerziaForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SPwpf"
+        Title="Boat Inertia" Height="640" Width="720"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+  <Grid Margin="10">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <TextBlock Grid.Row="0" TextWrapping="Wrap" Foreground="DimGray" Margin="0,0,0,8"
+               Text="The boat speed tends to the speed that the present conditions can sustain with a time constant tau (the inertia of the boat). Speed it is heading to: Sow Equilibrium = Sow + tau x dSow/dt. A luff that keeps the speed for a few seconds makes the boat decelerate, so the Vmg computed with the equilibrium speed does not reward it. Used by the Inertial channels (Sow, Vmg and VmgPerc Inertial) unless File Utilities, Inertial: old windows method is checked." />
+
+    <GroupBox Grid.Row="1" Header="Default from the displacement">
+      <Grid Margin="6">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0" Margin="0,0,6,0"><TextBlock Text="Displacement (kg)" /><TextBox Name="txt_Disl" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" TextChanged="Riferimenti_Cambiati" /></StackPanel>
+        <StackPanel Grid.Column="1" Margin="0,0,6,0"><TextBlock Text="Reference speed (kn)" ToolTip="Typical upwind boat speed" /><TextBox Name="txt_Vref" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" TextChanged="Riferimenti_Cambiati" /></StackPanel>
+        <StackPanel Grid.Column="2" Margin="0,0,6,0"><TextBlock Text="Drag at that speed (N)" ToolTip="From the VPP. 0 = estimated as 2.5% of the weight (typical keelboat upwind): then the displacement cancels out and tau depends only on the speed" /><TextBox Name="txt_Drag" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" TextChanged="Riferimenti_Cambiati" /></StackPanel>
+        <StackPanel Grid.Column="3"><TextBlock Text="Default tau (s)" /><TextBox Name="txt_TauDefault" IsReadOnly="True" HorizontalContentAlignment="Right" Background="#FFF0F0F0" /></StackPanel>
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="4" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="Gray" FontSize="11"
+                   Text="tau = 1.1 x displacement x speed / (2 x drag): 1.1 includes the water dragged along, the factor 2 comes from a drag growing with the square of the speed. Without the drag from the VPP it is about 1.15 s per knot of reference speed." />
+      </Grid>
+    </GroupBox>
+
+    <GroupBox Grid.Row="2" Header="Tau in use" Margin="0,8,0,0">
+      <DockPanel Margin="6">
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+          <TextBlock Text="tau (s)" VerticalAlignment="Center" Margin="0,0,6,0" />
+          <TextBox Name="txt_Tau" Width="70" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" TextChanged="Tau_Cambiato" />
+          <Button Content="Reset to default" Margin="10,0,0,0" Padding="8,1,8,1" Click="btn_Default_Click" ToolTip="Use the default tau from the displacement" />
+        </StackPanel>
+        <TextBlock Name="txt_Origine" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#FF30406A" TextWrapping="Wrap" />
+      </DockPanel>
+    </GroupBox>
+
+    <GroupBox Grid.Row="3" Header="Estimate from tacks and gybes (Pavarot)" Margin="0,8,0,0">
+      <DockPanel Margin="6">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+          <Button Content="Estimate" Padding="10,2,10,2" Click="btn_Stima_Click" ToolTip="Fit the speed recovery after every tack and gybe of the loaded dataset" />
+          <Button Name="btn_Usa" Content="Use the estimate" Padding="10,2,10,2" Margin="6,0,0,0" IsEnabled="False" Click="btn_Usa_Click" ToolTip="Use the median tau of the accepted manoeuvres" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Top" Name="txt_Riepilogo" TextWrapping="Wrap" Margin="0,0,0,6" FontWeight="Bold" />
+        <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" Foreground="Gray" FontSize="11" Margin="0,6,0,0"
+                   Text="For each manoeuvre: from the lowest speed in the 20 s after the key moment, up to 60 s (or the next manoeuvre), fit of V = Vfinal - recovery x exp(-t / tau). Accepted when the recovery is visible (0.3 kn and 5% of the speed), the fit is good (R2 0.5) and the recovery lasts at least 2 tau. The recovery also includes the crew trimming the sails, so it can be a little longer than the pure inertia of the hull." />
+        <DataGrid Name="grd_Manovre" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Time" Binding="{Binding Momento, StringFormat=HH:mm:ss}" />
+            <DataGridTextColumn Header="Type" Binding="{Binding Tipo}" />
+            <DataGridTextColumn Header="TWS" Binding="{Binding Tws, StringFormat=0.0}" />
+            <DataGridTextColumn Header="tau (s)" Binding="{Binding Tau, StringFormat=0.0}" />
+            <DataGridTextColumn Header="Min (kn)" Binding="{Binding VMin, StringFormat=0.00}" />
+            <DataGridTextColumn Header="Final (kn)" Binding="{Binding VFinale, StringFormat=0.00}" />
+            <DataGridTextColumn Header="Recovery (kn)" Binding="{Binding Recupero, StringFormat=0.00}" />
+            <DataGridTextColumn Header="R2" Binding="{Binding R2, StringFormat=0.00}" />
+            <DataGridTextColumn Header="Used (s)" Binding="{Binding Durata, StringFormat=0}" />
+            <DataGridTextColumn Header="Result" Binding="{Binding Motivo}" Width="*" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </DockPanel>
+    </GroupBox>
+
+    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button Content="Save and Refresh" Width="120" Margin="5" IsDefault="True" Click="btn_Save_Click" ToolTip="Save in the profile and recompute the Inertial channels" />
+      <Button Content="Cancel" Width="80" Margin="5" IsCancel="True" Click="btn_Cancel_Click" />
+    </StackPanel>
+  </Grid>
+</Window>

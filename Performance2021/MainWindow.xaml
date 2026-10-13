@@ -68,11 +68,23 @@
             <TextBox x:Name="txt_Search" TextChanged="FiltraGrigliaCanali" Margin="2,0,0,0" Width="150" Background="Beige" TextAlignment="Left" FontSize="16" Text=""></TextBox>
             <Button Content="x" ToolTip="Clear search" Cursor="Hand" Click="Button_Click" Width="15" Margin="2,2,2,2"></Button>
             <Menu Margin="10,0,0,0" HorizontalAlignment="Right" >
-              <MenuItem Header="File Utilities" ToolTip="Plot Settings" Height="30" Width="150" >
+              <MenuItem Header="File Utilities" ToolTip="Plot Settings" Height="30" Width="150" SubmenuOpened="mnu_FileUtilities_SubmenuOpened" >
                 <MenuItem >
                   <MenuItem.Header>
                     <Button x:Name="btn_RenameProfile" Content="Rename Profile" HorizontalContentAlignment="Left" Width="160" 
                             ToolTip="Change the boat name stored in the active profile" Click="btn_RenameProfile_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <Button x:Name="btn_BoatInertia" Content="Boat Inertia" HorizontalContentAlignment="Left" Width="160"
+                            ToolTip="Time constant of the boat (default from the displacement, estimate from tacks and gybes) used by the Inertial channels" Click="btn_BoatInertia_Click"/>
+                  </MenuItem.Header>
+                </MenuItem>
+                <MenuItem >
+                  <MenuItem.Header>
+                    <CheckBox x:Name="chk_InertialLegacy" Content="Inertial: old windows method" Width="160" Click="chk_InertialLegacy_Click"
+                              ToolTip="Checked: Inertial channels with the old windows (TWA averaged 15 to 5 s before, Sow averaged over the next seconds). Unchecked (default): equilibrium speed Sow + tau x dSow/dt with the current TWA. Saved in the profile." />
                   </MenuItem.Header>
                 </MenuItem>
                 <Separator />
