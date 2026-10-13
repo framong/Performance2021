@@ -1078,16 +1078,6 @@ Public Class UserControlFeedForward
     Return If(Delta >= 0, "+", "") & Dec(Delta, ChY) & Um & "  (" & clsFeedForward.ClasseAssociazione(A) & ")"
   End Function
 
-  Private Function AssociazioneNota1() As String
-    Return "Association = how much the channel changes when the boat goes from slow to fast: change of the channel from the lowest to the highest " & CanaleX.ShortName &
-           " bin with enough data (for example +1.7 T = 1.7 T more when the boat is fast).  In brackets how clear the change is compared with the normal " &
-           "oscillation of the channel:  low = practically constant,  medium = some change,  high = clear change."
-  End Function
-
-  Private Function AssociazioneNota2() As String
-    Return "Association is not causation: a channel can change with " & CanaleX.ShortName & " because the crew reacts to the speed (for example the forestay eased when the boat is slow) and not because it makes the boat faster."
-  End Function
-
   Private Function TabellaRiepilogoInsieme(Canali As List(Of KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)))) As clsFfPdfTabella
     Dim T As New clsFfPdfTabella
     Dim ChBanda As clsChannel2020 = CanaleDaId(Rep().TwsChannelId)
@@ -1108,9 +1098,6 @@ Public Class UserControlFeedForward
     Next
     T.Gruppi.Add(New KeyValuePair(Of String, Integer)("", 1))
     T.Gruppi.Add(New KeyValuePair(Of String, Integer)(NomeBanda & " bands", Bande.Count))
-    T.Intestazioni.Add("Association (slow to fast)")
-    T.Larghezze.Add(1.9)
-    T.Gruppi.Add(New KeyValuePair(Of String, Integer)("", 1))
 
     ' bersaglio di X per fascia: il piu' frequente tra i canali (con "spingi X" e' lo stesso per tutti)
     Dim Bersaglio As New Dictionary(Of Double, Double)
@@ -1128,13 +1115,11 @@ Public Class UserControlFeedForward
       Rt.Add(If(Bersaglio.ContainsKey(B), Dec(Bersaglio(B), CanaleX) & "  (" & TestoRiferimento() & ")", ""))
       Rc.Add(If(Campioni.ContainsKey(B), Campioni(B).ToString("N0"), ""))
     Next
-    Rt.Add("")
-    Rc.Add("")
     T.Righe.Add(Rt.ToArray)
     T.Righe.Add(Rc.ToArray)
     T.RigheEvidenza = 1
 
-    ' una riga per canale: lettera dell'affidabilita' e valore suggerito; in fondo l'associazione media sulle fasce (pesata sui campioni)
+    ' una riga per canale: lettera dell'affidabilita' e valore suggerito
     For Each kv As KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)) In Canali
       Dim ChY As clsChannel2020 = kv.Key
       Dim Um As String = If(String.IsNullOrWhiteSpace(ChY.ShortUM), "", " [" & ChY.ShortUM & "]")
@@ -1153,21 +1138,10 @@ Public Class UserControlFeedForward
         If Not Double.IsNaN(Rif) Then Testo &= "  (" & Dec(Rif, ChY) & ")"
         Cella.Add(O.Affidabilita.Substring(0, 1) & "   " & Testo)
       Next
-      Dim ConA As List(Of clsFfFascia) = kv.Value.Where(Function(q) q.Ottimo IsNot Nothing AndAlso Not Double.IsNaN(q.Ottimo.Associazione)).ToList
-      If ConA.Count = 0 Then
-        Cella.Add("")
-      Else
-        Dim Pesi As Double = ConA.Sum(Function(q) CDbl(q.Campioni))
-        Dim Am As Double = ConA.Sum(Function(q) q.Ottimo.Associazione * q.Campioni) / Pesi
-        Dim Dm As Double = ConA.Sum(Function(q) q.Ottimo.AssociazioneDelta * q.Campioni) / Pesi
-        Cella.Add(TestoAssoc(Dm, Am, ChY))
-      End If
       T.Righe.Add(Cella.ToArray)
     Next
     T.Note.Add("FF = feed forward: value suggested for each channel at the target " & CanaleX.ShortName & " of the band;  (value) = mean observed at the reference " & CanaleX.ShortName & " " & TestoRiferimento() & ";  '@ x' = the channel has a different target.")
     T.Note.Add("Letter before the value = reliability of the suggestion:  H = high,  M = medium,  L = low.  It measures how precise the value at the target is (2 standard errors) compared with the natural scatter of the channel inside the bins; with Maximize/Minimize Y it measures the quality of the fit (R2).")
-    T.Note.Add(AssociazioneNota1())
-    T.Note.Add(AssociazioneNota2())
     T.Note.Add("Details, charts and bins in the following pages, one per channel.")
     Return T
   End Function
@@ -1200,11 +1174,9 @@ Public Class UserControlFeedForward
     Dim Rt As New List(Of String) From {"FF target " & CanaleX.ShortName}
     Dim Re As New List(Of String) From {"FF expected " & ChY.ShortName}
     Dim Ra As New List(Of String) From {"FF reliability (H/M/L)"}
-    Dim Ras As New List(Of String) From {"Association with " & CanaleX.ShortName}
     Dim Rc As New List(Of String) From {"Samples"}
     For Each F As clsFfFascia In Scelte
       Dim O As clsFfOttimo = F.Ottimo
-      Ras.Add(If(O Is Nothing, "", TestoAssoc(O.AssociazioneDelta, O.Associazione, ChY)))
       Rt.Add(If(O Is Nothing, "", Dec(O.X, CanaleX) & If(O.Estrapolato, " *", "") & "  (" & TestoRiferimento() & ")"))
       Dim Rif As Double = MediaA(F, Rep().XRiferimento)
       Re.Add(If(O Is Nothing, "", Dec(O.Y, ChY) & If(Double.IsNaN(Rif), "", "  (" & Dec(Rif, ChY) & ")")))
@@ -1214,7 +1186,6 @@ Public Class UserControlFeedForward
     T.Righe.Add(Rt.ToArray)
     T.Righe.Add(Re.ToArray)
     T.Righe.Add(Ra.ToArray)
-    T.Righe.Add(Ras.ToArray)
     T.Righe.Add(Rc.ToArray)
     T.RigheEvidenza = 3
 
@@ -1236,8 +1207,6 @@ Public Class UserControlFeedForward
     Next
     T.Note.Add("Rows below 'Samples' = mean of " & ChY.ShortName & " in each " & CanaleX.ShortName & " bin;  gray = bin not used in the fit (too few samples).")
     T.Note.Add("FF = feed forward: suggested " & CanaleX.ShortName & ", expected " & ChY.ShortName & ";  (value) = reference " & CanaleX.ShortName & " " & TestoRiferimento() & " and mean " & ChY.ShortName & " observed there;  * = extrapolated;  H / M / L = reliability.")
-    T.Note.Add(AssociazioneNota1())
-    T.Note.Add(AssociazioneNota2())
     Return T
   End Function
 
