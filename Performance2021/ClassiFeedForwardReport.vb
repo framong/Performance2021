@@ -35,6 +35,8 @@ Public Class clsFeedForwardReport
   Public Property ColonnePagina As Integer = 2
   ''' <summary>PDF: True = un solo grafico per canale Y con le fasce selezionate insieme; False = un grafico per ogni fascia.</summary>
   Public Property PdfInsieme As Boolean = False
+  ''' <summary>Mostra nel grafico (app e PDF) la nuvola e le medie dei bin radi, che non entrano nel calcolo.</summary>
+  Public Property MostraBinRadi As Boolean = True
   ''' <summary>Dimensione dei nomi degli assi disegnati sullo sfondo del grafico.</summary>
   Public Property NomiAssiDimensione As Integer = 40
   ''' <summary>Opacita' (5-100) dei nomi degli assi.</summary>

@@ -89,7 +89,8 @@
             <StackPanel Grid.Column="1" Margin="0,0,4,4"><TextBlock Text="To (0 = open)" /><TextBox Name="txt_XEnd" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,0,4"><TextBlock Text="Bin width" /><TextBox Name="txt_XWidth" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Min samples" ToolTip="Samples needed for a bin to enter the fit" /><TextBox Name="txt_MinCamp" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
-            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Min bins" ToolTip="Bins needed to compute the optimum of a band" /><TextBox Name="txt_MinBin" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Min bins" ToolTip="Dense bins needed to compute the optimum of a band" /><TextBox Name="txt_MinBin" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="2"><TextBlock Text="Min share %" ToolTip="A bin is dense when it holds at least this share of the samples of the band (and at least Min samples). Only dense bins enter the fit and the target; sparse bins can still be shown" /><TextBox Name="txt_MinQuota" local:NumericInput.Kind="Decimal" HorizontalContentAlignment="Right" /></StackPanel>
           </Grid>
         </GroupBox>
 
@@ -117,7 +118,7 @@
               <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-              <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,4,0"><TextBlock Text="Dot size" /><TextBox Name="txt_PuntiDim" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,4,0"><TextBlock Text="Opacity %" ToolTip="5 = almost transparent, 100 = solid" /><TextBox Name="txt_PuntiOpacita" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" LostFocus="Grafica_Cambiata" /></StackPanel>
@@ -125,6 +126,7 @@
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,4,0"><TextBlock Text="Pdf rows" ToolTip="Charts per page: rows" /><TextBox Name="txt_RighePdf" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,4,0"><TextBlock Text="Pdf columns" ToolTip="Charts per page: columns" /><TextBox Name="txt_ColonnePdf" local:NumericInput.Kind="Integer" HorizontalContentAlignment="Right" /></StackPanel>
             <CheckBox Grid.Row="2" Grid.ColumnSpan="3" Name="chk_PdfInsieme" Margin="0,6,0,0" Content="Pdf: selected bands together" ToolTip="Checked: one chart per Y channel with the bands selected in the table (Show). Unchecked: one chart per band." Click="chk_PdfInsieme_Click" />
+            <CheckBox Grid.Row="3" Grid.ColumnSpan="3" Name="chk_MostraRadi" Margin="0,4,0,0" Content="Show sparse bins" ToolTip="Show the samples and the means of the sparse bins (not used in the calculation) in the chart and in the pdf" Click="chk_MostraRadi_Click" />
           </Grid>
         </GroupBox>
               <GroupBox Header="Axes" Margin="0,6,0,0">
@@ -218,7 +220,7 @@
           <DataGridTextColumn Header="R²" Binding="{Binding R2}" />
           <DataGridTextColumn Header="Extrapolated" Binding="{Binding Estrapolato}" />
           <DataGridTextColumn Header="Reliability" Binding="{Binding Affidabilita}" />
-          <DataGridTextColumn Header="Association" Binding="{Binding Associazione}" />
+          <DataGridTextColumn Header="Sensitivity" Binding="{Binding Sensitivita}" />
           <DataGridTextColumn Header="Note" Binding="{Binding Nota}" Width="*" />
         </DataGrid.Columns>
       </DataGrid>

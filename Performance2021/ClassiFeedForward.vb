@@ -21,8 +21,13 @@ Public Class clsFfParametri
   ''' <summary>Limite superiore dei bin di X; se non e' maggiore di XBinStart non c'e' limite superiore.</summary>
   Public Property XBinEnd As Double = 0
   Public Property XBinWidth As Double = 5
-  ''' <summary>Campioni minimi perche' un bin entri nel fit.</summary>
+  ''' <summary>Campioni minimi perche' un bin entri nel fit (minimo assoluto, insieme a MinQuotaBinPerc).</summary>
   Public Property MinCampioniBin As Integer = 20
+  ''' <summary>
+  ''' Quota minima dei campioni della fascia (%) perche' un bin sia "denso" ed entri nel fit e nel calcolo del bersaglio.
+  ''' Con la percentuale la soglia si adatta da sola a fasce con pochi o tanti campioni; i bin radi restano visibili ma non si usano.
+  ''' </summary>
+  Public Property MinQuotaBinPerc As Double = 2
   ''' <summary>Bin utilizzabili minimi per calcolare il fit di una fascia.</summary>
   Public Property MinBinPerFit As Integer = 3
   Public Property Modello As eFfModello = eFfModello.Quadratico
@@ -78,15 +83,6 @@ Public Class clsFfOttimo
   Public Property YMigliorBin As Double
   Public Property Punteggio As Double
   Public Property Affidabilita As String = ""
-  ''' <summary>
-  ''' Associazione tra Y e X: escursione della curva (parabola pesata su tutti i bin usati, solo dentro i dati) divisa per la dispersione
-  ''' dei campioni dentro i bin. Bassa = Y quasi costante al variare di X. Non dice nulla sulla causa.
-  ''' </summary>
-  Public Property Associazione As Double = Double.NaN
-  ''' <summary>Verso dell'associazione: +1 Y cresce con X, -1 cala, 0 piatta.</summary>
-  Public Property AssociazioneVerso As Integer
-  ''' <summary>Variazione di Y (nelle sue unita') dal bin usato con X piu' bassa a quello con X piu' alta, secondo la curva pesata.</summary>
-  Public Property AssociazioneDelta As Double = Double.NaN
 End Class
 
 Public Class clsFfFascia
@@ -104,6 +100,42 @@ Public Class clsFfFascia
   Public Property Ottimo As clsFfOttimo = Nothing
   ''' <summary>Motivo per cui non c'e' un ottimo (pochi bin, pochi campioni...).</summary>
   Public Property Messaggio As String = ""
+End Class
+
+''' <summary>Un bin (a quantili) del canale nel calcolo della sensitivita': valori medi del canale e della prestazione.</summary>
+Public Class clsFfBinSensitivita
+  Public Property CanaleMin As Double
+  Public Property CanaleMax As Double
+  Public Property CanaleMedio As Double
+  Public Property PrestazioneMedia As Double
+  Public Property N As Integer
+End Class
+
+''' <summary>
+''' Sensitivita' della prestazione X a un canale Y in una fascia: di quanto cambia X quando Y si sposta della sua variazione tipica
+''' (1 deviazione standard nella fascia), quanta parte della variazione di X si spiega con Y e il valore di Y con la prestazione migliore.
+''' </summary>
+Public Class clsFfSensitivita
+  Public Property TwsLow As Double
+  Public Property TwsHigh As Double
+  Public Property Campioni As Integer
+  ''' <summary>Variazione tipica del canale (deviazione standard dei campioni della fascia).</summary>
+  Public Property VariazioneTipica As Double = Double.NaN
+  ''' <summary>Variazione della prestazione per una variazione tipica del canale (unita' di X): pendenza della retta X su Y per la deviazione standard di Y.</summary>
+  Public Property Sensitivita As Double = Double.NaN
+  ''' <summary>Quota della varianza di X spiegata dai bin del canale (rapporto di correlazione eta^2, 0-1): coglie anche relazioni non lineari.</summary>
+  Public Property QuotaSpiegata As Double = Double.NaN
+  ''' <summary>Valore medio del canale nel bin con la prestazione migliore, guadagno rispetto alla prestazione media e se e' il primo o l'ultimo bin.</summary>
+  Public Property ValoreMigliore As Double = Double.NaN
+  Public Property GuadagnoMigliore As Double = Double.NaN
+  Public Property MiglioreAlBordo As Boolean
+  Public Property Bins As New List(Of clsFfBinSensitivita)
+  Public Property Messaggio As String = ""
+  Public ReadOnly Property Valida As Boolean
+    Get
+      Return Not Double.IsNaN(Sensitivita)
+    End Get
+  End Property
 End Class
 
 ''' <summary>
@@ -217,7 +249,7 @@ Public Class clsFeedForward
         Fascia.Bins.Add(New clsFfBin With {
           .Indice = kv.Key, .XLow = P.XBinStart + kv.Key * P.XBinWidth, .XHigh = P.XBinStart + (kv.Key + 1) * P.XBinWidth,
           .XMedio = a(1) / Nn, .N = Nn, .YMedio = Media, .YDev = System.Math.Sqrt(Var),
-          .UsatoNelFit = Nn >= P.MinCampioniBin})
+          .UsatoNelFit = Nn >= P.MinCampioniBin AndAlso Nn >= P.MinQuotaBinPerc / 100.0 * Fascia.Campioni})
       Next
       CalcolaOttimo(Fascia, P)
     Next
@@ -237,7 +269,7 @@ Public Class clsFeedForward
       Exit Sub
     End If
     If Usati.Count < System.Math.Max(2, P.MinBinPerFit) Then
-      F.Messaggio = "Not enough bins with at least " & P.MinCampioniBin & " samples (" & Usati.Count & " of " & System.Math.Max(2, P.MinBinPerFit) & ")"
+      F.Messaggio = "Not enough dense bins (at least " & P.MinCampioniBin & " samples and " & P.MinQuotaBinPerc.ToString("0.#") & "% of the band): " & Usati.Count & " of " & System.Math.Max(2, P.MinBinPerFit)
       Exit Sub
     End If
 
@@ -248,11 +280,7 @@ Public Class clsFeedForward
     Dim xLo As Double = xs(0)
     Dim xUltimo As Double = xs(xs.Length - 1)
     Dim xHi As Double = xUltimo + System.Math.Max(0, P.ExtrapolazioneBin) * P.XBinWidth
-    ' spingendo X il bersaglio non e' mai sotto il bin piu' alto con dati, anche se ha troppo pochi campioni per entrare nel fit
-    If P.SpingiX Then
-      Dim ConDati As List(Of clsFfBin) = F.Bins.Where(Function(b) b.N > 0).ToList
-      If ConDati.Count > 0 Then xHi = System.Math.Max(xHi, ConDati.Max(Function(b) b.XMedio))
-    End If
+    ' spingendo X il bersaglio e' l'ultimo bin denso piu' ExtrapolazioneBin bin: i bin radi (pochi campioni isolati) non lo spostano
 
     Dim O As New clsFfOttimo With {.BinUsati = Usati.Count, .CampioniUsati = Usati.Sum(Function(b) b.N)}
     Dim Migliore As clsFfBin = If(P.SpingiX, Usati.Last, If(P.Massimizza, Usati.OrderByDescending(Function(b) b.YMedio).First, Usati.OrderBy(Function(b) b.YMedio).First))
@@ -324,43 +352,9 @@ Public Class clsFeedForward
       If O.Estrapolato Then s *= 0.6
     End If
     O.Punteggio = s
-    CalcolaAssociazione(O, xs, ys, ws, Usati, P)
     O.Affidabilita = If(s >= 0.55, "High", If(s >= 0.3, "Medium", "Low"))
     F.Ottimo = O
   End Sub
-
-  ''' <summary>Associazione: escursione della parabola pesata (retta con 2 bin) dentro l'intervallo dei bin usati, divisa per la dispersione nei bin.</summary>
-  Private Shared Sub CalcolaAssociazione(O As clsFfOttimo, xs() As Double, ys() As Double, ws() As Double, Usati As List(Of clsFfBin), P As clsFfParametri)
-    Dim Sigma As Double = DispersioneNeiBin(Usati)
-    If Double.IsNaN(Sigma) OrElse Sigma <= 0 OrElse xs.Length < 2 Then Exit Sub
-    Dim C As clsPoli = AdattaPoli(xs, ys, ws, System.Math.Min(2, xs.Length - 1), P.XBinWidth)
-    If C Is Nothing Then Exit Sub
-    Dim x0 As Double = xs(0), x1 As Double = xs(xs.Length - 1)
-    Dim yMin As Double = Double.MaxValue, yMax As Double = Double.MinValue
-    Const Passi As Integer = 40
-    For k As Integer = 0 To Passi
-      Dim v As Double = C.Valore(x0 + (x1 - x0) * k / Passi)
-      yMin = System.Math.Min(yMin, v)
-      yMax = System.Math.Max(yMax, v)
-    Next
-    O.Associazione = (yMax - yMin) / Sigma
-    O.AssociazioneVerso = System.Math.Sign(C.Valore(x1) - C.Valore(x0))
-    O.AssociazioneDelta = C.Valore(x1) - C.Valore(x0)
-  End Sub
-
-  ''' <summary>Classe dell'associazione: low (&lt; 0.3), medium (&lt; 1), high.</summary>
-  Public Shared Function ClasseAssociazione(A As Double) As String
-    If Double.IsNaN(A) Then Return ""
-    Return If(A < 0.3, "low", If(A < 1, "medium", "high"))
-  End Function
-
-  ''' <summary>Testo dell'associazione: classe (low &lt; 0.3, medium &lt; 1, high), valore e verso.</summary>
-  Public Shared Function TestoAssociazione(A As Double, Verso As Integer) As String
-    If Double.IsNaN(A) Then Return ""
-    Dim Classe As String = If(A < 0.3, "low", If(A < 1, "medium", "high"))
-    Dim V As String = If(A < 0.3, "", If(Verso > 0, " rises", If(Verso < 0, " falls", "")))
-    Return Classe & " " & A.ToString("0.0", Globalization.CultureInfo.InvariantCulture) & V
-  End Function
 
   ''' <summary>Deviazione standard dei campioni dentro i bin (combinata sui bin usati): la variabilita' naturale del canale Y.</summary>
   Private Shared Function DispersioneNeiBin(Usati As List(Of clsFfBin)) As Double
@@ -494,6 +488,101 @@ Public Class clsFeedForward
       F.CurvaY.Add(yOpt)
     End If
   End Sub
+
+  ' ---------------------------------------------------------------- sensitivita' della prestazione ai canali
+
+  ''' <summary>Bin a quantili del canale usati per la quota spiegata e il valore migliore.</summary>
+  Public Const BinSensitivita As Integer = 8
+  ''' <summary>Sotto questa quota spiegata (eta^2) il canale praticamente non conta per la prestazione.</summary>
+  Public Const QuotaSpiegataMinima As Double = 0.02
+
+  ''' <summary>
+  ''' Sensitivita' per fascia della prestazione X (per esempio VmgPerc) al canale Y: stessi campioni della sorgente, del filtro e della fascia
+  ''' usati dal feed forward, ma con qualsiasi valore di X (limitare X per bin taglierebbe proprio la variabile che si misura).
+  ''' Sensitivita' = pendenza della retta X su Y per la deviazione standard di Y = di quanto cambia X quando il canale si sposta della sua
+  ''' variazione tipica. Quota spiegata: i campioni divisi in BinSensitivita bin a quantili di Y (stesso numero di campioni), varianza delle
+  ''' medie di X tra i bin sulla varianza totale di X. Valore migliore: Y medio del bin con X medio piu' alto.
+  ''' </summary>
+  Public Shared Function Sensitivita(X() As Double, Y() As Double, Tws() As Double, Righe As IEnumerable(Of Integer),
+                                     Maschera As Func(Of Integer, Boolean), P As clsFfParametri) As List(Of clsFfSensitivita)
+    Dim Out As New List(Of clsFfSensitivita)
+    If X Is Nothing OrElse Y Is Nothing OrElse Tws Is Nothing OrElse P Is Nothing OrElse P.TwsStep <= 0 Then Return Out
+    Dim NFasce As Integer = System.Math.Max(1, CInt(System.Math.Ceiling((P.TwsMax - P.TwsMin) / P.TwsStep - 0.000000001)))
+    Dim PerFascia As New List(Of List(Of Integer))
+    For f As Integer = 0 To NFasce - 1
+      Out.Add(New clsFfSensitivita With {.TwsLow = P.TwsMin + f * P.TwsStep, .TwsHigh = P.TwsMin + (f + 1) * P.TwsStep})
+      PerFascia.Add(New List(Of Integer))
+    Next
+    Dim n As Integer = System.Math.Min(X.Length, System.Math.Min(Y.Length, Tws.Length))
+    For Each i As Integer In Righe
+      If i < 0 OrElse i >= n Then Continue For
+      If Double.IsNaN(X(i)) OrElse Double.IsNaN(Y(i)) OrElse Double.IsNaN(Tws(i)) OrElse Double.IsInfinity(X(i)) OrElse Double.IsInfinity(Y(i)) Then Continue For
+      If Maschera IsNot Nothing AndAlso Not Maschera(i) Then Continue For
+      If Tws(i) < P.TwsMin OrElse Tws(i) >= P.TwsMax Then Continue For
+      Dim fa As Integer = CInt(System.Math.Floor((Tws(i) - P.TwsMin) / P.TwsStep))
+      If fa < 0 OrElse fa >= NFasce Then Continue For
+      PerFascia(fa).Add(i)
+    Next
+
+    For fa As Integer = 0 To NFasce - 1
+      Dim S As clsFfSensitivita = Out(fa)
+      Dim Idx As List(Of Integer) = PerFascia(fa)
+      S.Campioni = Idx.Count
+      If Idx.Count < BinSensitivita * System.Math.Max(5, P.MinCampioniBin) Then
+        S.Messaggio = If(Idx.Count = 0, "No samples", "Not enough samples (" & Idx.Count & ")")
+        Continue For
+      End If
+      ' medie, varianze e covarianza sui campioni
+      Dim Mx As Double = 0, My As Double = 0
+      For Each i As Integer In Idx
+        Mx += X(i)
+        My += Y(i)
+      Next
+      Mx /= Idx.Count
+      My /= Idx.Count
+      Dim Vx As Double = 0, Vy As Double = 0, Cxy As Double = 0
+      For Each i As Integer In Idx
+        Vx += (X(i) - Mx) * (X(i) - Mx)
+        Vy += (Y(i) - My) * (Y(i) - My)
+        Cxy += (X(i) - Mx) * (Y(i) - My)
+      Next
+      If Vy <= 0 Then
+        S.Messaggio = "The channel is constant"
+        Continue For
+      End If
+      S.VariazioneTipica = System.Math.Sqrt(Vy / (Idx.Count - 1))
+      S.Sensitivita = (Cxy / Vy) * S.VariazioneTipica
+
+      ' bin a quantili del canale
+      Dim Ord As List(Of Integer) = Idx.OrderBy(Function(q) Y(q)).ToList
+      Dim Tra As Double = 0
+      For b As Integer = 0 To BinSensitivita - 1
+        Dim i0 As Integer = CInt(System.Math.Floor(b * Ord.Count / CDbl(BinSensitivita)))
+        Dim i1 As Integer = CInt(System.Math.Floor((b + 1) * Ord.Count / CDbl(BinSensitivita))) - 1
+        If i1 < i0 Then Continue For
+        Dim Sx As Double = 0, Sy As Double = 0
+        For k As Integer = i0 To i1
+          Sx += X(Ord(k))
+          Sy += Y(Ord(k))
+        Next
+        Dim Nb As Integer = i1 - i0 + 1
+        Dim Bn As New clsFfBinSensitivita With {.CanaleMin = Y(Ord(i0)), .CanaleMax = Y(Ord(i1)), .CanaleMedio = Sy / Nb, .PrestazioneMedia = Sx / Nb, .N = Nb}
+        S.Bins.Add(Bn)
+        Tra += Nb * (Bn.PrestazioneMedia - Mx) * (Bn.PrestazioneMedia - Mx)
+      Next
+      S.QuotaSpiegata = If(Vx > 0, Tra / Vx, Double.NaN)
+      If S.Bins.Count > 0 Then
+        Dim Best As Integer = 0
+        For b As Integer = 1 To S.Bins.Count - 1
+          If S.Bins(b).PrestazioneMedia > S.Bins(Best).PrestazioneMedia Then Best = b
+        Next
+        S.ValoreMigliore = S.Bins(Best).CanaleMedio
+        S.GuadagnoMigliore = S.Bins(Best).PrestazioneMedia - Mx
+        S.MiglioreAlBordo = Best = 0 OrElse Best = S.Bins.Count - 1
+      End If
+    Next
+    Return Out
+  End Function
 
   ' ---------------------------------------------------------------- minimi quadrati pesati
 

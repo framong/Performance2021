@@ -38,7 +38,8 @@ Public Class UserControlFeedForward
     Public Property R2 As String
     Public Property Estrapolato As String
     Public Property Affidabilita As String
-    Public Property Associazione As String
+    ''' <summary>Sensitivita' della prestazione X al canale nella fascia (testo per la tabella).</summary>
+    Public Property Sensitivita As String
     Public Property Nota As String
     Public Property Dati As clsFfFascia
     ''' <summary>Se la fascia e' disegnata nel grafico (checkbox della tabella).</summary>
@@ -51,6 +52,8 @@ Public Class UserControlFeedForward
 
   ''' <summary>Risultati dell'ultimo calcolo: per ogni canale Y (ChannelId) le fasce di vento.</summary>
   Private Risultati As New Dictionary(Of String, List(Of clsFfFascia))
+  ''' <summary>Sensitivita' della prestazione X a ogni canale Y (ChannelId), per fascia.</summary>
+  Private Sensibilita As New Dictionary(Of String, List(Of clsFfSensitivita))
   Private Righe As New List(Of clsFfRiga)
   ''' <summary>Fasce selezionate (checkbox Show) per ogni canale Y: ChannelId -> inizio fascia (TwsLow).</summary>
   Private Selezione As New Dictionary(Of String, HashSet(Of Double))
@@ -155,6 +158,7 @@ Public Class UserControlFeedForward
     txt_XWidth.Text = Testo(P.XBinWidth)
     txt_MinCamp.Text = P.MinCampioniBin.ToString
     txt_MinBin.Text = P.MinBinPerFit.ToString
+    txt_MinQuota.Text = Testo(P.MinQuotaBinPerc)
     txt_Extra.Text = Testo(P.ExtrapolazioneBin)
     txt_XRif.Text = Testo(S.XRiferimento)
     txt_PuntiDim.Text = S.PuntiDimensione.ToString
@@ -163,6 +167,7 @@ Public Class UserControlFeedForward
     txt_RighePdf.Text = S.RighePagina.ToString
     txt_ColonnePdf.Text = S.ColonnePagina.ToString
     chk_PdfInsieme.IsChecked = S.PdfInsieme
+    chk_MostraRadi.IsChecked = S.MostraBinRadi
     txt_NomiAssiDim.Text = S.NomiAssiDimensione.ToString
     txt_NomiAssiOpacita.Text = S.NomiAssiOpacita.ToString
     txt_ValoriAssiDim.Text = S.ValoriAssiDimensione.ToString
@@ -195,11 +200,19 @@ Public Class UserControlFeedForward
     P.XBinWidth = Numero(txt_XWidth.Text, P.XBinWidth)
     P.MinCampioniBin = CInt(Numero(txt_MinCamp.Text, P.MinCampioniBin))
     P.MinBinPerFit = CInt(Numero(txt_MinBin.Text, P.MinBinPerFit))
+    P.MinQuotaBinPerc = Math.Max(0, Math.Min(50, Numero(txt_MinQuota.Text, P.MinQuotaBinPerc)))
     P.ExtrapolazioneBin = Numero(txt_Extra.Text, P.ExtrapolazioneBin)
     S.XRiferimento = Numero(txt_XRif.Text, S.XRiferimento)
     LeggiGrafica()
     S.PdfInsieme = chk_PdfInsieme.IsChecked = True
     SalvaProfilo()
+  End Sub
+
+  Private Sub chk_MostraRadi_Click(sender As Object, e As RoutedEventArgs)
+    If Not Inizializzato OrElse Caricando Then Exit Sub
+    Rep().MostraBinRadi = chk_MostraRadi.IsChecked = True
+    SalvaProfilo()
+    RidisegnaVisibili()
   End Sub
 
   Private Sub chk_PdfInsieme_Click(sender As Object, e As RoutedEventArgs)
@@ -267,6 +280,7 @@ Public Class UserControlFeedForward
     If R Is Nothing Then Exit Sub
     AppConfig.ActiveProfile.FeedForwardSettings = R.Clona()
     Risultati.Clear()
+    Sensibilita.Clear()
     Selezione.Clear()
     grd_Fasce.ItemsSource = Nothing
     DisegnaFascia(Nothing, Nothing)
@@ -482,6 +496,7 @@ Public Class UserControlFeedForward
       End If
 
       Risultati.Clear()
+      Sensibilita.Clear()
       CanaliY.Clear()
       Dim Mancanti As New List(Of String)
       Dim RigheCamp As List(Of Integer) = Nothing
@@ -495,6 +510,7 @@ Public Class UserControlFeedForward
         If RigheCamp Is Nothing Then RigheCamp = RigheSorgente(S.Sorgente, N).ToList
         CanaliY(V.Id) = ChY
         Risultati(V.Id) = clsFeedForward.Calcola(CanaleX.Valori, ChY.Valori, ChTws.Valori, RigheCamp, Maschera, S.Parametri)
+        Sensibilita(V.Id) = clsFeedForward.Sensitivita(CanaleX.Valori, ChY.Valori, ChTws.Valori, RigheCamp, Maschera, S.Parametri)
         ' selezione delle fasce: si conserva quella esistente (solo fasce ancora valide), altrimenti la prima con ottimo
         Dim Sel As HashSet(Of Double) = Nothing
         If Selezione.TryGetValue(V.Id, Sel) Then
@@ -540,8 +556,10 @@ Public Class UserControlFeedForward
     Dim Lista As List(Of clsFfFascia) = Nothing
     If V IsNot Nothing AndAlso Risultati.TryGetValue(V.Id, Lista) Then
       CanaleYVista = CanaliY(V.Id)
+      Dim Sl As List(Of clsFfSensitivita) = Nothing
+      Sensibilita.TryGetValue(V.Id, Sl)
       For Each F As clsFfFascia In Lista
-        Righe.Add(RigaTabella(F, CanaleYVista))
+        Righe.Add(RigaTabella(F, CanaleYVista, SensitivitaFascia(Sl, F.TwsLow)))
       Next
     End If
     AggiornaColonneBin(Lista)
@@ -658,8 +676,32 @@ Public Class UserControlFeedForward
     RidisegnaVisibili()
   End Sub
 
-  Private Function RigaTabella(F As clsFfFascia, ChY As clsChannel2020) As clsFfRiga
+  Private Shared Function SensitivitaFascia(Lista As List(Of clsFfSensitivita), TwsLow As Double) As clsFfSensitivita
+    If Lista Is Nothing Then Return Nothing
+    Return Lista.FirstOrDefault(Function(q) Math.Abs(q.TwsLow - TwsLow) < 0.000001)
+  End Function
+
+  ''' <summary>
+  ''' Sensitivita' come testo: variazione tipica del canale nella sua unita' e la variazione di X che ne segue.
+  ''' Esempio "+0.4 T: +5.1 %" = con il forestay 0.4 T piu' alto la Vmg% e' 5.1 punti piu' alta. La quota spiegata non si scrive:
+  ''' decide il grigio (canale che praticamente non conta) e l'ordine dei canali.
+  ''' </summary>
+  Private Function TestoSensitivita(S As clsFfSensitivita, ChY As clsChannel2020) As String
+    If S Is Nothing OrElse Not S.Valida Then Return ""
+    Dim UmX As String = If(String.IsNullOrWhiteSpace(CanaleX.ShortUM), "", " " & CanaleX.ShortUM)
+    Dim UmY As String = If(ChY Is Nothing OrElse String.IsNullOrWhiteSpace(ChY.ShortUM), "", " " & ChY.ShortUM)
+    Return "+" & Dec(S.VariazioneTipica, ChY) & UmY & ": " & If(S.Sensitivita >= 0, "+", "") & S.Sensitivita.ToString("0.0", CultureInfo.InvariantCulture) & UmX
+  End Function
+
+  Private Function TestoMigliore(S As clsFfSensitivita, ChY As clsChannel2020) As String
+    If S Is Nothing OrElse Not S.Valida OrElse Double.IsNaN(S.ValoreMigliore) Then Return ""
+    Dim Um As String = If(String.IsNullOrWhiteSpace(CanaleX.ShortUM), "", " " & CanaleX.ShortUM)
+    Return Dec(S.ValoreMigliore, ChY) & If(S.MiglioreAlBordo, " edge", "") & "  (+" & S.GuadagnoMigliore.ToString("0.0", CultureInfo.InvariantCulture) & Um & ")"
+  End Function
+
+  Private Function RigaTabella(F As clsFfFascia, ChY As clsChannel2020, Optional Sens As clsFfSensitivita = Nothing) As clsFfRiga
     Dim R As New clsFfRiga With {.Fascia = F.TwsLow.ToString("0.#") & " - " & F.TwsHigh.ToString("0.#"), .Campioni = F.Campioni, .Dati = F}
+    R.Sensitivita = TestoSensitivita(Sens, ChY)
     R.Bin = F.Bins.Where(Function(b) b.UsatoNelFit).Count & " / " & F.Bins.Count
     If F.Ottimo Is Nothing Then
       R.Nota = F.Messaggio
@@ -674,7 +716,6 @@ Public Class UserControlFeedForward
       R.R2 = If(Double.IsNaN(O.R2), "", O.R2.ToString("0.00"))
       R.Estrapolato = If(O.Estrapolato, "yes", "")
       R.Affidabilita = O.Affidabilita
-      R.Associazione = TestoAssoc(O.AssociazioneDelta, O.Associazione, ChY)
     End If
     Return R
   End Function
@@ -683,12 +724,12 @@ Public Class UserControlFeedForward
     If Righe.Count = 0 Then Exit Sub
     Dim Sb As New System.Text.StringBuilder
     Sb.AppendLine(If(CanaleYVista Is Nothing, "", CanaleYVista.LongName))
-    Dim Testa As New List(Of String) From {"Band", "Samples", "Bins", "Target X", "Expected Y", "+-2 SE", "Best bin X", "Best bin Y", "Gain vs best bin", "R2", "Extrapolated", "Reliability", "Association"}
+    Dim Testa As New List(Of String) From {"Band", "Samples", "Bins", "Target X", "Expected Y", "+-2 SE", "Best bin X", "Best bin Y", "Gain vs best bin", "R2", "Extrapolated", "Reliability", "Sensitivity"}
     Testa.AddRange(IntestazioniBin.Select(Function(q) q.Value))
     Testa.Add("Note")
     Sb.AppendLine(String.Join(vbTab, Testa))
     For Each R As clsFfRiga In Righe
-      Dim Cel As New List(Of String) From {R.Fascia, R.Campioni.ToString, R.Bin, R.OttimoX, R.OttimoY, R.Errore, R.MigliorX, R.MigliorY, R.Guadagno, R.R2, R.Estrapolato, R.Affidabilita, R.Associazione}
+      Dim Cel As New List(Of String) From {R.Fascia, R.Campioni.ToString, R.Bin, R.OttimoX, R.OttimoY, R.Errore, R.MigliorX, R.MigliorY, R.Guadagno, R.R2, R.Estrapolato, R.Affidabilita, R.Sensitivita}
       For Each Kb As KeyValuePair(Of Integer, String) In IntestazioniBin
         Dim Mv As String = Nothing
         Dim Us As Boolean = True
@@ -787,6 +828,7 @@ Public Class UserControlFeedForward
         L.Add(i)
       Next
       For Each b As clsFfBin In F.Bins
+        If Not b.UsatoNelFit AndAlso Not S.MostraBinRadi Then Continue For ' bin rado nascosto
         Dim Idx As List(Of Integer) = Nothing
         If Not PerBin.TryGetValue(b.Indice, Idx) Then Continue For
         Dim Passo As Integer = System.Math.Max(1, CInt(System.Math.Ceiling(Idx.Count / CDbl(MaxPuntiPerBin))))
@@ -806,6 +848,7 @@ Public Class UserControlFeedForward
 
       ' medie dei bin: piene se entrano nel fit, vuote se no
       For Each Usato As Boolean In {False, True}
+        If Not Usato AndAlso Not S.MostraBinRadi Then Continue For
         Dim Bs As List(Of clsFfBin) = F.Bins.Where(Function(b) b.UsatoNelFit = Usato).ToList
         If Bs.Count = 0 Then Continue For
         Dim Ds As New XyDataSeries(Of Double, Double) With {.AcceptsUnsortedData = True}
@@ -1071,11 +1114,69 @@ Public Class UserControlFeedForward
     Return Double.NaN
   End Function
 
-  ''' <summary>Associazione come testo: variazione del canale nelle sue unita' (con segno) e, tra parentesi, quanto e' netta.</summary>
-  Private Function TestoAssoc(Delta As Double, A As Double, ChY As clsChannel2020) As String
-    If Double.IsNaN(Delta) OrElse Double.IsNaN(A) Then Return ""
-    Dim Um As String = If(String.IsNullOrWhiteSpace(ChY.ShortUM), "", " " & ChY.ShortUM)
-    Return If(Delta >= 0, "+", "") & Dec(Delta, ChY) & Um & "  (" & clsFeedForward.ClasseAssociazione(A) & ")"
+  Private Function NotaSensitivita() As String
+    Return "Sensitivity, for example '+0.4 T: +5.1 %' = when the channel is higher by its typical change (1 standard deviation in the band, in its own unit) " & CanaleX.ShortName & " changes by that amount, from all the samples of the band.  " &
+           "Gray = the channel explains less than " & (clsFeedForward.QuotaSpiegataMinima * 100).ToString("0") & "% of the " & CanaleX.ShortName & " variation of the band (also counting a best value in the middle): it practically does not matter.  " &
+           "It is an observed relation, not a cause: steady data (filter) make it more reliable."
+  End Function
+
+  ''' <summary>
+  ''' Tabella della sensitivita' nel riepilogo: una riga per canale (dal piu' al meno influente, per quota spiegata media pesata sui campioni),
+  ''' una colonna per fascia (le stesse del riepilogo feed forward); grigio = quota spiegata sotto la soglia.
+  ''' </summary>
+  Private Function TabellaSensitivita(Canali As List(Of KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)))) As clsFfPdfTabella
+    Dim T As New clsFfPdfTabella
+    Dim ChBanda As clsChannel2020 = CanaleDaId(Rep().TwsChannelId)
+    Dim NomeBanda As String = If(ChBanda Is Nothing, "Band", ChBanda.ShortName)
+    Dim Bande As New SortedDictionary(Of Double, Double)
+    For Each kv As KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)) In Canali
+      For Each F As clsFfFascia In kv.Value
+        If Not Bande.ContainsKey(F.TwsLow) Then Bande(F.TwsLow) = F.TwsHigh
+      Next
+    Next
+    T.Intestazioni.Add("")
+    T.Larghezze.Add(2.6)
+    For Each B As KeyValuePair(Of Double, Double) In Bande
+      T.Intestazioni.Add(B.Key.ToString("0.#") & " - " & B.Value.ToString("0.#"))
+      T.Larghezze.Add(1.0)
+    Next
+    T.Gruppi.Add(New KeyValuePair(Of String, Integer)("", 1))
+    T.Gruppi.Add(New KeyValuePair(Of String, Integer)(NomeBanda & " bands", Bande.Count))
+
+    ' canali in ordine di influenza
+    Dim Righe As New List(Of KeyValuePair(Of Double, String()))
+    Dim Grigie As New List(Of List(Of Integer))
+    For Each kv As KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)) In Canali
+      Dim ChY As clsChannel2020 = kv.Key
+      Dim IdY As String = CanaliY.Where(Function(c) c.Value Is ChY).Select(Function(c) c.Key).FirstOrDefault
+      Dim Sl As List(Of clsFfSensitivita) = Nothing
+      If IdY Is Nothing OrElse Not Sensibilita.TryGetValue(IdY, Sl) Then Continue For
+      Dim Um As String = If(String.IsNullOrWhiteSpace(ChY.ShortUM), "", " [" & ChY.ShortUM & "]")
+      Dim Cella As New List(Of String) From {ChY.ShortName & Um}
+      Dim G As New List(Of Integer)
+      Dim Somma As Double = 0, Pesi As Double = 0
+      For Each B As Double In Bande.Keys
+        Dim Sf As clsFfSensitivita = SensitivitaFascia(Sl, B)
+        Cella.Add(TestoSensitivita(Sf, ChY))
+        If Sf IsNot Nothing AndAlso Sf.Valida Then
+          If Sf.QuotaSpiegata < clsFeedForward.QuotaSpiegataMinima Then G.Add(Cella.Count - 1)
+          Somma += Sf.QuotaSpiegata * Sf.Campioni
+          Pesi += Sf.Campioni
+        End If
+      Next
+      Righe.Add(New KeyValuePair(Of Double, String())(If(Pesi > 0, Somma / Pesi, -1), Cella.ToArray))
+      Grigie.Add(G)
+    Next
+    Dim Ordine As List(Of Integer) = Enumerable.Range(0, Righe.Count).OrderByDescending(Function(q) Righe(q).Key).ToList
+    For Each k As Integer In Ordine
+      For Each c As Integer In Grigie(k)
+        T.CelleGrigie.Add(T.Righe.Count & "," & c)
+      Next
+      T.Righe.Add(Righe(k).Value)
+    Next
+    T.Note.Add(NotaSensitivita())
+    T.Note.Add("Channels sorted from the most to the least influential (mean explained share over the bands).")
+    Return T
   End Function
 
   Private Function TabellaRiepilogoInsieme(Canali As List(Of KeyValuePair(Of clsChannel2020, List(Of clsFfFascia)))) As clsFfPdfTabella
@@ -1175,6 +1276,18 @@ Public Class UserControlFeedForward
     Dim Re As New List(Of String) From {"FF expected " & ChY.ShortName}
     Dim Ra As New List(Of String) From {"FF reliability (H/M/L)"}
     Dim Rc As New List(Of String) From {"Samples"}
+    Dim IdY As String = CanaliY.Where(Function(c) c.Value Is ChY).Select(Function(c) c.Key).FirstOrDefault
+    Dim Sl As List(Of clsFfSensitivita) = Nothing
+    If IdY IsNot Nothing Then Sensibilita.TryGetValue(IdY, Sl)
+    Dim Rs As New List(Of String) From {"Sensitivity of " & CanaleX.ShortName}
+    Dim Rb As New List(Of String) From {"Best " & ChY.ShortName & " (gain)"}
+    Dim GrigieS As New List(Of Integer)
+    For Each F As clsFfFascia In Scelte
+      Dim Sf As clsFfSensitivita = SensitivitaFascia(Sl, F.TwsLow)
+      Rs.Add(TestoSensitivita(Sf, ChY))
+      Rb.Add(TestoMigliore(Sf, ChY))
+      If Sf IsNot Nothing AndAlso Sf.Valida AndAlso Sf.QuotaSpiegata < clsFeedForward.QuotaSpiegataMinima Then GrigieS.Add(Rs.Count - 1)
+    Next
     For Each F As clsFfFascia In Scelte
       Dim O As clsFfOttimo = F.Ottimo
       Rt.Add(If(O Is Nothing, "", Dec(O.X, CanaleX) & If(O.Estrapolato, " *", "") & "  (" & TestoRiferimento() & ")"))
@@ -1187,6 +1300,12 @@ Public Class UserControlFeedForward
     T.Righe.Add(Re.ToArray)
     T.Righe.Add(Ra.ToArray)
     T.Righe.Add(Rc.ToArray)
+    For Each Rx As List(Of String) In {Rs, Rb}
+      For Each c As Integer In GrigieS
+        T.CelleGrigie.Add(T.Righe.Count & "," & c)
+      Next
+      T.Righe.Add(Rx.ToArray)
+    Next
     T.RigheEvidenza = 3
 
     ' bin dal piu' alto al piu' basso
@@ -1205,7 +1324,9 @@ Public Class UserControlFeedForward
       Next
       T.Righe.Add(Cella.ToArray)
     Next
-    T.Note.Add("Rows below 'Samples' = mean of " & ChY.ShortName & " in each " & CanaleX.ShortName & " bin;  gray = bin not used in the fit (too few samples).")
+    T.Note.Add(NotaSensitivita())
+    T.Note.Add("Best = mean " & ChY.ShortName & " of the eighth of the samples with the highest " & CanaleX.ShortName & "; 'edge' = it is the lowest or the highest eighth, the best may be beyond the values sailed.")
+    T.Note.Add("Rows below the sensitivity = mean of " & ChY.ShortName & " in each " & CanaleX.ShortName & " bin;  gray = bin not used in the fit (too few samples).")
     T.Note.Add("FF = feed forward: suggested " & CanaleX.ShortName & ", expected " & ChY.ShortName & ";  (value) = reference " & CanaleX.ShortName & " " & TestoRiferimento() & " and mean " & ChY.ShortName & " observed there;  * = extrapolated;  H / M / L = reliability.")
     Return T
   End Function
@@ -1333,6 +1454,8 @@ Public Class UserControlFeedForward
         PgR.Righe.Add(Riga1)
         PgR.Righe.Add(Riga2)
         PgR.Tabella = TabellaRiepilogoInsieme(PerRiepilogo)
+        PgR.Tabella2 = TabellaSensitivita(PerRiepilogo)
+        PgR.TitoloTabella2 = "Sensitivity of " & CanaleX.ShortName & " to each channel"
         Pagine.Insert(0, PgR)
       End If
       Dim Creato As Boolean = If(S.PdfInsieme, clsPdfFeedForward.CreaPagine(Percorso, "Feed Forward - " & Nome, Pagine),

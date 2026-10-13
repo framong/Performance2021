@@ -41,6 +41,9 @@ Public Class clsFfPdfPagina
   Public Property Righe As New List(Of String)
   Public Property Immagine As System.IO.Stream
   Public Property Tabella As clsFfPdfTabella
+  ''' <summary>Seconda tabella opzionale sotto la prima (per esempio la sensitivita' nel riepilogo), con il suo titolo.</summary>
+  Public Property Tabella2 As clsFfPdfTabella
+  Public Property TitoloTabella2 As String = ""
 End Class
 
 Public Class clsPdfFeedForward
@@ -58,6 +61,8 @@ Public Class clsPdfFeedForward
   Private Const AltezzaRigaNote As Double = 9
   Private Const PaddingNote As Double = 5
   Private Const DistaccoNote As Double = 16
+  Private Const DistaccoTabelle As Double = 18
+  Private Const AltezzaTitoloTabella As Double = 16
   Private Shared ReadOnly FTab As New XFont("Verdana", 7.5)
   Private Shared ReadOnly FTabB As New XFont("Verdana", 7.5, XFontStyle.Bold)
   Private Shared ReadOnly FPiede As New XFont("Verdana", 7)
@@ -286,12 +291,14 @@ Public Class clsPdfFeedForward
 
       ' note (legenda della tabella, sorgente, filtro, impostazioni) in un riquadro con cornice, largo come la tabella, in fondo alla pagina
       Dim T As clsFfPdfTabella = Pg.Tabella
+      Dim T2 As clsFfPdfTabella = Pg.Tabella2
       Dim RigheNote As New List(Of String)
-      If T IsNot Nothing Then
-        For Each Nota As String In T.Note.Where(Function(q) Not q.StartsWith("#"))
+      For Each Tx As clsFfPdfTabella In {T, T2}
+        If Tx Is Nothing Then Continue For
+        For Each Nota As String In Tx.Note.Where(Function(q) Not q.StartsWith("#"))
           RigheNote.AddRange(ACapo(Gfx, Nota, FNote, W - 2 * PaddingNote))
         Next
-      End If
+      Next
       For Each R As String In Pg.Righe
         RigheNote.AddRange(ACapo(Gfx, R, FNote, W - 2 * PaddingNote))
       Next
@@ -299,6 +306,7 @@ Public Class clsPdfFeedForward
       Dim HNote As Double = If(RigheNote.Count = 0, 0, RigheNote.Count * AltezzaRigaNote + 2 * PaddingNote)
       Dim YNote As Double = Fondo - HNote
       Dim Ht As Double = AltezzaTabella(Gfx, W, T) ' righe piu' alte dove il testo va su due righe
+      If T2 IsNot Nothing Then Ht += DistaccoTabelle + AltezzaTitoloTabella + AltezzaTabella(Gfx, W, T2)
       ' il grafico prende lo spazio che resta tra il titolo e la tabella, che resta staccata dal riquadro delle note
       Dim HGraf As Double = YNote - DistaccoNote - Ht - Spazio - Y
 
@@ -318,6 +326,12 @@ Public Class clsPdfFeedForward
       End If
 
       If T IsNot Nothing Then Y = DisegnaTabellaSuPagina(Gfx, Y, W, YNote - DistaccoNote, T)
+      If T2 IsNot Nothing Then
+        Y += DistaccoTabelle
+        Gfx.DrawString(Tronca(Gfx, Pg.TitoloTabella2, FSez, W), FSez, XBrushes.DarkBlue, New XRect(Margine, Y, W, AltezzaTitoloTabella), XStringFormats.CenterLeft)
+        Y += AltezzaTitoloTabella
+        Y = DisegnaTabellaSuPagina(Gfx, Y, W, YNote - DistaccoNote, T2)
+      End If
       If RigheNote.Count > 0 Then
         ' se la pagina e' piena il riquadro non sale sopra la tabella: le righe che non entrano si perdono
         Dim YBox As Double = Math.Max(YNote, Y + DistaccoNote)
