@@ -45,9 +45,6 @@ Public Class clsFeedForwardReport
   Public Property DecimaliAssiExtra As Integer = 0
   ''' <summary>X di riferimento (per esempio Vmg% 100): nel riepilogo, accanto al valore suggerito, la media di Y osservata a questa X.</summary>
   Public Property XRiferimento As Double = 100
-  ''' <summary>Test lead-lag: ritardo massimo cercato (s) e lisciatura/orizzonte delle variazioni (s).</summary>
-  Public Property LeadLagMaxS As Double = 30
-  Public Property LeadLagLisciaS As Double = 3
   ''' <summary>Dimensione del titolo dentro il grafico.</summary>
   Public Property TitoloDimensione As Integer = 11
 

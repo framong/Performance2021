@@ -56,8 +56,6 @@ Public Class UserControlFeedForward
   Private Selezione As New Dictionary(Of String, HashSet(Of Double))
   Private CanaleX As clsChannel2020 = Nothing
   Private CanaliY As New Dictionary(Of String, clsChannel2020)
-  ''' <summary>Test lead-lag dell'ultimo calcolo, per canale Y (ChannelId).</summary>
-  Private LeadLags As New Dictionary(Of String, clsFfLeadLag)
   Private CanaleYVista As clsChannel2020 = Nothing
   Private VociY As New ObservableCollection(Of clsVoceY)
   Private DescrizioneFiltro As String = ""
@@ -159,8 +157,6 @@ Public Class UserControlFeedForward
     txt_MinBin.Text = P.MinBinPerFit.ToString
     txt_Extra.Text = Testo(P.ExtrapolazioneBin)
     txt_XRif.Text = Testo(S.XRiferimento)
-    txt_LLMax.Text = Testo(S.LeadLagMaxS)
-    txt_LLLiscia.Text = Testo(S.LeadLagLisciaS)
     txt_PuntiDim.Text = S.PuntiDimensione.ToString
     txt_PuntiOpacita.Text = S.PuntiOpacita.ToString
     txt_MedieDim.Text = S.MedieDimensione.ToString
@@ -201,10 +197,6 @@ Public Class UserControlFeedForward
     P.MinBinPerFit = CInt(Numero(txt_MinBin.Text, P.MinBinPerFit))
     P.ExtrapolazioneBin = Numero(txt_Extra.Text, P.ExtrapolazioneBin)
     S.XRiferimento = Numero(txt_XRif.Text, S.XRiferimento)
-    S.LeadLagMaxS = System.Math.Max(1, System.Math.Min(300, Numero(txt_LLMax.Text, S.LeadLagMaxS)))
-    S.LeadLagLisciaS = System.Math.Max(0.5, System.Math.Min(60, Numero(txt_LLLiscia.Text, S.LeadLagLisciaS)))
-    txt_LLMax.Text = Testo(S.LeadLagMaxS)
-    txt_LLLiscia.Text = Testo(S.LeadLagLisciaS)
     LeggiGrafica()
     S.PdfInsieme = chk_PdfInsieme.IsChecked = True
     SalvaProfilo()
@@ -276,8 +268,6 @@ Public Class UserControlFeedForward
     AppConfig.ActiveProfile.FeedForwardSettings = R.Clona()
     Risultati.Clear()
     Selezione.Clear()
-    LeadLags.Clear()
-    txt_LeadLag.Text = ""
     grd_Fasce.ItemsSource = Nothing
     DisegnaFascia(Nothing, Nothing)
     CaricaImpostazioni()
@@ -493,8 +483,6 @@ Public Class UserControlFeedForward
 
       Risultati.Clear()
       CanaliY.Clear()
-      LeadLags.Clear()
-      Dim Tempi() As Double = SecondiRighe()
       Dim Mancanti As New List(Of String)
       Dim RigheCamp As List(Of Integer) = Nothing
       For Each V As clsVoceY In VociY
@@ -507,7 +495,6 @@ Public Class UserControlFeedForward
         If RigheCamp Is Nothing Then RigheCamp = RigheSorgente(S.Sorgente, N).ToList
         CanaliY(V.Id) = ChY
         Risultati(V.Id) = clsFeedForward.Calcola(CanaleX.Valori, ChY.Valori, ChTws.Valori, RigheCamp, Maschera, S.Parametri)
-        If Tempi IsNot Nothing Then LeadLags(V.Id) = clsFeedForward.LeadLag(CanaleX.Valori, ChY.Valori, ChTws.Valori, Tempi, RigheCamp, Maschera, S.Parametri, S.LeadLagMaxS, S.LeadLagLisciaS)
         ' selezione delle fasce: si conserva quella esistente (solo fasce ancora valide), altrimenti la prima con ottimo
         Dim Sel As HashSet(Of Double) = Nothing
         If Selezione.TryGetValue(V.Id, Sel) Then
@@ -526,33 +513,6 @@ Public Class UserControlFeedForward
       MsgBox("Error: " & ex.Message, MsgBoxStyle.Exclamation, "Feed Forward")
       Return False
     End Try
-  End Function
-
-  ''' <summary>Secondi di ogni riga dai TimeStamps del dataset (Nothing se mancano).</summary>
-  Private Function SecondiRighe() As Double()
-    Dim Ts() As DateTime = DataProvider2020.TimeStamps
-    If Ts Is Nothing OrElse Ts.Length = 0 Then Return Nothing
-    Dim T0 As DateTime = Ts(0)
-    Dim Out(Ts.Length - 1) As Double
-    For i As Integer = 0 To Ts.Length - 1
-      Out(i) = If(Ts(i).Ticks = 0, Double.NaN, (Ts(i) - T0).TotalSeconds)
-    Next
-    Return Out
-  End Function
-
-  ''' <summary>Lead-lag del canale come frase per l'utente.</summary>
-  Private Function FraseLeadLag(Id As String, ChY As clsChannel2020) As String
-    Dim L As clsFfLeadLag = Nothing
-    If CanaleX Is Nothing OrElse ChY Is Nothing OrElse Not LeadLags.TryGetValue(Id, L) Then Return ""
-    Dim Spiega As String
-    Select Case L.Esito
-      Case eFfLeadLag.Precede : Spiega = ChY.ShortName & " changes first, " & CanaleX.ShortName & " follows: consistent with an effect on the performance"
-      Case eFfLeadLag.Segue : Spiega = CanaleX.ShortName & " changes first, " & ChY.ShortName & " follows: the crew reacts to the speed"
-      Case eFfLeadLag.Insieme : Spiega = "they change at the same time: the order cannot be told"
-      Case eFfLeadLag.Misto : Spiega = "similar links before and after: both effect and reaction"
-      Case Else : Spiega = If(L.Messaggio <> "", L.Messaggio, "no significant relation between the changes")
-    End Select
-    Return "Lead-lag " & ChY.ShortName & " vs " & CanaleX.ShortName & ":  " & clsFeedForward.TestoLeadLag(L) & "  -  " & Spiega
   End Function
 
   Private Sub btn_Calcola_Click(sender As Object, e As RoutedEventArgs)
@@ -585,7 +545,6 @@ Public Class UserControlFeedForward
       Next
     End If
     AggiornaColonneBin(Lista)
-    txt_LeadLag.Text = If(V Is Nothing, "", FraseLeadLag(V.Id, CanaleYVista))
     ' all'inizio e' visibile solo la prima fascia con ottimo (le altre si abilitano con la checkbox)
     Dim Prima As clsFfRiga = Righe.FirstOrDefault(Function(r) r.Dati.Ottimo IsNot Nothing)
     If Prima Is Nothing Then Prima = Righe.FirstOrDefault(Function(r) r.Campioni > 0)
@@ -724,7 +683,6 @@ Public Class UserControlFeedForward
     If Righe.Count = 0 Then Exit Sub
     Dim Sb As New System.Text.StringBuilder
     Sb.AppendLine(If(CanaleYVista Is Nothing, "", CanaleYVista.LongName))
-    If txt_LeadLag.Text <> "" Then Sb.AppendLine(txt_LeadLag.Text)
     Dim Testa As New List(Of String) From {"Band", "Samples", "Bins", "Target X", "Expected Y", "+-2 SE", "Best bin X", "Best bin Y", "Gain vs best bin", "R2", "Extrapolated", "Reliability", "Association"}
     Testa.AddRange(IntestazioniBin.Select(Function(q) q.Value))
     Testa.Add("Note")
@@ -1126,19 +1084,6 @@ Public Class UserControlFeedForward
            "oscillation of the channel:  low = practically constant,  medium = some change,  high = clear change."
   End Function
 
-  Private Function LeadLagNota1() As String
-    Return "Lead-lag = do the changes of the channel come before or after the changes of " & CanaleX.ShortName & "?  'leads 4 s' = the channel changes first and " & CanaleX.ShortName &
-           " follows about 4 s later (consistent with the setting producing the performance);  'follows 6 s' = " & CanaleX.ShortName & " changes first and the channel follows (the crew reacts to the speed);  " &
-           "'together' = same time, the order cannot be told;  'mixed' = both;  'unclear' = no significant relation.  r = correlation of the changes (+ same direction, - opposite)."
-  End Function
-
-  Private Function LeadLagNota2() As String
-    Dim S As clsFeedForwardReport = Rep()
-    Return "Lead-lag computed on the continuous stretches of the source that pass the filter, in the band range " & S.Parametri.TwsMin.ToString("0.#") & " - " & S.Parametri.TwsMax.ToString("0.#") &
-           ", with every " & CanaleX.ShortName & " value (also when slow); changes over " & Testo(S.LeadLagLisciaS) & " s, shifts up to " & Testo(S.LeadLagMaxS) & " s.  " &
-           "A common cause (a gust, a wave) can move both: a hint, not a proof."
-  End Function
-
   Private Function AssociazioneNota2() As String
     Return "Association is not causation: a channel can change with " & CanaleX.ShortName & " because the crew reacts to the speed (for example the forestay eased when the boat is slow) and not because it makes the boat faster."
   End Function
@@ -1165,9 +1110,7 @@ Public Class UserControlFeedForward
     T.Gruppi.Add(New KeyValuePair(Of String, Integer)(NomeBanda & " bands", Bande.Count))
     T.Intestazioni.Add("Association (slow to fast)")
     T.Larghezze.Add(1.9)
-    T.Intestazioni.Add("Lead-lag")
-    T.Larghezze.Add(1.7)
-    T.Gruppi.Add(New KeyValuePair(Of String, Integer)("", 2))
+    T.Gruppi.Add(New KeyValuePair(Of String, Integer)("", 1))
 
     ' bersaglio di X per fascia: il piu' frequente tra i canali (con "spingi X" e' lo stesso per tutti)
     Dim Bersaglio As New Dictionary(Of Double, Double)
@@ -1185,8 +1128,8 @@ Public Class UserControlFeedForward
       Rt.Add(If(Bersaglio.ContainsKey(B), Dec(Bersaglio(B), CanaleX) & "  (" & TestoRiferimento() & ")", ""))
       Rc.Add(If(Campioni.ContainsKey(B), Campioni(B).ToString("N0"), ""))
     Next
-    Rt.AddRange({"", ""})
-    Rc.AddRange({"", ""})
+    Rt.Add("")
+    Rc.Add("")
     T.Righe.Add(Rt.ToArray)
     T.Righe.Add(Rc.ToArray)
     T.RigheEvidenza = 1
@@ -1219,17 +1162,12 @@ Public Class UserControlFeedForward
         Dim Dm As Double = ConA.Sum(Function(q) q.Ottimo.AssociazioneDelta * q.Campioni) / Pesi
         Cella.Add(TestoAssoc(Dm, Am, ChY))
       End If
-      Dim Ll As clsFfLeadLag = Nothing
-      Dim IdY As String = CanaliY.Where(Function(c) c.Value Is ChY).Select(Function(c) c.Key).FirstOrDefault
-      Cella.Add(If(IdY IsNot Nothing AndAlso LeadLags.TryGetValue(IdY, Ll), clsFeedForward.TestoLeadLag(Ll), ""))
       T.Righe.Add(Cella.ToArray)
     Next
     T.Note.Add("FF = feed forward: value suggested for each channel at the target " & CanaleX.ShortName & " of the band;  (value) = mean observed at the reference " & CanaleX.ShortName & " " & TestoRiferimento() & ";  '@ x' = the channel has a different target.")
     T.Note.Add("Letter before the value = reliability of the suggestion:  H = high,  M = medium,  L = low.  It measures how precise the value at the target is (2 standard errors) compared with the natural scatter of the channel inside the bins; with Maximize/Minimize Y it measures the quality of the fit (R2).")
     T.Note.Add(AssociazioneNota1())
     T.Note.Add(AssociazioneNota2())
-    T.Note.Add(LeadLagNota1())
-    T.Note.Add(LeadLagNota2())
     T.Note.Add("Details, charts and bins in the following pages, one per channel.")
     Return T
   End Function
@@ -1300,8 +1238,6 @@ Public Class UserControlFeedForward
     T.Note.Add("FF = feed forward: suggested " & CanaleX.ShortName & ", expected " & ChY.ShortName & ";  (value) = reference " & CanaleX.ShortName & " " & TestoRiferimento() & " and mean " & ChY.ShortName & " observed there;  * = extrapolated;  H / M / L = reliability.")
     T.Note.Add(AssociazioneNota1())
     T.Note.Add(AssociazioneNota2())
-    T.Note.Add(LeadLagNota1())
-    T.Note.Add(LeadLagNota2())
     Return T
   End Function
 
@@ -1397,8 +1333,6 @@ Public Class UserControlFeedForward
           Dim Pg As New clsFfPdfPagina With {.Titolo = ChY.LongName & " " & CanaleX.LongName & " FeedForward Optimization"}
           Pg.Righe.Add(Riga1)
           Pg.Righe.Add(Riga2)
-          Dim Ll As String = FraseLeadLag(V.Id, ChY)
-          If Ll <> "" Then Pg.Righe.Insert(0, Ll)
           Pg.Immagine = Await CatturaAsync(Scelte, ChY)
           Pg.Tabella = TabellaCanaleInsieme(ChY, Scelte)
           Pagine.Add(Pg)
